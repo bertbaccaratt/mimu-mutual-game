@@ -1,4 +1,8 @@
 assets/source/
 .DS_Store
 Thumbs.db
+node_modules/
+.wrangler/
+.wrangler-state/
+.dev.vars
 

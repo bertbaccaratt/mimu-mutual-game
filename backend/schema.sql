@@ -92,3 +92,5 @@ CREATE TABLE IF NOT EXISTS admin_fails (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_players_xid ON players (x_id) WHERE x_id IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_players_xhandle ON players (lower(x_handle)) WHERE x_handle IS NOT NULL;

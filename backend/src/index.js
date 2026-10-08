@@ -199,7 +199,7 @@ async function handleAuth(env, req) {
   await env.DB.prepare('INSERT INTO players(address,name,picture,glyph_name,last_ip,updated_at) VALUES(?1,?2,?3,?4,?5,?6) ON CONFLICT(address) DO UPDATE SET name=?2,picture=?3,glyph_name=?4,last_ip=?5,updated_at=?6')
     .bind(addr.toLowerCase(), name, picture, glyphName, clientIp(req), now).run();
   const exp = now + SESSION_MS;
-  return json(env, req, { token: await signToken(env, { sub: addr.toLowerCase(), exp }), expiresAt: exp, gates, x: (mine && mine.x_handle) || '', needX: !!env.X_CLIENT_ID && !(mine && mine.x_handle) });
+  return json(env, req, { token: await signToken(env, { sub: addr.toLowerCase(), exp }), expiresAt: exp, gates, x: (mine && mine.x_handle) || '', needX: xNeeded(env) && !(mine && mine.x_handle) });
 }
 
 /* ---------- verified runs ---------- */
@@ -230,9 +230,9 @@ async function handleRunStart(env, req) {
   if (!sess) return json(env, req, { error: 'sign in first' }, 401);
   if (await limited(env, 'RL_RUN', sess.sub)) return tooMany(env, req);
   if (await isBanned(env, sess.sub)) return json(env, req, { error: 'blocked' }, 403);
-  if (env.X_CLIENT_ID) {                                           // when X login is on, every player needs a connected X account
-    const me = await env.DB.prepare('SELECT x_id FROM players WHERE address=?1').bind(sess.sub).first();
-    if (!me || !me.x_id) return json(env, req, { error: 'connect your X account first', needX: true }, 403);
+  if (xNeeded(env)) {                                              // every player needs an X handle on file (verified via X login when that is set up, typed otherwise)
+    const me = await env.DB.prepare('SELECT x_handle FROM players WHERE address=?1').bind(sess.sub).first();
+    if (!me || !me.x_handle) return json(env, req, { error: 'add your X handle first', needX: true }, 403);
   }
   let b = {}; try { b = await req.json(); } catch { /* optional body */ }
   if (!(await humanOk(env, b.cf, clientIp(req)))) return json(env, req, { error: 'human check failed' }, 403);
@@ -325,6 +325,7 @@ async function handleHit(env, req) {
 }
 
 /* ---------- Sign in with X (OAuth 2.0 + PKCE). The X @handle becomes the player's name; it is read from X, never typed. ---------- */
+const xNeeded = (env) => !!(env.X_CLIENT_ID || env.X_REQUIRED === '1');
 const X_AUTH = (env) => env.X_AUTH_URL || 'https://x.com/i/oauth2/authorize';
 const X_API = (env) => String(env.X_API_BASE || 'https://api.x.com').replace(/\/$/, '');
 const xRedirect = (req) => new URL(req.url).origin + '/api/x/callback';
@@ -365,6 +366,22 @@ async function handleXCallback(env, req, url) {
     const proof = await signToken(env, { k: 'x', id: String(u.id), u: u.username, exp: Date.now() + 30 * 24 * 3600 * 1000 });
     return xPage(st.o, { type: 'mimu-x', proof, x: u.username, pic: cleanPic(u.profile_image_url ? String(u.profile_image_url).replace('_normal.', '_400x400.') : '') }, 'Connected as @' + String(u.username) + '. You can close this window.');
   } catch (e) { console.error('x callback', String(e && e.message || e)); return fail('network'); }
+}
+/* Typed X handle: used while real X login is not set up. It is NOT verified by X, so each handle can belong to only one wallet. */
+async function handleXHandle(env, req) {
+  const sess = await readToken(env, req);
+  if (!sess) return json(env, req, { error: 'sign in first' }, 401);
+  if (await limited(env, 'RL_AUTH', sess.sub)) return tooMany(env, req);
+  let b = {}; try { b = await req.json(); } catch { return json(env, req, { error: 'bad json' }, 400); }
+  const x = String(b.x || '').trim().replace(/^@/, '').replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, '').replace(/[/?#].*$/, '');
+  if (!/^[A-Za-z0-9_]{1,15}$/.test(x)) return json(env, req, { error: 'That does not look like an X handle (letters, numbers and _ only, up to 15).' }, 400);
+  const me = await env.DB.prepare('SELECT x_id FROM players WHERE address=?1').bind(sess.sub).first();
+  if (me && me.x_id) return json(env, req, { error: 'Your X account is already verified.' }, 409);
+  const taken = await env.DB.prepare('SELECT address FROM players WHERE lower(x_handle)=lower(?1) AND address<>?2').bind(x, sess.sub).first();
+  if (taken) return json(env, req, { error: 'That X handle is already used by another wallet.' }, 409);
+  try { await env.DB.prepare("UPDATE players SET x_handle=?1, name='@'||?1 WHERE address=?2").bind(x, sess.sub).run(); }
+  catch { return json(env, req, { error: 'That X handle is already used by another wallet.' }, 409); }
+  return json(env, req, { ok: true, x });
 }
 async function handleXLink(env, req) {                              // attach a verified X account to the signed-in wallet
   const sess = await readToken(env, req);
@@ -408,7 +425,7 @@ async function handleAdmin(env, req, url) {
       q('SELECT COUNT(*) c FROM visitors WHERE last_seen>?1', Date.now() - 24 * 3600 * 1000).first(),
       top('run_best'), top('coins_total'),
       q("SELECT r.id, r.address a, p.name n, p.x_handle x, r.score, r.coins, r.last_tick ticks, r.flags, r.ended_at t FROM runs r LEFT JOIN players p ON p.address=r.address WHERE r.status='held' ORDER BY r.ended_at DESC LIMIT 50").all(),
-      q('SELECT p.address a, p.name n, p.glyph_name g, p.picture pic, p.x_handle x, p.last_ip ip, p.updated_at t, (SELECT 1 FROM bans b WHERE b.address=p.address) banned FROM players p ORDER BY p.updated_at DESC LIMIT 1000').all(),
+      q('SELECT p.address a, p.name n, p.glyph_name g, p.picture pic, p.x_handle x, (p.x_id IS NOT NULL) xv, p.last_ip ip, p.updated_at t, (SELECT 1 FROM bans b WHERE b.address=p.address) banned FROM players p ORDER BY p.updated_at DESC LIMIT 1000').all(),
       q('SELECT lat, lon, country, city, COUNT(*) c FROM visitors WHERE lat IS NOT NULL AND lon IS NOT NULL GROUP BY ROUND(lat,1), ROUND(lon,1) ORDER BY MAX(last_seen) DESC LIMIT 1500').all(),
       q('SELECT ts, ip, country, city, vid FROM hits ORDER BY id DESC LIMIT 200').all(),
       q('SELECT COUNT(*) c FROM bans').first(),
@@ -477,7 +494,7 @@ export default {
     const url = new URL(req.url);
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(env, req) });
     try {
-      if (url.pathname === '/api/health') return json(env, req, { ok: true, week: weekNow(), gates: { mimu: !!env.GATE_MIMU, pass: !!env.GATE_PASS, dengs: !!env.GATE_DENGS }, xLogin: !!(env.X_CLIENT_ID && env.X_CLIENT_SECRET) });
+      if (url.pathname === '/api/health') return json(env, req, { ok: true, week: weekNow(), gates: { mimu: !!env.GATE_MIMU, pass: !!env.GATE_PASS, dengs: !!env.GATE_DENGS }, xLogin: !!(env.X_CLIENT_ID && env.X_CLIENT_SECRET), xRequired: xNeeded(env) });
       if (!env.SESSION_SECRET) return json(env, req, { error: 'server not configured' }, 500);
       if (url.pathname === '/api/nonce' && req.method === 'GET') { if (await limited(env, 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleNonce(env, req); }
       if (url.pathname === '/api/auth' && req.method === 'POST') { if (await limited(env, 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleAuth(env, req); }
@@ -488,6 +505,7 @@ export default {
       if (url.pathname === '/api/x/start' && req.method === 'GET') { if (await limited(env, 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleXStart(env, req, url); }
       if (url.pathname === '/api/x/callback' && req.method === 'GET') { if (await limited(env, 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleXCallback(env, req, url); }
       if (url.pathname === '/api/x/link' && req.method === 'POST') return handleXLink(env, req);
+      if (url.pathname === '/api/x/handle' && req.method === 'POST') return handleXHandle(env, req);
       if (url.pathname.startsWith('/api/admin/')) { if (await limited(env, 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleAdmin(env, req, url); }
       return json(env, req, { error: 'not found' }, 404);
     } catch (e) {

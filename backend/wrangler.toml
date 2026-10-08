@@ -39,3 +39,4 @@ RPC_33139 = "https://apechain.calderachain.xyz/http"
 RPC_1     = "https://cloudflare-eth.com"
 RPC_4663  = "https://robinhood-rpc.publicnode.com,https://robinhood.drpc.org,https://4663.rpc.thirdweb.com,https://rpc.mainnet.chain.robinhood.com"   # several = automatic fallback
 EXPLORER_4663 = "https://robinhoodchain.blockscout.com"   # keyless fallback if every RPC is busy
+X_REQUIRED = "1"   # every player must add an X handle (typed until real X login is set up)

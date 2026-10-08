@@ -237,7 +237,7 @@ function render(d){
   $('#users').innerHTML=d.users.length?'<table><thead><tr><th>Glyph</th><th>Wallet</th><th>X account</th><th>IP address</th><th>Last seen</th><th></th></tr></thead><tbody>'+d.users.map(u=>`<tr>
     <td>${u.pic&&/^https:\/\//.test(u.pic)?`<img class="av" src="${esc(u.pic)}" alt="" referrerpolicy="no-referrer" loading="lazy">`:''}${esc(u.g||u.n)}${u.banned?' <span class="tag bad">banned</span>':''}</td>
     <td>${wal(u.a)}<br><span style="color:var(--muted);font-size:10px">${esc(u.a)}</span></td>
-    <td>${xlink(u.x)}</td><td style="font-size:11px">${esc(u.ip||"unknown")}</td><td>${ago(u.t)}</td>
+    <td>${xlink(u.x)}${u.x&&!u.xv?' <span class="tag warn" title="Typed by the player, not verified by X">typed</span>':''}</td><td style="font-size:11px">${esc(u.ip||"unknown")}</td><td>${ago(u.t)}</td>
     <td>${u.banned?`<button class="btn ghost" data-ub="${esc(u.a)}">Unban</button>`:`<button class="btn ghost" data-bn="${esc(u.a)}">Ban</button>`}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">No players yet.</div>';
   // ips
   $('#ips').innerHTML=d.ips.length?'<table><thead><tr><th>When</th><th>IP address</th><th>Place</th><th>Visitor</th></tr></thead><tbody>'+d.ips.map(h=>`<tr><td title="${esc(new Date(h.ts).toLocaleString())}">${ago(h.ts)}</td><td>${esc(h.ip)}</td><td>${esc([h.city,h.country].filter(Boolean).join(', ')||'unknown')}</td><td style="color:var(--muted)">${esc((h.vid||'').slice(0,8))}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">No visits recorded yet.</div>';

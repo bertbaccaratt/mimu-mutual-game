@@ -19,7 +19,9 @@ async function login(acct, name) {
   const n = (await call('/api/nonce')).b;
   const msg = `Sign in to Chair Run × Mutual Mimu\nThis only proves you own this wallet. It costs nothing, sends no transaction and cannot move your assets.\n\nDomain: ${domain}\nAddress: ${acct.address}\nNonce: ${n.nonce}\nIssued: ${n.issuedAt}`;
   const signature = await acct.signMessage({ message: msg });
-  return call('/api/auth', { method: 'POST', body: JSON.stringify({ address: acct.address, nonce: n.nonce, issuedAt: n.issuedAt, signature, name, picture: '' }) });
+  const r = await call('/api/auth', { method: 'POST', body: JSON.stringify({ address: acct.address, nonce: n.nonce, issuedAt: n.issuedAt, signature, name, picture: '' }) });
+  if (r.s === 200 && r.b.needX) await call('/api/x/handle', { method: 'POST', body: JSON.stringify({ x: 'R' + acct.address.slice(2, 12) }) }, r.b.token);
+  return r;
 }
 function bot(seed, wallet, ticks, metronome = false) {                      // plays the shared game core locally and records its inputs
   const sim = Sim.create(seed, { wallet }), S = sim.S, inputs = [];

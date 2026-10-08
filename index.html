@@ -1059,14 +1059,19 @@ function afterUnlock(){if(!P.mimu)onboard();else buildHome(true)}
 function onboard(){
   P.mimu=STARTERS[0];P.handle='mimu';ensureRivals();buildHome();
   let pick=0;const handle='mimu_'+Math.floor(1000+Math.random()*9000);
+  const typedName=()=>`<div class="lbl" style="margin:16px 0 6px">Your name</div><div class="sub2" style="margin-bottom:10px">Type your X <b style="color:var(--cream)">@handle</b>. It becomes your name on every leaderboard.</div>${xTypeBox(P.x&&P.x.handle)}`;
   const nameBlock=()=>{
-    if(!XL.on)return `<div class="lbl" style="margin:16px 0 6px">Your name</div><div class="sub2" style="margin-bottom:2px">You&rsquo;re <b style="color:var(--cream)">${handle}</b> for now. It becomes your X @handle once you connect X.</div>`;
+    if(XL.req&&!XL.on)return typedName();if(!XL.on)return `<div class="lbl" style="margin:16px 0 6px">Your name</div><div class="sub2" style="margin-bottom:2px">You&rsquo;re <b style="color:var(--cream)">${handle}</b> for now. It becomes your X @handle once you connect X.</div>`;
     if(P.x&&P.x.handle)return `<div class="lbl" style="margin:16px 0 6px">Your name</div><div class="mono" style="font-size:18px;color:var(--gold2)">@${escH(P.x.handle)} <span style="color:var(--up)">&#10003;</span></div>`;
     return `<div class="lbl" style="margin:16px 0 6px">Your name</div><div class="sub2" style="margin-bottom:10px">Connect your X account. Your X <b style="color:var(--cream)">@handle</b> becomes your name on every leaderboard.</div><button class="btn" id="xcon" style="padding:14px;background:#000;border:1px solid #fff4;color:#fff;font-weight:600">Connect with &#120143;</button><div class="hint" id="xerr" style="min-height:16px;margin-top:6px;color:#e0675f"></div>`;
   };
   const paint=()=>{
     const nb=$('#nameb');if(nb)nb.innerHTML=nameBlock();
-    const go=$('#obgo');if(go){const need=XL.on&&!(P.x&&P.x.handle);go.disabled=need;go.style.opacity=need?.45:1}
+    const go=$('#obgo'),xt=$('#xtype');
+    if(go){
+      const sync=()=>{const need=xt?!X_RE.test(xt.value.trim().replace(/^@/,'')):(XL.on&&!(P.x&&P.x.handle));go.disabled=need;go.style.opacity=need?.45:1};
+      if(xt)xt.oninput=sync;sync();
+    }
     const c=$('#xcon');if(c)c.onclick=async()=>{c.disabled=true;const er=$('#xerr');if(er)er.textContent='';try{await XL.connect();sfx.win();paint()}catch(e){c.disabled=false;if(er)er.textContent=(e&&e.message)||'Could not connect X.'}};
   };
   const body=()=>`<div class="lbl" style="color:var(--gold)">Welcome to the building</div><div class="h2" style="font-size:28px;margin:6px 0 4px">Meet your <em>Mimu</em></div>
@@ -1371,10 +1376,12 @@ const API={
   }
 };
 
+const X_RE=/^[A-Za-z0-9_]{1,15}$/;
+const xTypeBox=(val)=>`<input id="xtype" maxlength="41" value="${escH(val||'')}" placeholder="type your x handle here" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%;padding:14px;border-radius:14px;background:#1a1315;border:1.5px solid rgba(217,178,95,.55);color:#f2e7d0;font:500 15px var(--mono);outline:0;text-align:center"><div style="margin-top:8px;text-align:center"><a href="https://x.com/home" target="_blank" rel="noopener noreferrer" style="color:#9ad1ff;font:500 12px var(--sans)">Open X to find your handle &#8599;</a></div>`;
 /* Sign in with X: opens X in a small window, gets back a signed proof of the account (never a typed name) */
 const XL={
   on:null,
-  async check(){if(XL.on!==null)return XL.on;try{XL.on=!!(await API.j('/api/health')).xLogin}catch(e){XL.on=false}return XL.on},
+  req:false,async check(){if(XL.on!==null)return XL.on;try{const h=await API.j('/api/health');XL.on=!!h.xLogin;XL.req=!!h.xRequired}catch(e){XL.on=false;XL.req=false}return XL.on},
   connect(){
     return new Promise((res,rej)=>{
       const api=GAME_CONFIG.api.replace(/\/$/,''),w=window.open(api+'/api/x/start?o='+encodeURIComponent(location.origin),'mimu-x','width=520,height=720');
@@ -1544,8 +1551,27 @@ function runGate(root,ctl,enter){
     reason?denied(reason):needX?askX():welcome();
   };
 
+  /* typed X handle (used until real X login is set up): saved against the wallet, one wallet per handle */
+  const askTyped=async()=>{
+    const save=async(v)=>{await API.j('/api/x/handle',{method:'POST',body:JSON.stringify({x:v})});P.x={handle:v.replace(/^@/,''),proof:null,pic:''};applyIdentity()};
+    if(P.x&&P.x.handle){try{await save(P.x.handle);if(alive())return welcome()}catch(e){if(e.status===409||e.status===400)P.x=null}}
+    show(`<div class="gl-gem">${GEM_SVG}</div><h2>Add your <em>X</em> handle</h2>
+      <p>Your X <b>@handle</b> becomes your name on every leaderboard.</p>
+      ${xTypeBox('')}
+      <div class="hint" id="xe" style="min-height:18px;color:#e0675f;margin-top:6px"></div>
+      <div class="acts"><button class="btn gold" id="xs" style="padding:16px">Continue</button><button class="btn ghost" id="xh" style="max-width:300px">Back to phone</button></div>`);
+    const inp=$('#xtype',root),err=$('#xe',root),btn=$('#xs',root);
+    $('#xh',root).onclick=()=>goHome();
+    const go=async()=>{
+      const v=inp.value.trim().replace(/^@/,'');
+      if(!X_RE.test(v)){err.textContent='Type your X handle (letters, numbers and _ only, up to 15).';return}
+      btn.disabled=true;err.textContent='';
+      try{await save(v);if(alive()){beep(880,.1);welcome()}}catch(e){btn.disabled=false;err.textContent=(e&&e.message)||'Could not save that. Try again.'}
+    };
+    btn.onclick=go;inp.onkeydown=e=>{if(e.key==='Enter')go()};setTimeout(()=>inp.focus(),300);
+  };
   /* every player connects their X account once (Sign in with X). The X @handle becomes their name everywhere; nothing is typed. */
-  const askX=async()=>{
+  const askX=async()=>{await XL.check();if(!XL.on)return askTyped();
     if(P.x&&P.x.proof){                                   /* connected earlier (first-visit screen): just attach it to this wallet */
       try{await API.j('/api/x/link',{method:'POST',body:JSON.stringify({proof:P.x.proof})});if(alive()){applyIdentity();return welcome()}}catch(e){if(e.status===409)P.x=null;else if(e.status===401)P.x.proof=null}
     }
@@ -2195,7 +2221,8 @@ const A={
   closesheet(){closeSheet()},
   doback(el){doBack(+el.dataset.v)},
   pickm(el){window._ob.set(+el.dataset.v)},
-  startgame(){if(XL.on&&!(P.x&&P.x.handle)){toast('&#128274; <span>Connect your X account first.</span>');return}const o=window._ob.get();P.mimu=STARTERS[o.pick];P.handle=P.x&&P.x.handle?'@'+P.x.handle:(o.handle||'mimu').replace(/[^\w.\-]/g,'').slice(0,16)||'mimu';P.coins=250;P.rivals=null;ensureRivals();saveP();closeSheet();sfx.win();confetti(40);
+  startgame(){const xt=document.getElementById('xtype');if(xt){const v=xt.value.trim().replace(/^@/,'');if(!X_RE.test(v)){toast('&#128274; <span>Type your X handle first.</span>');return}P.x={handle:v,proof:null,pic:''}}
+    if(XL.on&&!(P.x&&P.x.handle)){toast('&#128274; <span>Connect your X account first.</span>');return}const o=window._ob.get();P.mimu=STARTERS[o.pick];P.handle=P.x&&P.x.handle?'@'+P.x.handle:(o.handle||'mimu').replace(/[^\w.\-]/g,'').slice(0,16)||'mimu';P.coins=250;P.rivals=null;ensureRivals();saveP();closeSheet();sfx.win();confetti(40);
     setTimeout(()=>{buildHome(true);toast('🪑 <span>Welcome, <b>'+P.handle+'</b>. Open <b>Chair Run</b> to start earning.</span>',3600)},500)},
   soon(){toast('🔒 <span>Coming soon in the collab: Mimu Mail.</span>')}
 };

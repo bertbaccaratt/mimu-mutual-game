@@ -25,13 +25,30 @@ const msg = `Sign in to Chair Run × Mutual Mimu\nThis only proves you own this 
 const li = await call('/api/auth', { method: 'POST', body: JSON.stringify({ address: a.address, nonce: n.nonce, issuedAt: n.issuedAt, signature: await a.signMessage({ message: msg }), name: 'Admin Test Ape', picture: '' }) });
 ok('sign in works', li.s === 200 && li.b.x === '');
 const tok = li.b.token;
-ok('the old typed-username endpoint is gone', (await call('/api/profile/x', { method: 'POST', body: JSON.stringify({ x: 'abc' }) }, tok)).s === 404);
+ok('sign in says an X handle is needed', li.b.needX === true);
+const pre = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX' }) }, tok);
+ok('cannot start a run before adding an X handle', pre.s === 403 && pre.b.needX === true, String(pre.s));
+ok('bad X handle refused', (await call('/api/x/handle', { method: 'POST', body: JSON.stringify({ x: 'not valid!!' }) }, tok)).s === 400);
+ok('X handle needs sign-in', (await call('/api/x/handle', { method: 'POST', body: JSON.stringify({ x: 'abc' }) })).s === 401);
+const hnd = 'T' + randomBytes(5).toString('hex');
+const sx = await call('/api/x/handle', { method: 'POST', body: JSON.stringify({ x: '@' + hnd }) }, tok);
+ok('X handle saved', sx.s === 200 && sx.b.x === hnd, JSON.stringify(sx.b));
+const post = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX' }) }, tok);
+ok('runs work once a handle is on file', post.s === 200, String(post.s));
+{
+  const b2 = privateKeyToAccount(generatePrivateKey());
+  const n2 = (await call('/api/nonce')).b;
+  const m2 = `Sign in to Chair Run × Mutual Mimu\nThis only proves you own this wallet. It costs nothing, sends no transaction and cannot move your assets.\n\nDomain: ${domain}\nAddress: ${b2.address}\nNonce: ${n2.nonce}\nIssued: ${n2.issuedAt}`;
+  const l2 = await call('/api/auth', { method: 'POST', body: JSON.stringify({ address: b2.address, nonce: n2.nonce, issuedAt: n2.issuedAt, signature: await b2.signMessage({ message: m2 }), name: 'Second', picture: '' }) });
+  const dup = await call('/api/x/handle', { method: 'POST', body: JSON.stringify({ x: hnd.toUpperCase() }) }, l2.b.token);
+  ok('the same handle cannot be used by a second wallet (any capitalisation)', dup.s === 409, String(dup.s));
+}
 
 // dashboard
 const d = await admin('dashboard');
 ok('dashboard works with the password', d.s === 200 && typeof d.b.visitors === 'number', `visitors ${d.b.visitors}`);
 ok('visitor counted once', d.b.visitors === before + 1, `${before} -> ${d.b.visitors}`);
-ok('player listed with Glyph name, wallet and IP', d.b.users.some((u) => u.g === 'Admin Test Ape' && u.a === a.address.toLowerCase() && u.ip));
+ok('player listed with Glyph name, wallet, X handle and IP', d.b.users.some((u) => u.g === 'Admin Test Ape' && u.a === a.address.toLowerCase() && u.x === hnd && u.ip));
 ok('recent visitors list has the visit', d.b.ips.length > 0 && d.b.ips.some((h) => h.vid === vid));
 ok('CORS allows the admin header', (await fetch(base + '/api/admin/dashboard', { method: 'OPTIONS', headers: { Origin: origin, 'Access-Control-Request-Method': 'GET', 'Access-Control-Request-Headers': 'x-admin-token' } })).headers.get('access-control-allow-headers')?.includes('X-Admin-Token'));
 ok('admin CORS echoes the origin', d.h.get('access-control-allow-origin') === origin);

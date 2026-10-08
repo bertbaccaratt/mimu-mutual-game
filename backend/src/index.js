@@ -331,20 +331,28 @@ async function handleHit(env, req) {
  *   - the amount comes out of the sender's "$TMF found" total and goes into the recipient's, in one all-or-nothing step. */
 const TOP_N = 9;
 const SCORE = '(run_best+boost)';                 // a player's Chair Run score = their best verified run + the boost they were given
+const TOTAL = '(run_best+boost+coins_total)';      // a player's total main score = Chair Run score (incl. boost) + their $TMF found
 const BOOST_PER_TMF = 2;                          // each $TMF sent to a top-9 runner adds this many points to their score
 async function topNine(env, week) {
-  const r = await env.DB.prepare(`SELECT address FROM scores WHERE week=?1 AND run_best>0 ORDER BY ${SCORE} DESC, updated_at ASC LIMIT ?2`).bind(week, TOP_N).all();
+  const r = await env.DB.prepare(`SELECT address FROM scores WHERE week=?1 AND ${TOTAL}>0 ORDER BY ${TOTAL} DESC, updated_at ASC LIMIT ?2`).bind(week, TOP_N).all();
   return (r.results || []).map((x) => x.address);
+}
+async function handleTop9(env, req) {
+  if (await limited(env, 'RL_READ', clientIp(req))) return tooMany(env, req);
+  const week = weekNow();
+  const rows = (await env.DB.prepare(`SELECT s.address a, ${TOTAL} total, (s.run_best+s.boost) run, s.coins_total tmf, p.name n, p.picture pic FROM scores s JOIN players p ON p.address=s.address
+      WHERE s.week=?1 AND ${TOTAL}>0 ORDER BY ${TOTAL} DESC, s.updated_at ASC LIMIT 300`).bind(week).all()).results || [];
+  return json(env, req, { week, count: rows.length, rows: rows.map((r, i) => ({ rank: i + 1, id: r.a, name: r.n, picture: r.pic || '', total: r.total, run: r.run, tmf: r.tmf, top9: i < TOP_N })) });
 }
 async function handleSendStatus(env, req) {
   const sess = await readToken(env, req);
   if (!sess) return json(env, req, { error: 'sign in first' }, 401);
   if (await limited(env, 'RL_READ', sess.sub)) return tooMany(env, req);
   const week = weekNow();
-  const [top, mine] = await Promise.all([topNine(env, week), env.DB.prepare(`SELECT ${SCORE} AS sc, run_best, coins_total FROM scores WHERE address=?1 AND week=?2`).bind(sess.sub, week).first()]);
+  const [top, mine] = await Promise.all([topNine(env, week), env.DB.prepare(`SELECT ${TOTAL} AS sc, run_best, coins_total FROM scores WHERE address=?1 AND week=?2`).bind(sess.sub, week).first()]);
   const inTop = top.includes(sess.sub), balance = mine ? mine.coins_total : 0;
-  const rank = mine && mine.run_best > 0 ? await rankOf(env, week, SCORE, mine.sc) : null;
-  return json(env, req, { week, balance, rank, top9: inTop, canSend: !inTop && balance > 0 });
+  const rank = mine && mine.sc > 0 ? await rankOf(env, week, TOTAL, mine.sc) : null;
+  return json(env, req, { week, balance, rank, total: mine ? mine.sc : 0, top9: inTop, canSend: !inTop && balance > 0 });
 }
 async function handleTransfer(env, req) {
   const sess = await readToken(env, req);
@@ -552,6 +560,7 @@ export default {
       if (url.pathname === '/api/run/chunk' && req.method === 'POST') return handleRunChunk(env, req);
       if (url.pathname === '/api/leaderboard' && req.method === 'GET') return handleBoard(env, req, url);
       if (url.pathname === '/api/hit' && req.method === 'POST') return handleHit(env, req);
+      if (url.pathname === '/api/top9' && req.method === 'GET') return handleTop9(env, req);
       if (url.pathname === '/api/send/status' && req.method === 'GET') return handleSendStatus(env, req);
       if (url.pathname === '/api/transfer' && req.method === 'POST') return handleTransfer(env, req);
       if (url.pathname === '/api/x/start' && req.method === 'GET') { if (await limited(env, 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleXStart(env, req, url); }

@@ -48,6 +48,11 @@ try {
   ok('sending to a top-9 runner works and reports a boost', boostRes.s === 200 && boostRes.b.boosted === 20 && boostRes.b.balance === 30, JSON.stringify(boostRes.b));
   const b1 = await board();
   ok('the top-9 runner score went up by 2 points per $TMF', b1[addr(0)] === b0[addr(0)] + 20, b0[addr(0)] + ' -> ' + b1[addr(0)]);
+  const t9 = (await call('/api/top9')).b;
+  const r0 = t9.rows.find((r) => r.id === addr(0)), r9 = t9.rows.find((r) => r.id === addr(9)), pos9 = t9.rows.findIndex((r) => r.id === addr(9));
+  ok('top 9 list: the leaders are flagged and the total is Chair Run score + $TMF found', !!r0 && r0.top9 === true && r0.total === r0.run + r0.tmf && r0.run === 900020 && r0.tmf === 60, JSON.stringify(r0));
+  ok('top 9 list: everyone else is listed, not flagged', !!r9 && r9.top9 === false && pos9 >= 9 && t9.rows.filter((r) => r.top9).length === 9, 'rank ' + (r9 && r9.rank));
+  ok('top 9 list is ordered by total', t9.rows.every((r, i) => i === 0 || t9.rows[i - 1].total >= r.total));
   const c = await send(9, 10, 15);
   ok('outside the top 9: sending works', c.s === 200 && c.b.balance === 15 && c.b.boosted === 0, JSON.stringify(c.b));
   const s10 = await call('/api/send/status', {}, tok[10]);

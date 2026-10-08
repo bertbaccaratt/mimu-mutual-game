@@ -1061,7 +1061,7 @@ function onboard(){
   let pick=0;const handle='mimu_'+Math.floor(1000+Math.random()*9000);
   const typedName=()=>`<div class="lbl" style="margin:16px 0 6px">Your name</div><div class="sub2" style="margin-bottom:10px">Type your X <b style="color:var(--cream)">@handle</b>. It becomes your name on every leaderboard.</div>${xTypeBox(P.x&&P.x.handle)}`;
   const nameBlock=()=>{
-    if(XL.req&&!XL.on)return typedName();if(!XL.on)return `<div class="lbl" style="margin:16px 0 6px">Your name</div><div class="sub2" style="margin-bottom:2px">You&rsquo;re <b style="color:var(--cream)">${handle}</b> for now. It becomes your X @handle once you connect X.</div>`;
+    return `<div class="sub2" style="margin-top:14px">Connect your Glyph in Chair Run to pick your username.</div>`;if(!XL.on)return `<div class="lbl" style="margin:16px 0 6px">Your name</div><div class="sub2" style="margin-bottom:2px">You&rsquo;re <b style="color:var(--cream)">${handle}</b> for now. It becomes your X @handle once you connect X.</div>`;
     if(P.x&&P.x.handle)return `<div class="lbl" style="margin:16px 0 6px">Your name</div><div class="mono" style="font-size:18px;color:var(--gold2)">@${escH(P.x.handle)} <span style="color:var(--up)">&#10003;</span></div>`;
     return `<div class="lbl" style="margin:16px 0 6px">Your name</div><div class="sub2" style="margin-bottom:10px">Connect your X account. Your X <b style="color:var(--cream)">@handle</b> becomes your name on every leaderboard.</div><button class="btn" id="xcon" style="padding:14px;background:#000;border:1px solid #fff4;color:#fff;font-weight:600">Connect with &#120143;</button><div class="hint" id="xerr" style="min-height:16px;margin-top:6px;color:#e0675f"></div>`;
   };
@@ -1377,7 +1377,7 @@ const API={
 };
 
 const X_RE=/^[A-Za-z0-9_]{1,15}$/;
-const xTypeBox=(val)=>`<input id="xtype" maxlength="41" value="${escH(val||'')}" placeholder="type your x handle here" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%;padding:14px;border-radius:14px;background:#1a1315;border:1.5px solid rgba(217,178,95,.55);color:#f2e7d0;font:500 15px var(--mono);outline:0;text-align:center"><div style="margin-top:8px;text-align:center"><a href="https://x.com/home" target="_blank" rel="noopener noreferrer" style="color:#9ad1ff;font:500 12px var(--sans)">Open X to find your handle &#8599;</a></div>`;
+const xTypeBox=(val)=>`<input id="xtype" maxlength="41" value="${escH(val||'')}" placeholder="type your x handle here" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%;padding:14px;border-radius:14px;background:#1a1315;border:1.5px solid rgba(217,178,95,.55);color:#f2e7d0;font:500 15px var(--mono);outline:0;text-align:center">`;
 /* Sign in with X: opens X in a small window, gets back a signed proof of the account (never a typed name) */
 const XL={
   on:null,
@@ -1489,7 +1489,7 @@ function runGate(root,ctl,enter){
 
   const intro=()=>{
     show(`<div class="gl-gem">${GEM_SVG}</div><h2>Connect <em>Glyph</em></h2>
-      <p>Run the halls as yourself. We read your <b>Glyph username</b>, <b>profile picture</b> and <b>wallet address</b>, and ask for your <b>X username</b>.</p>
+      <p>Run the halls as yourself. We read your <b>Glyph username</b>, <b>profile picture</b> and <b>wallet address</b>, and ask for a <b>username</b> (your X handle).</p>
       <ul class="gl-req"><li><i>1</i>Hold a Mimu On Ape</li><li class="no"><i>2</i>No TMF Pass in the wallet</li><li class="no"><i>3</i>No Dengs in the wallet</li></ul>
       <div class="acts"><button class="btn gold" id="gc" style="padding:16px">Connect with Glyph</button><div class="sm">Only a free sign-in signature. Never a transaction, approval or seed phrase.</div></div>`);
     $('#gc',root).onclick=()=>{beep(520);connect()};
@@ -1555,11 +1555,11 @@ function runGate(root,ctl,enter){
   const askTyped=async()=>{
     const save=async(v)=>{await API.j('/api/x/handle',{method:'POST',body:JSON.stringify({x:v})});P.x={handle:v.replace(/^@/,''),proof:null,pic:''};applyIdentity()};
     if(P.x&&P.x.handle){try{await save(P.x.handle);if(alive())return welcome()}catch(e){if(e.status===409||e.status===400)P.x=null}}
-    show(`<div class="gl-gem">${GEM_SVG}</div><h2>Add your <em>X</em> handle</h2>
-      <p>Your X <b>@handle</b> becomes your name on every leaderboard.</p>
+    show(`<div class="gl-gem">${GEM_SVG}</div><h2>Enter your <em>username</em></h2>
+      <p>Your username <b>must be your X handle</b>. Just type it below and press OK. It becomes your name on every leaderboard.</p>
       ${xTypeBox('')}
       <div class="hint" id="xe" style="min-height:18px;color:#e0675f;margin-top:6px"></div>
-      <div class="acts"><button class="btn gold" id="xs" style="padding:16px">Continue</button><button class="btn ghost" id="xh" style="max-width:300px">Back to phone</button></div>`);
+      <div class="acts"><button class="btn gold" id="xs" style="padding:16px">OK</button><button class="btn ghost" id="xh" style="max-width:300px">Back to phone</button></div>`);
     const inp=$('#xtype',root),err=$('#xe',root),btn=$('#xs',root);
     $('#xh',root).onclick=()=>goHome();
     const go=async()=>{

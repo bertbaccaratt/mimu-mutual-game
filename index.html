@@ -60,7 +60,7 @@ input{font:inherit;color:inherit;-webkit-user-select:text;user-select:text}
 .prop img{display:block;width:100%;height:auto;-webkit-user-drag:none;user-select:none}
 .p-paper{left:2.4%;top:5.5%;width:440px}
 .p-paper img{transform:rotate(-24deg);transform-origin:50% 50%}
-.p-bell{left:1.8%;bottom:92px;width:260px}
+.p-bell{left:2.4%;bottom:96px;width:195px}
 /* the bell: swings from its yoke on hover, rings on click (and then opens the leaderboard) */
 .p-bell img{transform-origin:50% 88%;filter:drop-shadow(10px 14px 10px rgba(0,0,0,.45))}
 .p-bell .bell-hit{position:absolute;inset:0;z-index:3;pointer-events:auto;cursor:pointer;clip-path:ellipse(49% 48% at 50% 52%)}
@@ -197,7 +197,10 @@ body.native .hw{display:none}
 #volhud .vb i{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(0deg,#f0d28a,#fff6dd);border-radius:99px;transition:height .12s}
 #volhud b{font:600 11px var(--mono);color:#fff3d0}
 #volhud svg{width:16px;height:16px}
-#phone:after{content:"";position:absolute;right:-7px;top:210px;width:3px;height:90px;border-radius:2px;background:#2c2c31}
+.hw.pw{left:auto;right:-8px;top:210px;height:90px;border-radius:0 3px 3px 0;background:linear-gradient(270deg,#17171a,#3a3a41 55%,#2c2c31);box-shadow:1px 0 1px #0006}
+.hw.pw:before{inset:-6px -12px -6px -8px}
+.hw.pw:hover{background:linear-gradient(270deg,#222226,#55555d 55%,#3c3c43)}
+.hw.pw:active,.hw.pw.press{transform:translateX(-2.5px)}
 #screen{position:relative;width:100%;height:100%;border-radius:46px;overflow:hidden;background:#000;isolation:isolate}
 #screen:after{content:"";position:absolute;inset:0;pointer-events:none;z-index:200;border-radius:46px;background:linear-gradient(125deg,rgba(255,255,255,.12),transparent 28%,transparent 70%,rgba(255,255,255,.04))}
 #island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:32px;border-radius:20px;background:#000;z-index:120}
@@ -1964,6 +1967,13 @@ function setVolStep(n,quiet){
   mk('mt','Silent switch',()=>{muted=!muted;if(typeof P!=='undefined'&&P){P.mute=muted;saveP()}ac();if(!muted)tone(520,0,.1,.06);volHud(muted?'MUTE':volStep)});
   mk('vu','Volume up',()=>{setVolStep(volStep+1);blip()});
   mk('vd','Volume down',()=>{setVolStep(volStep-1);blip()});
+  /* power button: lock the phone and show the lock screen with its notifications */
+  mk('pw','Lock screen',()=>{
+    const L=document.getElementById('lock');if(!L)return;
+    if(typeof curApp!=='undefined'&&curApp==='run')dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));
+    ac();tone(300,0,.12,.05,'triangle',180);
+    buildLock();L.style.display='';L.classList.add('go');void L.offsetWidth;L.classList.remove('go');
+  });
 })();
 /* ---- cinematic NDA gate: sign it, then the iris opens on the desk ---- */
 (function(){

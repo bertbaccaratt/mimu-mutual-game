@@ -258,6 +258,8 @@ body.native #screen,body.native #screen:after{border-radius:0}
 .app-i .ic{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;position:relative;box-shadow:0 8px 18px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.28),inset 0 -8px 14px rgba(0,0,0,.2)}
 .app-i .ic svg{width:34px;height:34px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4))}
 .app-i.lk{opacity:.5}
+.app-i[disabled]{opacity:.42;filter:grayscale(1);cursor:not-allowed}
+.topbar nav button[disabled]{opacity:.35;cursor:not-allowed;pointer-events:none;filter:grayscale(1)}
 .cdw{margin-top:22px;border-radius:26px;padding:13px 16px 14px;background:rgba(43,31,33,.62);backdrop-filter:blur(16px);border:2px solid #e0332f;box-shadow:0 0 0 1px rgba(0,0,0,.45),0 0 18px rgba(224,51,47,.38),0 10px 24px rgba(0,0,0,.3);text-align:center;cursor:default;transform-origin:50% 60%}
 .cdw:hover{animation:cdwig .55s ease-in-out infinite}
 @keyframes cdwig{0%,100%{transform:rotate(0)}20%{transform:rotate(-2.4deg) translateX(-2px)}40%{transform:rotate(2.4deg) translateX(2px)}60%{transform:rotate(-1.7deg) translateX(-1px)}80%{transform:rotate(1.7deg) translateX(1px)}}
@@ -648,7 +650,7 @@ body.enter .footbar{animation-name:chromeInB}
   <header class="topbar">
     <a class="brand" href="https://opensea.io/collection/mimuonape" target="_blank" rel="noopener" aria-label="Mimu On Ape">
       <img id="logoText" alt="MIMU"></a>
-    <nav aria-label="Game"><button data-launch="run">Chair Run</button><button data-launch="ff">Mutual Mimu</button><button data-launch="lb">Leaderboards</button><button data-launch="vault">Badges</button><button data-launch="top5">Top 5</button><button class="guide" id="guideBtn" type="button">How this site works</button><button class="cta" data-launch="play">Play now</button></nav>
+    <nav aria-label="Game"><button data-launch="run">Chair Run</button><button data-launch="ff">Mutual Mimu</button><button data-launch="lb">Leaderboards</button><button data-launch="vault">Badges</button><button data-launch="top5">Top 9</button><button class="guide" id="guideBtn" type="button">How this site works</button><button class="cta" data-launch="play">Play now</button></nav>
   </header>
 
   <!-- landing page: footer -->
@@ -707,7 +709,7 @@ body.enter .footbar{animation-name:chromeInB}
         <div><b>Mutual Mimu</b><span>The boardroom: stake $TMF, vote and join the lobby. A closing bell rings every 4h 20m and settles the round.</span></div>
         <div><b>Leaderboards</b><span>Weekly boards for the best run and for $TMF found. Every score is checked by the server, which replays your run, so everyone is ranked fairly.</span></div>
         <div><b>Badges</b><span>Your season meter, badges, chair gallery (jump 25 of each to unlock), patron status and career stats.</span></div>
-        <div><b>Top 5</b><span>See the five runners leading the week. Backing a runner with your $TMF is coming soon.</span></div>
+        <div><b>Top 9</b><span>See the nine runners leading the week. The top 9 cannot send $TMF. Anyone outside the top 9 can send their $TMF to any player who has registered at least 1 $TMF point.</span></div>
         <div><b>Phone, Messages, Camera, Settings</b><span>The dock. Read your texts, dial a number, snap a photo, or flip sound on and off. Locked apps (Dengs Desk, Mimu Mail) come later.</span></div>
       </div>
 
@@ -739,7 +741,7 @@ body.enter .footbar{animation-name:chromeInB}
       <h3>1 · Acceptance</h3><p>By opening or playing Chair Run × Mutual Mimu (the “Game”) you agree to these Terms. If you do not agree, please do not use the Game.</p>
       <h3>2 · Who we are</h3><p>The Game is published by MIMU ON APE, built by Bert Baccaratt, in collaboration with THEMUTUAL.FUN (together, “we”, “us”). It is an entertainment product and a community campaign.</p>
       <h3>3 · Eligibility</h3><p>You must be old enough to enter a binding agreement where you live, and at least 18 to be considered for any reward. Where the law restricts promotions or digital-asset rewards in your region, you may not be eligible.</p>
-      <h3>4 · In-game currency and points</h3><p>“$TMF” coins and “Season Points” shown inside the Game are virtual items for gameplay only. They have no cash value, cannot be sold or redeemed, and are not the $TMF token or any other digital asset. The only way to give coins away is the in-game “Top 5” app; those gifts are virtual and final.</p>
+      <h3>4 · In-game currency and points</h3><p>“$TMF” coins and “Season Points” shown inside the Game are virtual items for gameplay only. They have no cash value, cannot be sold or redeemed, and are not the $TMF token or any other digital asset. The only way to give coins away is the in-game “Top 9” app: the top 9 runners of the week cannot send, and anyone outside the top 9 can send to any player who has registered at least 1 $TMF point. Those gifts are virtual and final.</p>
       <h3>5 · Leaderboards and recognition</h3><p>The Game has a leaderboard that resets each week, and you are welcome to keep playing to beat your own best score. Top players may be considered for recognition, which could include a TMF Pass or another item, but nothing is promised. No TMF Passes have been allocated to the Game at this time. Whether any recognition is given, who is considered, how many items exist and when are decided solely by MIMU ON APE and THEMUTUAL.FUN, and may change or end at any time. Leaderboard results may be reviewed and adjusted to remove cheating or errors. A score, rank or badge does not entitle anyone to a reward.</p>
       <h3>5b · Fair play</h3><p>Every leaderboard score is checked by our server, which replays your run from the moves you made. Runs that can&rsquo;t be verified, or that come from bots, scripts, edited code or exploits, don&rsquo;t count and may be removed along with the account&rsquo;s results. Chair Run runs on your device, so keep your connection open until the &ldquo;run complete&rdquo; screen finishes ranking you.</p>
       <h3>5a · Connecting Glyph and your data</h3><p>Chair Run asks you to connect a Glyph wallet. We read your Glyph username, profile picture and wallet address, and we check which NFTs that wallet holds: you need a Mimu On Ape to play, and wallets holding a TMF Pass or a Dengs can&rsquo;t play. Your username, picture and scores are shown publicly on the leaderboards, and we store them (plus your wallet address) to run the leaderboards. You also give us an X username, which the team can see but which is not shown on the public leaderboards. Like most websites, we count visitors: when you open the site we record an anonymous browser ID, your IP address and the approximate place (city and country) your connection comes from, and we keep only the most recent records. Connecting only asks for a signature that proves you own the wallet. It costs nothing, sends no transaction and can&rsquo;t move your assets. Disconnect any time in Settings.</p>
@@ -1013,7 +1015,7 @@ function confetti(n=60){const c=document.createElement('div');c.className='fx';c
   for(let i=0;i<n;i++){const e=document.createElement('i');e.style.left=Math.random()*100+'%';e.style.background=cols[i%6];e.style.animationDelay=Math.random()*.6+'s';e.style.animationDuration=1.8+Math.random()*1.4+'s';c.appendChild(e)}
   $('#screen').appendChild(c);setTimeout(()=>c.remove(),4200)}
 const IC={
-  top5:'<svg viewBox="0 0 32 32" fill="none" stroke="#fff3d0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 23l-1.4-12 7.2 6 5.2-9.5 5.2 9.5 7.2-6L27 23z" fill="#fff3d0" fill-opacity=".22"/><path d="M6.5 27h19"/><text x="16" y="21.2" font-family="Newsreader,Georgia,serif" font-weight="700" font-size="10.5" fill="#fff3d0" stroke="none" text-anchor="middle">5</text></svg>',
+  top5:'<svg viewBox="0 0 32 32" fill="none" stroke="#fff3d0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 23l-1.4-12 7.2 6 5.2-9.5 5.2 9.5 7.2-6L27 23z" fill="#fff3d0" fill-opacity=".22"/><path d="M6.5 27h19"/><text x="16" y="21.2" font-family="Newsreader,Georgia,serif" font-weight="700" font-size="10.5" fill="#fff3d0" stroke="none" text-anchor="middle">9</text></svg>',
   run:'<svg viewBox="0 0 32 32"><rect x="9" y="4" width="14" height="13" rx="2" fill="#fff3d0"/><rect x="11" y="6" width="10" height="9" fill="#d9b25f"/><rect x="8" y="17" width="16" height="4" rx="1" fill="#fff3d0"/><rect x="9" y="21" width="3" height="8" fill="#fff3d0"/><rect x="20" y="21" width="3" height="8" fill="#fff3d0"/></svg>',
   ff:'<svg viewBox="0 0 32 32" fill="none" stroke="#fff3d0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 26h20M16 4v3"/><path d="M9 22c0-8 2-12 7-12s7 4 7 12z" fill="#d9b25f" stroke="#fff3d0"/><circle cx="16" cy="25" r="2" fill="#fff3d0"/></svg>',
   lb:'<svg viewBox="0 0 32 32" fill="none" stroke="#fff3d0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5h12v8a6 6 0 01-12 0z" fill="#d9b25f"/><path d="M10 8H5c0 5 2 7 5 7M22 8h5c0 5-2 7-5 7M16 19v5M11 27h10"/></svg>',
@@ -1030,7 +1032,7 @@ const APPS=[
   {id:'ff',n:'Mutual Mimu',bg:'linear-gradient(135deg,#6a5ac0,#2e2870)',ic:IC.ff},
   {id:'lb',n:'Leaderboards',bg:'linear-gradient(135deg,#e0a63a,#8a5a14)',ic:IC.lb},
   {id:'vault',n:'Badges',bg:'linear-gradient(135deg,#3f9a6a,#1b4a34)',ic:IC.vault},
-  {id:'top5',n:'Top 5',bg:'linear-gradient(135deg,#d9b25f,#7a4e16)',ic:IC.top5}];
+  {id:'top5',n:'Top 9',bg:'linear-gradient(135deg,#d9b25f,#7a4e16)',ic:IC.top5}];
 let curApp=null,appObj=null;
 /* the phone keeps Pacific time, 12-hour clock (follows daylight saving: PST in winter, PDT in summer) */
 const PT='America/Los_Angeles';
@@ -1092,7 +1094,7 @@ function buildHome(anim){
     <button class="w" data-open="lb"><div class="l">Weekly rank</div><div class="v">${rank?'#'+rank:'—'}</div><div class="l" style="margin-top:6px">${rank&&rank<=10?'<span style="color:var(--up)">in the top 10</span>':rank?'chasing top 10':'not ranked yet'}</div>
       <div class="row" style="margin-top:8px;gap:6px"><div style="width:24px;height:24px;border-radius:8px;overflow:hidden;border:1px solid var(--line2)">${meAv()}</div><div class="l" style="color:var(--cream)">${escH(P.handle)}</div></div></button>
    </div>
-   <div class="grid">${APPS.map(a=>`<button class="app-i" data-open="${a.id}"><div class="ic" style="background:${a.bg}">${a.ic}${a.id==='top5'&&P.coins>0?'<i class="bd">♥</i>':''}</div>${a.n}</button>`).join('')}
+   <div class="grid">${APPS.map(a=>`<button class="app-i${a.id==='ff'&&!GATE.ok?' lk':''}" data-open="${a.id}"${a.id==='ff'&&!GATE.ok?' disabled aria-disabled="true" title="Connect Glyph in Chair Run first"':''}><div class="ic" style="background:${a.bg}">${a.ic}${a.id==='top5'&&P.coins>0?'<i class="bd">♥</i>':''}</div>${a.n}</button>`).join('')}
     <button class="app-i" type="button"><div class="ic" style="background:linear-gradient(135deg,#ff8a4c,#d4362f)">${IC.alarm}</div>Alarm</button>
     <button class="app-i lk" data-act="soon"><div class="ic" style="background:linear-gradient(135deg,#4a4a52,#2a2a30)">${IC.lock}</div>Mimu Mail</button>
    </div>
@@ -1282,7 +1284,14 @@ function buildSet(root){
   draw();return{};
 }
 
+/* Mutual Mimu stays greyed out and closed until the player has connected Glyph (and passed the wallet checks) */
+function syncLocks(){
+  const lock=!GATE.ok;
+  document.querySelectorAll('[data-open=ff]').forEach(b=>{b.disabled=lock;b.classList.toggle('lk',lock);b.setAttribute('aria-disabled',lock?'true':'false');b.title=lock?'Connect Glyph in Chair Run first':''});
+  document.querySelectorAll('[data-launch=ff]').forEach(b=>{b.disabled=lock;b.setAttribute('aria-disabled',lock?'true':'false');b.title=lock?'Connect Glyph in Chair Run first':''});
+}
 function openApp(id,from){
+  if(id==='ff'&&!GATE.ok){try{toast('&#128274; <span>Connect your Glyph in <b>Chair Run</b> first.</span>',3000)}catch(e){}return}
   if(curApp)return;ac();sfx.tap();curApp=id;
   const a=document.createElement('div');a.className='app';a.id='app-'+id;
   const [x,y]=from?relPos(from):[185,420];a.style.transformOrigin=`${x}px ${y}px`;
@@ -1471,7 +1480,7 @@ function applyIdentity(){
 }
 function disconnectGlyph(){
   try{if(window.MimuGlyph)window.MimuGlyph.disconnect()}catch(e){}
-  P.glyph=null;API.token=null;GATE.ok=false;saveP();
+  P.glyph=null;API.token=null;GATE.ok=false;saveP();syncLocks();
 }
 function buildRun(root){
   const ctl={inner:null,dead:false,destroy(){ctl.dead=true;if(ctl.inner&&ctl.inner.destroy)ctl.inner.destroy()}};
@@ -1591,7 +1600,7 @@ function runGate(root,ctl,enter){
     };
   };
   const welcome=()=>{
-    GATE.ok=true;applyIdentity();refreshBoards();
+    GATE.ok=true;syncLocks();applyIdentity();refreshBoards();
     sfx.win();confetti(46);
     const g=P.glyph;
     show(`<div class="gl-hero"><div class="badge">✓</div><div class="card3"><img src="mimu-hero.jpg" alt="Mimu On Ape"><div class="holo"></div><div class="tag"><span>Mimu On Ape</span><span>verified</span></div></div>
@@ -1603,7 +1612,7 @@ function runGate(root,ctl,enter){
   };
 
   const denied=reason=>{
-    GATE.ok=false;sfx.fail();
+    GATE.ok=false;syncLocks();sfx.fail();
     const again=`<button class="btn ghost" id="gs" style="max-width:300px">Try another account</button><button class="btn ghost" id="gh" style="max-width:300px">Back to phone</button>`;
     if(reason==='nomimu')show(`<div class="gl-hero lost"><div class="badge">✕</div><div class="card3"><img src="mimu-hero.jpg" alt=""><div class="glitch"></div><div class="q">?</div></div></div>
       <h2>No Mimu <em>found</em></h2><p>Chair Run is for <b>Mimu On Ape</b> holders, and this wallet doesn’t hold one yet.</p>
@@ -2045,7 +2054,7 @@ function buildVault(root){
      <div class="card"><div class="lbl">Badges unlocked</div>${P.passes.length?`<div class="row" style="flex-wrap:wrap;margin-top:10px">${P.passes.map(p=>`<span class="tag" style="color:var(--gold2);border-color:var(--gold)"><span class="pmini"></span>#${String(p.n).padStart(3,'0')}</span>`).join('')}</div>`:'<div class="sub2" style="margin-top:6px">None yet. Run a few halls.</div>'}</div>
      <div class="card"><div class="row" style="margin-bottom:10px"><div class="lbl">Chair gallery</div><div class="sp"></div><div class="lbl">jump 25 to unlock</div></div><div class="chairs">${CHAIRS.map((c,i)=>{const n=P.cleared[i],u=n>=25;return`<div class="chr ${u?'un':''} ${n>0?'':'lk'}">${chairCv(i)}<small>${Math.min(n,25)}/25${u?' ✦':''}</small></div>`}).join('')}</div></div>
      <div class="card"><div class="lbl" style="margin-bottom:10px">Your Mimu</div><div class="row" style="gap:14px"><div style="width:96px;height:96px;border-radius:18px;overflow:hidden;border:1.5px solid var(--gold);flex:none;background:#000">${pcvM(HERO,'vs0')}</div><div class="sub2" style="font-size:12.5px">Official artwork. Wardrobe and headwear unlocks are coming to the Vault in a later season.</div></div></div>
-     <div class="card"><div class="row"><div class="lbl">Patron status</div><div class="sp"></div><span class="tag" style="color:var(--gold2);border-color:var(--gold)">${patronTier()}</span></div><div class="sub2" style="margin-top:6px;font-size:12.5px">${P.patron?`You have given ${fmt(P.patron)} $TMF to top-five runners.`:'Give your $TMF to a top-five runner in the Top 5 app to become a patron.'}</div></div>
+     <div class="card"><div class="row"><div class="lbl">Patron status</div><div class="sp"></div><span class="tag" style="color:var(--gold2);border-color:var(--gold)">${patronTier()}</span></div><div class="sub2" style="margin-top:6px;font-size:12.5px">${P.patron?`You have given ${fmt(P.patron)} $TMF to other players.`:'Send $TMF to another player in the Top 9 app to become a patron.'}</div></div>
      <div class="card"><div class="lbl" style="margin-bottom:8px">Career</div><div class="stats" style="margin:0"><div><b>${P.runs}</b><span>runs</span></div><div><b>${fmt(P.dist)}m</b><span>distance</span></div><div><b>${fmt(P.totalCoins)}</b><span>$TMF found</span></div></div></div>
      <button class="btn ghost" id="rst" style="font-size:12px;opacity:.7">Reset progress</button></div></div>`;
     paintAll();paintChairs(root);
@@ -2169,20 +2178,82 @@ async function friday(r){
 const kfmt=n=>n>=1000?(n/1000).toFixed(1).replace(/\.0$/,'')+'k':String(Math.round(n));
 const BOOST_X=2,SP_X=1.5,TIERS=[[1,'Supporter'],[500,'Patron'],[2000,'Benefactor'],[5000,'Chairman’s Friend']];
 const patronTier=()=>{const p=P.patron||0;let n='—';TIERS.forEach(x=>{if(p>=x[0])n=x[1]});return n};
+/* Top 9 (live): the leaderboard server decides who may send and to whom; this screen just shows the rules and the people */
 function buildTop5(root){
+  if(!(API.on()&&!LIVE.failed))return buildTop5Sim(root);
+  let st=null,stErr='',q='';
+  const mine=()=>P.glyph&&P.glyph.address?P.glyph.address.toLowerCase():null;
+  const loadStatus=()=>{if(!API.token){st=null;return Promise.resolve()}return API.j('/api/send/status').then(s=>{st=s;stErr=''}).catch(e=>{st=null;stErr=e.status===401?'Reconnect Glyph in Chair Run to send.':''})};
+  const draw=()=>{
+    const rows=board('run').slice(0,9),recips=(LIVE.nw&&LIVE.nw.rows?LIVE.nw.rows:[]).filter(r=>r.id!==mine()&&(!q||String(r.name).toLowerCase().includes(q)));
+    const can=!!(st&&st.canSend);
+    const rules=`<div class="card" style="border-color:rgba(217,178,95,.45)"><div class="lbl" style="color:var(--gold)">The rules</div>
+      <ul style="margin:8px 0 0 18px;padding:0;font:400 12.5px/1.55 var(--sans);color:var(--muted)">
+       <li><b style="color:var(--cream)">The top 9 runners cannot send $TMF</b> to anyone.</li>
+       <li><b style="color:var(--cream)">Anyone outside the top 9</b> can send their $TMF to any player who has registered <b style="color:var(--cream)">at least 1 $TMF point</b> this week.</li>
+       <li>The $TMF you send comes out of your &ldquo;$TMF found&rdquo; total and goes into theirs.</li>
+       <li>Gifts are final and can&rsquo;t be taken back. $TMF here is virtual and has no cash value.</li></ul></div>`;
+    const status=!API.token?`<div class="card" style="text-align:center"><div class="sub2">Connect your Glyph in <button style="color:var(--gold2);text-decoration:underline" data-go="run">Chair Run</button> to send $TMF.</div></div>`
+      :stErr?`<div class="card" style="text-align:center"><div class="sub2">${escH(stErr)}</div></div>`
+      :!st?`<div class="card" style="text-align:center"><div class="sub2">Checking your seat&hellip;</div></div>`
+      :st.top9?`<div class="card" style="border-color:rgba(224,103,95,.5)"><div class="lbl" style="color:#ff8a80">Sending is locked</div><div class="sub2" style="margin-top:4px">You are <b style="color:var(--cream)">#${st.rank}</b> this week, inside the top 9, so you can&rsquo;t send $TMF. Fall out of the top 9 and the lock lifts.</div></div>`
+      :`<div class="card"><div class="row"><div><div class="lbl">Your $TMF to send</div><div class="mono" style="font-size:22px;color:var(--gold2);margin-top:2px">${fmt(st.balance)}</div></div><div class="sp"></div><span class="tag" style="color:var(--up);border-color:var(--up)">${st.balance>0?'you can send':'earn some first'}</span></div>${st.rank?`<div class="sub2" style="margin-top:6px;font-size:12px">You are #${st.rank} this week.</div>`:''}</div>`;
+    const top=rows.length?rows.map((r,i)=>`<div class="t5 ${r.me?'me':''} ${i===0?'first':''}" style="animation-delay:${i*50}ms"><div class="t5rk">${i+1}</div><div class="av">${avOf(r)}</div>
+      <div style="min-width:0;flex:1"><div class="nm">${escH(r.name)}${r.me?' <span class="tag" style="margin-left:4px">you</span>':''}</div><div class="sm">${fmt(r.v)} pts${i===8&&!r.me?'<br><span style="color:var(--up)">closest to falling out</span>':''}</div></div><span class="tag">can&rsquo;t send</span></div>`).join('')
+      :'<div class="card" style="text-align:center"><div class="h2" style="font-size:18px">No runners yet</div><div class="sub2" style="margin-top:4px">The top nine appear once the first scores land.</div></div>';
+    const list=recips.length?recips.slice(0,60).map(r=>`<div class="t5" style="padding:10px 12px"><div class="av">${avOf({pic:r.picture})}</div><div style="min-width:0;flex:1"><div class="nm">${escH(r.name)}</div><div class="sm">${fmt(r.v)} $TMF registered</div></div>
+      <button class="btn sm ${can?'gold':'ghost'}" data-send="${escH(r.id)}" ${can?'':'disabled'}>Send</button></div>`).join(''):`<div class="sub2" style="padding:6px 2px">${q?'Nobody matches that name.':'Nobody has registered a $TMF point yet.'}</div>`;
+    root.innerHTML=`<div class="sc"><div class="ah"><div><h1>Top 9</h1><div class="sub">this week&rsquo;s leaders</div></div><div class="sp"></div></div>
+      <div class="scroll" style="padding-bottom:30px">${rules}${status}
+       <div class="lbl" style="margin:14px 4px 8px">This week&rsquo;s top 9</div>${top}
+       <div class="lbl" style="margin:16px 4px 8px">Send $TMF to a player</div>
+       <input id="t9q" value="${escH(q)}" placeholder="search a name" autocomplete="off" style="width:100%;padding:11px 14px;border-radius:12px;background:var(--panel);border:1px solid var(--line2);color:var(--cream);font:500 13px var(--mono);outline:0;margin-bottom:8px">
+       <div id="t9l">${list}</div></div></div>`;
+    paintAll();
+    const g=$('[data-go=run]',root);if(g)g.onclick=()=>{goHome();setTimeout(()=>openApp('run'),700)};
+    const qi=$('#t9q',root);if(qi)qi.oninput=()=>{q=qi.value.trim().toLowerCase();const pos=qi.selectionStart;draw();const n=$('#t9q',root);if(n){n.focus();n.setSelectionRange(pos,pos)}};
+    $$('[data-send]',root).forEach(b=>b.onclick=()=>{const r=(LIVE.nw.rows||[]).find(x=>x.id===b.dataset.send);if(r){sfx.select();openSend(r)}});
+  };
+  const openSend=r=>{
+    const max=st.balance;
+    sheet(`<div class="lbl" style="color:var(--gold)">Top 9 &middot; send $TMF</div><div class="h2" style="margin:6px 0 10px;font-size:24px">Send to <em>${escH(r.name)}</em></div>
+      <div class="sub2" style="font-size:12.5px;margin-bottom:12px">They have <b style="color:var(--cream)">${fmt(r.v)}</b> $TMF registered. You can send up to <b style="color:var(--cream)">${fmt(max)}</b>. This is final.</div>
+      <input id="sendamt" type="number" inputmode="numeric" min="1" max="${max}" value="${max}" style="width:100%;padding:13px 14px;border-radius:14px;background:var(--panel);border:1px solid var(--line2);color:var(--cream);font:500 17px var(--mono);outline:0;text-align:center">
+      <div class="hint" id="senderr" style="min-height:18px;color:#e0675f;margin-top:6px"></div>
+      <button class="btn gold" id="sendgo" style="padding:15px;margin-top:6px">Send $TMF</button><button class="btn ghost" data-act="closesheet" style="margin-top:8px">Not now</button>`);
+    setTimeout(()=>{
+      const go=document.getElementById('sendgo');if(!go)return;
+      go.onclick=async()=>{
+        const amt=Number(document.getElementById('sendamt').value),er=document.getElementById('senderr');
+        if(!Number.isInteger(amt)||amt<1||amt>max){er.textContent='Enter a whole number from 1 to '+max+'.';return}
+        go.disabled=true;er.textContent='';
+        try{
+          const res=await API.j('/api/transfer',{method:'POST',body:JSON.stringify({to:r.id,amount:amt})});
+          closeSheet();sfx.coin(6);setTimeout(()=>sfx.win(),180);
+          toast(`&hearts; <span>You sent <b>${fmt(amt)} $TMF</b> to <b>${escH(r.name)}</b>.</span>`,3600);
+          await refreshBoards();await loadStatus();if(window._t5)window._t5();
+        }catch(e){go.disabled=false;er.textContent=(e&&e.message)||'Could not send. Try again.';if(e&&e.body&&e.body.top9){loadStatus().then(()=>{if(window._t5)window._t5()})}}
+      };
+    },60);
+  };
+  window._t5=draw;draw();
+  refreshBoards().then(()=>{if(document.body.contains(root))draw()});loadStatus().then(()=>{if(document.body.contains(root))draw()});
+  return{destroy(){window._t5=null}};
+}
+function buildTop5Sim(root){
   ensureRivals();
   const draw=()=>{
-    const rows=board('run').slice(0,5);if(!rows.length){root.innerHTML='<div class="sc"><div class="ah"><h1>Top 5</h1></div><div class="scroll"><div class="card" style="text-align:center"><div class="h2" style="font-size:18px">No runners yet</div><div class="sub2" style="margin-top:4px">The top five appear once the first scores land.</div></div></div></div>';return}const lead=rows[0].v,coins=P.coins,led=(P.backed||[]).slice(0,4);
+    const rows=board('run').slice(0,9);if(!rows.length){root.innerHTML='<div class="sc"><div class="ah"><h1>Top 9</h1></div><div class="scroll"><div class="card" style="text-align:center"><div class="h2" style="font-size:18px">No runners yet</div><div class="sub2" style="margin-top:4px">The top nine appear once the first scores land.</div></div></div></div>';return}const lead=rows[0].v,coins=P.coins,led=(P.backed||[]).slice(0,4);
     const cards=rows.map((r,i)=>{const idx=r.me?-1:+r.id.slice(1),behind=lead-r.v;
       return`<div class="t5 ${r.me?'me':''} ${i===0?'first':''}" style="animation-delay:${i*60}ms"><div class="t5rk">${i+1}</div><div class="av">${avOf(r)}</div>
         <div style="min-width:0;flex:1"><div class="nm">${escH(r.name)}${r.me?' <span class="tag" style="margin-left:4px">you</span>':''}</div>
-        <div class="sm">${fmt(r.v)} pts · ${i?fmt(behind)+' behind #1':'leading the week'}${r.boost?`<br><span style="color:var(--gold2)">♥ ${kfmt(r.boost)} backed${r.mine?' · you gave':''}</span>`:''}${i===4&&!r.me?'<br><span style="color:var(--up)">closest to falling out</span>':''}</div></div>
+        <div class="sm">${fmt(r.v)} pts · ${i?fmt(behind)+' behind #1':'leading the week'}${r.boost?`<br><span style="color:var(--gold2)">♥ ${kfmt(r.boost)} backed${r.mine?' · you gave':''}</span>`:''}${i===8&&!r.me?'<br><span style="color:var(--up)">closest to falling out</span>':''}</div></div>
         ${r.me?'<span class="tag">your seat</span>':LIVE.on?'<span class="tag">backing soon</span>':`<button class="btn sm ${coins>0?'gold':'ghost'}" data-back="${idx}" ${coins>0?'':'disabled'}>Back</button>`}</div>`}).join('');
-    root.innerHTML=`<div class="sc"><div class="ah"><div><h1>Top 5</h1><div class="sub">back a runner</div></div><div class="sp"></div><div class="pill"><span class="coin"></span>${fmt(coins)}</div></div>
+    root.innerHTML=`<div class="sc"><div class="ah"><div><h1>Top 9</h1><div class="sub">back a runner</div></div><div class="sp"></div><div class="pill"><span class="coin"></span>${fmt(coins)}</div></div>
      <div class="scroll" style="padding-bottom:30px">
-      <div class="card" style="border-color:rgba(217,178,95,.45)"><div class="lbl" style="color:var(--gold)">This week’s top five</div>
+      <div class="card" style="border-color:rgba(217,178,95,.45)"><div class="lbl" style="color:var(--gold)">This week’s top nine</div>
         <div class="h2" style="font-size:22px;margin:6px 0 6px">Give it all to <em>one</em> runner</div>
-        <div class="sub2" style="font-size:12.5px">Pick someone in the top five and hand over <b style="color:var(--cream)">every $TMF you hold</b>. Each coin becomes <b style="color:var(--gold2)">${BOOST_X} points</b> on their score, and you earn <b style="color:var(--gold2)">${SP_X}x Season Points</b> for it. Gifts are final.</div></div>
+        <div class="sub2" style="font-size:12.5px">Pick someone in the top nine and hand over <b style="color:var(--cream)">every $TMF you hold</b>. Each coin becomes <b style="color:var(--gold2)">${BOOST_X} points</b> on their score, and you earn <b style="color:var(--gold2)">${SP_X}x Season Points</b> for it. Gifts are final.</div></div>
       ${coins>0?'':`<div class="card" style="text-align:center"><div class="sub2">Your wallet is empty. <button style="color:var(--gold2);text-decoration:underline" data-go="run">Run the halls</button> to earn coins you can give.</div></div>`}
       ${cards}
       ${led.length?`<div class="card"><div class="row" style="margin-bottom:6px"><div class="lbl">Your backing</div><div class="sp"></div><span class="tag" style="color:var(--gold2);border-color:var(--gold)">${patronTier()}</span></div>
@@ -2190,16 +2261,16 @@ function buildTop5(root){
         <div class="sub2" style="font-size:11.5px;margin-top:6px">${fmt(P.patron||0)} $TMF given in total.</div></div>`:''}
      </div></div>`;
     paintAll();
-    if(LIVE.on){const c=$('.card .sub2',root),h=$('.card .h2',root);if(c)c.textContent='Backing a runner with your $TMF opens soon. For now, see who is leading the week.';if(h)h.innerHTML='This week&rsquo;s <em>top five</em>'}
+    if(LIVE.on){const c=$('.card .sub2',root),h=$('.card .h2',root);if(c)c.textContent='Backing a runner with your $TMF opens soon. For now, see who is leading the week.';if(h)h.innerHTML='This week&rsquo;s <em>top nine</em>'}
     $$('[data-back]',root).forEach(b=>b.onclick=()=>{sfx.select();openBack(+b.dataset.back)});
     const g=$('[data-go=run]',root);if(g)g.onclick=()=>{goHome();setTimeout(()=>openApp('run'),700)};
   };
-  window._t5=draw;draw();if(API.on())refreshBoards().then(ok=>{if(ok&&document.body.contains(root))draw()});
+  window._t5=draw;draw();
   return{destroy(){window._t5=null}};
 }
 function openBack(idx){
   const r=P.rivals[idx];if(!r||P.coins<=0)return;const amt=P.coins,rows=board('run'),me=rows.find(x=>x.id==='r'+idx),rank=rows.findIndex(x=>x.id==='r'+idx)+1;
-  sheet(`<div class="lbl" style="color:var(--gold)">Top 5 · back a runner</div><div class="h2" style="margin:6px 0 12px;font-size:24px">Give everything to <em>${r.name}</em>?</div>
+  sheet(`<div class="lbl" style="color:var(--gold)">Top 9 · back a runner</div><div class="h2" style="margin:6px 0 12px;font-size:24px">Give everything to <em>${r.name}</em>?</div>
     <div class="row" style="margin-bottom:14px"><div style="width:60px;height:60px;border-radius:16px;overflow:hidden;border:1.5px solid var(--gold);flex:none">${pcvM(r.m,'bkc')}</div><div class="sub2" style="font-size:12.5px"><b style="color:var(--cream)">#${rank}</b> this week with <b style="color:var(--cream)">${fmt(me?me.v:0)}</b> points. Your coins turn into points on their score.</div></div>
     <div class="stats"><div><b>${fmt(amt)}</b><span>$TMF you give</span></div><div><b>+${fmt(amt*BOOST_X)}</b><span>their points</span></div><div><b>+${fmt(Math.floor(amt*SP_X))}</b><span>your SP</span></div></div>
     <div class="sub2" style="font-size:12px;margin-bottom:14px">This is final. The coins can’t be taken back and your wallet drops to 0.</div>
@@ -2238,7 +2309,7 @@ function launch(id){
   const L=$('#lock'),open=()=>{if(!P.mimu||sheetOpen)return;if(curApp===id)return;if(curApp){goHome();setTimeout(()=>openApp(id),760)}else openApp(id)};
   if(L.style.display!=='none'&&!L.classList.contains('go')){window._unlock();if(P.mimu)setTimeout(open,1500)}else open();
 }
-$$('[data-launch]').forEach(b=>b.addEventListener('click',()=>launch(b.dataset.launch)));
+$$('[data-launch]').forEach(b=>b.addEventListener('click',()=>launch(b.dataset.launch)));syncLocks();
 const tosEl=$('#tos');
 function tosOpen(){tosEl.classList.add('on');tosEl.setAttribute('aria-hidden','false');$('.tos-body',tosEl).scrollTop=0;sfx.tap()}
 function tosClose(){tosEl.classList.remove('on');tosEl.setAttribute('aria-hidden','true')}

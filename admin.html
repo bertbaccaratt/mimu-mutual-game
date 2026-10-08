@@ -121,6 +121,8 @@ td.n{width:44px;white-space:nowrap;color:var(--gold);font-weight:600}td.r{text-a
 
   <section class="sec"><h2>Review queue <small>held or flagged runs</small></h2><div id="q"></div></section>
 
+  <section class="sec"><h2>$TMF sent between players <small>Top 9 app · latest 50</small></h2><div class="scroll" id="xfers" style="max-height:300px"></div></section>
+
   <section class="sec"><h2>Players <small id="ucount">Glyph + X + IP</small></h2><div class="scroll" id="users"></div></section>
 
   <section class="sec"><h2>Where people log on from <small id="mcount"></small></h2>
@@ -232,6 +234,8 @@ function render(d){
     <td><div class="flags">${(h.flags||[]).map(f=>`<span class="tag warn">${esc(f)}</span>`).join('')}</div></td>
     <td><div class="btns"><button class="btn ok" data-ap="${esc(h.id)}">Approve</button><button class="btn no" data-dn="${esc(h.id)}">Deny</button><button class="btn ghost" data-bn="${esc(h.a)}">Ban wallet</button></div></td></tr>`).join('')+'</tbody></table></div>'
     :'<div class="empty">Nothing waiting. Flagged runs show up here for you to approve or deny.</div>';
+  // transfers
+  $('#xfers').innerHTML=(d.transfers||[]).length?'<table><thead><tr><th>When</th><th>From</th><th>To</th><th style="text-align:right">$TMF</th></tr></thead><tbody>'+d.transfers.map(x=>`<tr><td>${ago(x.ts)}</td><td>${esc(x.sn||short(x.sa))}<br>${wal(x.sa)}</td><td>${esc(x.rn||short(x.ra))}<br>${wal(x.ra)}</td><td class="r">${nf(x.amount)}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">No transfers yet.</div>';
   // players
   $('#ucount').textContent=nf(d.users.length)+' players · Glyph + X + IP';
   $('#users').innerHTML=d.users.length?'<table><thead><tr><th>Glyph</th><th>Wallet</th><th>X account</th><th>IP address</th><th>Last seen</th><th></th></tr></thead><tbody>'+d.users.map(u=>`<tr>

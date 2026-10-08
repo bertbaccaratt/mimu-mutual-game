@@ -324,6 +324,51 @@ async function handleHit(env, req) {
   return json(env, req, { ok: true });
 }
 
+/* ---------- Top 9: sending $TMF between players ----------
+ * Rules (enforced here, not in the browser):
+ *   - the top 9 runners of the week (Chair Run board) cannot send;
+ *   - anyone outside the top 9 can send to any player who has registered at least 1 $TMF this week;
+ *   - the amount comes out of the sender's "$TMF found" total and goes into the recipient's, in one all-or-nothing step. */
+const TOP_N = 9;
+async function topNine(env, week) {
+  const r = await env.DB.prepare('SELECT address FROM scores WHERE week=?1 AND run_best>0 ORDER BY run_best DESC, updated_at ASC LIMIT ?2').bind(week, TOP_N).all();
+  return (r.results || []).map((x) => x.address);
+}
+async function handleSendStatus(env, req) {
+  const sess = await readToken(env, req);
+  if (!sess) return json(env, req, { error: 'sign in first' }, 401);
+  if (await limited(env, 'RL_READ', sess.sub)) return tooMany(env, req);
+  const week = weekNow();
+  const [top, mine] = await Promise.all([topNine(env, week), env.DB.prepare('SELECT run_best, coins_total FROM scores WHERE address=?1 AND week=?2').bind(sess.sub, week).first()]);
+  const inTop = top.includes(sess.sub), balance = mine ? mine.coins_total : 0;
+  const rank = mine && mine.run_best > 0 ? await rankOf(env, week, 'run_best', mine.run_best) : null;
+  return json(env, req, { week, balance, rank, top9: inTop, canSend: !inTop && balance > 0 });
+}
+async function handleTransfer(env, req) {
+  const sess = await readToken(env, req);
+  if (!sess) return json(env, req, { error: 'sign in first' }, 401);
+  if (await limited(env, 'RL_RUN', sess.sub)) return tooMany(env, req);
+  if (await isBanned(env, sess.sub)) return json(env, req, { error: 'blocked' }, 403);
+  let b = {}; try { b = await req.json(); } catch { return json(env, req, { error: 'bad json' }, 400); }
+  const to = String(b.to || '').toLowerCase(), amount = Number(b.amount);
+  if (!/^0x[0-9a-f]{40}$/.test(to) || !Number.isInteger(amount) || amount < 1 || amount > 1e9) return json(env, req, { error: 'bad request' }, 400);
+  if (to === sess.sub) return json(env, req, { error: 'You cannot send $TMF to yourself.' }, 400);
+  const week = weekNow();
+  if ((await topNine(env, week)).includes(sess.sub)) return json(env, req, { error: 'The top 9 runners cannot send $TMF.', top9: true }, 403);
+  const rc = await env.DB.prepare('SELECT coins_total c FROM scores WHERE address=?1 AND week=?2').bind(to, week).first();
+  if (!rc || rc.c < 1) return json(env, req, { error: 'That player has not registered any $TMF yet, so they cannot receive.' }, 409);
+  if (await isBanned(env, to)) return json(env, req, { error: 'That player cannot receive $TMF.' }, 409);
+  const now = Date.now();
+  const res = await env.DB.batch([
+    env.DB.prepare('UPDATE scores SET coins_total=coins_total-?1 WHERE address=?2 AND week=?3 AND coins_total>=?1').bind(amount, sess.sub, week),
+    env.DB.prepare('UPDATE scores SET coins_total=coins_total+?1 WHERE address=?2 AND week=?3 AND (SELECT changes())>0').bind(amount, to, week),
+    env.DB.prepare('INSERT INTO transfers(ts,week,sender,recipient,amount) SELECT ?1,?2,?3,?4,?5 WHERE (SELECT changes())>0').bind(now, week, sess.sub, to, amount),
+  ]);
+  if (!res[0].meta || !res[0].meta.changes) return json(env, req, { error: 'You do not have that much $TMF to send.' }, 409);
+  const left = await env.DB.prepare('SELECT coins_total c FROM scores WHERE address=?1 AND week=?2').bind(sess.sub, week).first();
+  return json(env, req, { ok: true, sent: amount, balance: left ? left.c : 0 });
+}
+
 /* ---------- Sign in with X (OAuth 2.0 + PKCE). The X @handle becomes the player's name; it is read from X, never typed. ---------- */
 const xNeeded = (env) => !!(env.X_CLIENT_ID || env.X_REQUIRED === '1');
 const X_AUTH = (env) => env.X_AUTH_URL || 'https://x.com/i/oauth2/authorize';
@@ -419,7 +464,7 @@ async function handleAdmin(env, req, url) {
   if (path === 'dashboard' && req.method === 'GET') {
     const week = weekNow(), q = (sql, ...a) => env.DB.prepare(sql).bind(...a);
     const top = (col) => q(`SELECT s.address a, s.${col} v, p.name n, p.x_handle x FROM scores s JOIN players p ON p.address=s.address WHERE s.week=?1 AND s.${col}>0 ORDER BY s.${col} DESC, s.updated_at ASC LIMIT 10`, week).all();
-    const [vis, tot, today, run, nw, held, users, map, ips, banned] = await Promise.all([
+    const [vis, tot, today, run, nw, held, users, map, ips, banned, transfers] = await Promise.all([
       q('SELECT COUNT(*) c FROM visitors').first(),
       q('SELECT COALESCE(SUM(visits),0) c FROM visitors').first(),
       q('SELECT COUNT(*) c FROM visitors WHERE last_seen>?1', Date.now() - 24 * 3600 * 1000).first(),
@@ -429,12 +474,13 @@ async function handleAdmin(env, req, url) {
       q('SELECT lat, lon, country, city, COUNT(*) c FROM visitors WHERE lat IS NOT NULL AND lon IS NOT NULL GROUP BY ROUND(lat,1), ROUND(lon,1) ORDER BY MAX(last_seen) DESC LIMIT 1500').all(),
       q('SELECT ts, ip, country, city, vid FROM hits ORDER BY id DESC LIMIT 200').all(),
       q('SELECT COUNT(*) c FROM bans').first(),
+      q('SELECT t.ts, t.amount, t.sender sa, t.recipient ra, ps.name sn, pr.name rn FROM transfers t LEFT JOIN players ps ON ps.address=t.sender LEFT JOIN players pr ON pr.address=t.recipient ORDER BY t.id DESC LIMIT 50').all(),
     ]);
     return out({
       week, visitors: vis.c, visits: tot.c, today: today.c, banned: banned.c,
       topRun: run.results || [], topNw: nw.results || [],
       held: (held.results || []).map((r) => ({ ...r, flags: JSON.parse(r.flags || '[]'), seconds: Math.round(r.ticks / 60) })),
-      users: users.results || [], map: map.results || [], ips: ips.results || [],
+      users: users.results || [], map: map.results || [], ips: ips.results || [], transfers: transfers.results || [],
     });
   }
   if (path === 'held' && req.method === 'GET') {
@@ -502,6 +548,8 @@ export default {
       if (url.pathname === '/api/run/chunk' && req.method === 'POST') return handleRunChunk(env, req);
       if (url.pathname === '/api/leaderboard' && req.method === 'GET') return handleBoard(env, req, url);
       if (url.pathname === '/api/hit' && req.method === 'POST') return handleHit(env, req);
+      if (url.pathname === '/api/send/status' && req.method === 'GET') return handleSendStatus(env, req);
+      if (url.pathname === '/api/transfer' && req.method === 'POST') return handleTransfer(env, req);
       if (url.pathname === '/api/x/start' && req.method === 'GET') { if (await limited(env, 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleXStart(env, req, url); }
       if (url.pathname === '/api/x/callback' && req.method === 'GET') { if (await limited(env, 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleXCallback(env, req, url); }
       if (url.pathname === '/api/x/link' && req.method === 'POST') return handleXLink(env, req);

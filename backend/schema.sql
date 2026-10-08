@@ -94,3 +94,6 @@ CREATE TABLE IF NOT EXISTS admin_fails (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_players_xid ON players (x_id) WHERE x_id IS NOT NULL;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_players_xhandle ON players (lower(x_handle)) WHERE x_handle IS NOT NULL;
+
+-- $TMF sent between players in the Top 9 app
+CREATE TABLE IF NOT EXISTS transfers (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, week INTEGER NOT NULL, sender TEXT NOT NULL, recipient TEXT NOT NULL, amount INTEGER NOT NULL);

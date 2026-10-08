@@ -2,7 +2,7 @@
 
 A collab game and landing page by **MIMU ON APE** × **THEMUTUAL.FUN**, built by Bert Baccaratt.
 
-A phone lies on a wood desk, and the phone is the game: Chair Run (a pseudo-3D runner), Mutual Mimu (stake, vote and a closing bell every 4h 20m), Leaderboards, Season Vault, Top 5, plus Phone, Messages, Camera and Settings.
+A phone lies on a wood desk, and the phone is the game: Chair Run (a pseudo-3D runner), Mutual Mimu (stake, vote and a closing bell every 4h 20m), Leaderboards, Badges, Top 5, plus Phone, Messages, Camera and Settings.
 
 ## Run it locally
 

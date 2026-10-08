@@ -643,7 +643,7 @@ body.enter .footbar{animation-name:chromeInB}
   <header class="topbar">
     <a class="brand" href="https://opensea.io/collection/mimuonape" target="_blank" rel="noopener" aria-label="Mimu On Ape">
       <img id="logoText" alt="MIMU"></a>
-    <nav aria-label="Game"><button data-launch="run">Chair Run</button><button data-launch="ff">Mutual Mimu</button><button data-launch="lb">Leaderboards</button><button data-launch="vault">Season Vault</button><button data-launch="top5">Top 5</button><button class="guide" id="guideBtn" type="button">How this site works</button><button class="cta" data-launch="play">Play now</button></nav>
+    <nav aria-label="Game"><button data-launch="run">Chair Run</button><button data-launch="ff">Mutual Mimu</button><button data-launch="lb">Leaderboards</button><button data-launch="vault">Badges</button><button data-launch="top5">Top 5</button><button class="guide" id="guideBtn" type="button">How this site works</button><button class="cta" data-launch="play">Play now</button></nav>
   </header>
 
   <!-- landing page: footer -->
@@ -694,14 +694,14 @@ body.enter .footbar{animation-name:chromeInB}
       <p><b>Connecting:</b> only Chair Run asks you to connect. Your Glyph name and picture then show up across the site and on the Leaderboards, where real runners rank by their best score each week. Wallets that already hold a TMF Pass or a Dengs can&rsquo;t play.</p>
       <p><b>$TMF coins</b> are your score fuel. Every coin and clean chair hop builds a <b>chain</b> that multiplies your score up to x5, but four seconds without a gain breaks it. <b>Power-ups</b> show up on the floor: a coin magnet, a briefcase shield and a gilded x2. Hit a milestone every 250m for a bonus. Lose your last life and you can pay 30 $TMF for a one-time <b>Second Wind</b>.</p>
       <p><b>Ballot Gates</b> appear down the hall. Pick a lane to vote on an asset. About 110m later the closing bell pays a dividend or takes a drawdown from your run's $TMF. Risky picks swing harder.</p>
-      <p><b>Daily quests</b> (three a day) and a daily streak give you bonus season points. Each run also earns season points toward your Season Vault badge meter.</p>
+      <p><b>Daily quests</b> (three a day) and a daily streak give you bonus season points. Each run also earns season points toward your Badges meter.</p>
 
       <h3>Every app on the phone</h3>
       <div class="gd-grid">
         <div><b>Chair Run</b><span>The runner. Beat your best score every day.</span></div>
         <div><b>Mutual Mimu</b><span>The boardroom: stake $TMF, vote and join the lobby. A closing bell rings every 4h 20m and settles the round.</span></div>
         <div><b>Leaderboards</b><span>Weekly boards for the best run and for $TMF found. Every score is checked by the server, which replays your run, so everyone is ranked fairly.</span></div>
-        <div><b>Season Vault</b><span>Your season meter, badges, chair gallery (jump 25 of each to unlock), patron status and career stats.</span></div>
+        <div><b>Badges</b><span>Your season meter, badges, chair gallery (jump 25 of each to unlock), patron status and career stats.</span></div>
         <div><b>Top 5</b><span>See the five runners leading the week. Backing a runner with your $TMF is coming soon.</span></div>
         <div><b>Phone, Messages, Camera, Settings</b><span>The dock. Read your texts, dial a number, snap a photo, or flip sound on and off. Locked apps (Dengs Desk, Mimu Mail) come later.</span></div>
       </div>
@@ -1024,7 +1024,7 @@ const APPS=[
   {id:'run',n:'Chair Run',bg:'linear-gradient(135deg,#c4505a,#6e1f26)',ic:IC.run},
   {id:'ff',n:'Mutual Mimu',bg:'linear-gradient(135deg,#6a5ac0,#2e2870)',ic:IC.ff},
   {id:'lb',n:'Leaderboards',bg:'linear-gradient(135deg,#e0a63a,#8a5a14)',ic:IC.lb},
-  {id:'vault',n:'Season Vault',bg:'linear-gradient(135deg,#3f9a6a,#1b4a34)',ic:IC.vault},
+  {id:'vault',n:'Badges',bg:'linear-gradient(135deg,#3f9a6a,#1b4a34)',ic:IC.vault},
   {id:'top5',n:'Top 5',bg:'linear-gradient(135deg,#d9b25f,#7a4e16)',ic:IC.top5}];
 let curApp=null,appObj=null;
 /* the phone keeps Pacific time, 12-hour clock (follows daylight saving: PST in winter, PDT in summer) */
@@ -1947,7 +1947,7 @@ function buildLB(root){
 function buildVault(root){
   const draw=()=>{
     const m=passMeter(),next=P.passGoal-P.pp;
-    root.innerHTML=`<div class="sc"><div class="ah"><h1>Season Vault</h1><div class="sp"></div><div class="pill"><span class="coin"></span>${fmt(P.coins)}</div></div><div class="scroll" style="padding-bottom:30px">
+    root.innerHTML=`<div class="sc"><div class="ah"><h1>Badges</h1><div class="sp"></div><div class="pill"><span class="coin"></span>${fmt(P.coins)}</div></div><div class="scroll" style="padding-bottom:30px">
      <div class="ticket"><div class="sh"></div><div class="row"><div><div class="tt">Season Badge</div><div class="lbl" style="color:var(--cream);margin-top:6px">Next badge · no.${String(P.passes.length+1).padStart(3,'0')}</div></div><div class="sp"></div><div style="width:58px;height:58px;border-radius:14px;overflow:hidden;border:2px solid var(--gold)">${pcvM(P.mimu,'vm')}</div></div>
       <div class="dash"></div><div class="row"><div class="lbl" style="color:var(--cream)">Season meter</div><div class="sp"></div><b class="mono" style="color:var(--gold2)">${fmt(P.pp)} / ${fmt(P.passGoal)} SP</b></div>
       <div class="bar" style="margin-top:9px;background:#0004"><i style="width:${m*100}%"></i></div><div class="lbl" style="color:var(--cream);margin-top:8px;opacity:.8">${fmt(next)} SP to the next badge · runs and bell votes both count</div></div>

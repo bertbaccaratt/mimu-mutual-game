@@ -11,11 +11,18 @@
 <meta name="theme-color" content="#2a180d">
 <meta property="og:title" content="Chair Run × Mutual Mimu — Mimu On Ape × TheMutual.fun">
 <meta property="og:description" content="Run the halls, hop the chairs, vote at the bell and climb the leaderboard.">
-<meta property="og:image" content="https://mutualmimu.fun/mimu-hero.jpg">
+<meta property="og:image" content="https://mutualmimu.fun/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Mimu king on his throne">
+<meta name="twitter:image" content="https://mutualmimu.fun/assets/og-image.png">
 <meta property="og:url" content="https://mutualmimu.fun/">
 <meta name="twitter:card" content="summary_large_image">
 <meta property="og:type" content="website">
-<link rel="icon" href="assets/mimu-icon.jpg">
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,500;1,6..72,700&display=swap" rel="stylesheet">
@@ -1111,6 +1118,16 @@ const DOCK=[
 .shut{width:74px;height:74px;border-radius:50%;border:4px solid #fff;display:grid;place-items:center}.shut i{width:60px;height:60px;border-radius:50%;background:#fff;display:block;transition:transform .12s}.shut:active i{transform:scale(.88)}
 .camv .th{position:absolute;left:30px;bottom:44px;width:50px;height:50px;border-radius:10px;border:2px solid #fff6;background:#222;overflow:hidden}
 .camv .th b{position:absolute;inset:0;display:grid;place-items:center;font:600 12px var(--sans);color:#fff}
+.camv .th{cursor:pointer;padding:0}
+.camv .th img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.camv .th b{background:linear-gradient(transparent 55%,#0009);align-items:end;justify-items:end;padding:0 5px 3px;font-size:11px}
+.gal{position:absolute;inset:0;background:#000;z-index:30;display:flex;flex-direction:column;color:#fff}
+.gal .gh{display:flex;align-items:center;justify-content:space-between;padding:54px 14px 10px;font:600 15px var(--sans)}
+.gal .gh span{min-width:70px;text-align:right;color:#fff9;font-weight:500;font-size:13px}.gal .gx{min-width:70px;text-align:left;color:#ffd60a;font:500 15px var(--sans)}
+.gal .gg{flex:1;overflow:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:2px;align-content:start}
+.gal .gg button{aspect-ratio:1;overflow:hidden;padding:0}.gal .gg img{width:100%;height:100%;object-fit:cover;display:block}
+.gal .gv{flex:1;display:grid;place-items:center;overflow:hidden;touch-action:pan-y}.gal .gv img{max-width:100%;max-height:100%;object-fit:contain;user-select:none;-webkit-user-drag:none}
+.gal .ga{position:absolute;top:50%;width:38px;height:38px;border-radius:50%;background:#0008;color:#fff;font-size:26px;line-height:34px;transform:translateY(-50%)}.gal .ga.l{left:8px}.gal .ga.r{right:8px}
 .camv .fl{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
 .camv .fl.on{animation:camfl .35s ease-out}@keyframes camfl{0%{opacity:.95}100%{opacity:0}}
 .sgrp{margin:0 16px 18px;border-radius:16px;background:var(--panel);border:1px solid var(--line);overflow:hidden}
@@ -1161,10 +1178,28 @@ function buildPhone(root){
 }
 function buildCam(root){
   let n=P.photos||0;
-  root.innerHTML=`<div class="camv"><div class="vf"><img src="assets/camera-photo.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:47% 50%"><div class="gridl"></div></div><div class="ct"><span>⚡︎ Auto</span><span>HDR</span></div><div class="md">PHOTO</div>
-   <div class="th"><b id="pn">${n?n:''}</b></div><div class="cb"><button class="shut" id="sh"><i></i></button></div><div class="fl" id="fl"></div></div>`;
+  root.innerHTML=`<div class="camv"><div class="vf"><img src="assets/camera-photo.webp?v=2" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%"><div class="gridl"></div></div><div class="ct"><span>⚡︎ Auto</span><span>HDR</span></div><div class="md">PHOTO</div>
+   <button class="th" id="gal" aria-label="Open photos"><img src="assets/photos/p1.webp" alt=""><b id="pn">${n?n:''}</b></button><div class="cb"><button class="shut" id="sh"><i></i></button></div><div class="fl" id="fl"></div></div>`;
   paintAll();
   $('#sh',root).onclick=()=>{ac();const f=$('#fl',root);f.classList.remove('on');void f.offsetWidth;f.classList.add('on');tone(1800,0,.03,.05,'square');tone(900,.05,.05,.04,'square');n++;P.photos=n;saveP();$('#pn',root).textContent=n;toast('📸 <span>Saved to Photos: <b>Mimu, caught in 4K</b></span>',1800)};
+  /* photo library: grid of shots, tap one to view it full screen, swipe or use the arrows to browse */
+  const PICS=[1,2,3,4,5,6].map(i=>'assets/photos/p'+i+'.webp');
+  $('#gal',root).onclick=()=>{
+    ac();tone(700,0,.03,.04,'square');
+    const g=document.createElement('div');g.className='gal';
+    const grid=()=>{g.innerHTML=`<div class="gh"><button class="gx" id="gx">‹ Camera</button><b>Photos</b><span>${PICS.length}</span></div><div class="gg">${PICS.map((s,i)=>`<button data-i="${i}"><img src="${s}" alt="Photo ${i+1}" loading="lazy"></button>`).join('')}</div>`;
+      $('#gx',g).onclick=()=>{g.remove();tone(500,0,.03,.04,'square')};
+      g.querySelectorAll('.gg button').forEach(b=>b.onclick=()=>view(+b.dataset.i));};
+    const view=i=>{
+      g.innerHTML=`<div class="gh"><button class="gx" id="gb">‹ Photos</button><b>${i+1} of ${PICS.length}</b><span></span></div><div class="gv"><img src="${PICS[i]}" alt="Photo ${i+1}"></div><button class="ga l" id="gp" aria-label="Previous">‹</button><button class="ga r" id="gn" aria-label="Next">›</button>`;
+      $('#gb',g).onclick=grid;
+      $('#gp',g).onclick=()=>view((i+PICS.length-1)%PICS.length);$('#gn',g).onclick=()=>view((i+1)%PICS.length);
+      let x0=null;const gv=$('.gv',g);
+      gv.onpointerdown=e=>{x0=e.clientX};
+      gv.onpointerup=e=>{if(x0==null)return;const dx=e.clientX-x0;x0=null;if(Math.abs(dx)>40)view(dx<0?(i+1)%PICS.length:(i+PICS.length-1)%PICS.length)};
+    };
+    grid();$('.camv',root).appendChild(g);
+  };
   return{};
 }
 function buildSet(root){

@@ -1978,8 +1978,7 @@ function setVolStep(n,quiet){
 /* ---- cinematic NDA gate: sign it, then the iris opens on the desk ---- */
 (function(){
   const el=document.getElementById('nda');if(!el)return;
-  const KEY='mimu_nda_ok_v1';let seen=false;try{seen=!!localStorage.getItem(KEY)}catch(e){}
-  if(seen&&!/[?&]nda\b/.test(location.search)){el.remove();return}
+  /* shown on every visit and every refresh, by design */
   const $1=s=>el.querySelector(s),doc=$1('#ndaDoc'),pad=$1('#ndaPad'),cv=pad.querySelector('canvas'),ctx=cv.getContext('2d'),go=$1('#ndaGo'),chk=$1('#ndaChk'),typed=$1('#ndaTyped');
   $1('#ndaNo').textContent=String(Math.floor(1000+Math.random()*8999));
   $1('#ndaDate').textContent=new Date().toLocaleDateString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',year:'numeric'}).toUpperCase();
@@ -2009,7 +2008,7 @@ function setVolStep(n,quiet){
     setTimeout(()=>{try{ac();tone(70,0,.3,.22,'sine',32);tone(900,0,.05,.08,'square');tone(1600,.06,.04,.05,'square')}catch(e){}doc.classList.add('shake');$1('#ndaFlash').classList.add('on')},330);
     setTimeout(()=>{doc.classList.remove('shake');doc.classList.add('leave');try{tone(300,0,.9,.05,'sawtooth',1100);setTimeout(()=>{tone(784,0,.3,.05,'triangle');tone(1047,.1,.5,.05,'triangle');tone(1568,.22,.7,.04,'sine')},900)}catch(e){}},1750);
     setTimeout(()=>{el.classList.add('out');document.body.classList.add('enter')},2250);
-    setTimeout(()=>{try{localStorage.setItem(KEY,String(Date.now()))}catch(e){}el.remove();document.body.style.overflow='';document.body.classList.remove('enter');if(prev&&prev.focus)try{prev.focus()}catch(e){}},4000);
+    setTimeout(()=>{el.remove();document.body.style.overflow='';document.body.classList.remove('enter');if(prev&&prev.focus)try{prev.focus()}catch(e){}},4000);
   };
 })();
 

@@ -98,3 +98,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_players_xhandle ON players (lower(x_handle
 
 -- $TMF sent between players in the Top 9 app
 CREATE TABLE IF NOT EXISTS transfers (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, week INTEGER NOT NULL, sender TEXT NOT NULL, recipient TEXT NOT NULL, amount INTEGER NOT NULL, boost INTEGER NOT NULL DEFAULT 0);
+
+-- uploaded profile picture (small JPEG/PNG/WebP, stored as 'mime|base64')
+-- (existing databases: ALTER TABLE players ADD COLUMN avatar TEXT)

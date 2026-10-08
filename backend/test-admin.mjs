@@ -44,11 +44,22 @@ ok('runs work once a handle is on file', post.s === 200, String(post.s));
   ok('the same handle cannot be used by a second wallet (any capitalisation)', dup.s === 409, String(dup.s));
 }
 
+// profile picture
+const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+ok('picture upload needs sign-in', (await call('/api/avatar', { method: 'POST', body: JSON.stringify({ image: PNG }) })).s === 401);
+ok('svg is refused', (await call('/api/avatar', { method: 'POST', body: JSON.stringify({ image: 'data:image/svg+xml;base64,PHN2Zy8+' }) }, tok)).s === 400);
+ok('a fake png (text bytes) is refused', (await call('/api/avatar', { method: 'POST', body: JSON.stringify({ image: 'data:image/png;base64,' + Buffer.from('<script>alert(1)</script>-----').toString('base64') }) }, tok)).s === 400);
+ok('an oversized picture is refused', (await call('/api/avatar', { method: 'POST', body: JSON.stringify({ image: 'data:image/png;base64,' + 'A'.repeat(95000) }) }, tok)).s === 400);
+const up = await call('/api/avatar', { method: 'POST', body: JSON.stringify({ image: PNG }) }, tok);
+ok('a real picture is accepted', up.s === 200 && /\/api\/avatar\/0x[0-9a-f]{40}\?v=\d+$/.test(up.b.url || ''), JSON.stringify(up.b));
+const img = await fetch(base + '/api/avatar/' + a.address.toLowerCase());
+ok('the picture is served back as an image, locked down', img.status === 200 && img.headers.get('content-type') === 'image/png' && img.headers.get('x-content-type-options') === 'nosniff' && /sandbox/.test(img.headers.get('content-security-policy') || ''));
+ok('a player without a picture gets 404', (await fetch(base + '/api/avatar/0x' + '2'.repeat(40))).status === 404);
 // dashboard
 const d = await admin('dashboard');
 ok('dashboard works with the password', d.s === 200 && typeof d.b.visitors === 'number', `visitors ${d.b.visitors}`);
 ok('visitor counted once', d.b.visitors === before + 1, `${before} -> ${d.b.visitors}`);
-ok('player listed with Glyph name, wallet, X handle and IP', d.b.users.some((u) => u.g === 'Admin Test Ape' && u.a === a.address.toLowerCase() && u.x === hnd && u.ip));
+ok('player listed with Glyph name, wallet, X handle, IP and our picture URL', d.b.users.some((u) => u.g === 'Admin Test Ape' && u.a === a.address.toLowerCase() && u.x === hnd && u.ip && /\/api\/avatar\//.test(u.pic || '')));
 ok('recent visitors list has the visit', d.b.ips.length > 0 && d.b.ips.some((h) => h.vid === vid));
 ok('CORS allows the admin header', (await fetch(base + '/api/admin/dashboard', { method: 'OPTIONS', headers: { Origin: origin, 'Access-Control-Request-Method': 'GET', 'Access-Control-Request-Headers': 'x-admin-token' } })).headers.get('access-control-allow-headers')?.includes('X-Admin-Token'));
 ok('admin CORS echoes the origin', d.h.get('access-control-allow-origin') === origin);

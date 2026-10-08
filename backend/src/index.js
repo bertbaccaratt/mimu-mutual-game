@@ -324,6 +324,41 @@ async function handleHit(env, req) {
   return json(env, req, { ok: true });
 }
 
+/* ---------- profile pictures: the browser shrinks the photo to a small JPEG; we re-check the bytes and serve it ourselves ---------- */
+const apiOrigin = (req) => { const o = new URL(req.url).origin; return /^https:\/\/[a-z0-9.\-]+$/i.test(o) ? o : ''; };
+const picSql = (req) => `(CASE WHEN p.avatar IS NOT NULL THEN '${apiOrigin(req)}/api/avatar/'||p.address||'?v='||length(p.avatar) ELSE p.picture END)`;
+function sniffImage(b) {
+  if (b.length > 12 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
+  if (b.length > 12 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return 'image/png';
+  if (b.length > 12 && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return 'image/webp';
+  return null;
+}
+async function handleAvatarPost(env, req) {
+  const sess = await readToken(env, req);
+  if (!sess) return json(env, req, { error: 'sign in first' }, 401);
+  if (await limited(env, 'RL_AUTH', sess.sub)) return tooMany(env, req);
+  let b = {}; try { b = await req.json(); } catch { return json(env, req, { error: 'bad json' }, 400); }
+  const m = /^data:image\/(?:jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(String(b.image || ''));
+  if (!m || m[1].length > 90000) return json(env, req, { error: 'That picture is too big. Try a smaller one.' }, 400);
+  let bytes; try { bytes = Uint8Array.from(atob(m[1]), (c) => c.charCodeAt(0)); } catch { return json(env, req, { error: 'bad image' }, 400); }
+  const type = sniffImage(bytes);
+  if (!type) return json(env, req, { error: 'That file is not a JPG, PNG or WebP picture.' }, 400);
+  const stored = type + '|' + m[1];
+  await env.DB.prepare('UPDATE players SET avatar=?1 WHERE address=?2').bind(stored, sess.sub).run();
+  return json(env, req, { ok: true, url: `${apiOrigin(req)}/api/avatar/${sess.sub}?v=${stored.length}` });
+}
+async function handleAvatarGet(env, req, url) {
+  if (await limited(env, 'RL_READ', clientIp(req))) return tooMany(env, req);
+  const a = url.pathname.split('/').pop().toLowerCase();
+  if (!/^0x[0-9a-f]{40}$/.test(a)) return new Response('not found', { status: 404 });
+  const row = await env.DB.prepare('SELECT avatar FROM players WHERE address=?1').bind(a).first();
+  if (!row || !row.avatar) return new Response('not found', { status: 404 });
+  const [type, b64] = String(row.avatar).split('|');
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(type)) return new Response('not found', { status: 404 });
+  const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  return new Response(bytes, { headers: { 'Content-Type': type, 'Cache-Control': 'public, max-age=300', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; sandbox", 'Cross-Origin-Resource-Policy': 'cross-origin' } });
+}
+
 /* ---------- Top 9: sending $TMF between players ----------
  * Rules (enforced here, not in the browser):
  *   - the top 9 runners of the week (Chair Run board) cannot send;
@@ -340,7 +375,7 @@ async function topNine(env, week) {
 async function handleTop9(env, req) {
   if (await limited(env, 'RL_READ', clientIp(req))) return tooMany(env, req);
   const week = weekNow();
-  const rows = (await env.DB.prepare(`SELECT s.address a, ${TOTAL} total, (s.run_best+s.boost) run, s.coins_total tmf, p.name n, p.picture pic FROM scores s JOIN players p ON p.address=s.address
+  const rows = (await env.DB.prepare(`SELECT s.address a, ${TOTAL} total, (s.run_best+s.boost) run, s.coins_total tmf, p.name n, ${picSql(req)} pic FROM scores s JOIN players p ON p.address=s.address
       WHERE s.week=?1 AND ${TOTAL}>0 ORDER BY ${TOTAL} DESC, s.updated_at ASC LIMIT 300`).bind(week).all()).results || [];
   return json(env, req, { week, count: rows.length, rows: rows.map((r, i) => ({ rank: i + 1, id: r.a, name: r.n, picture: r.pic || '', total: r.total, run: r.run, tmf: r.tmf, top9: i < TOP_N })) });
 }
@@ -482,7 +517,7 @@ async function handleAdmin(env, req, url) {
       q('SELECT COUNT(*) c FROM visitors WHERE last_seen>?1', Date.now() - 24 * 3600 * 1000).first(),
       top(SCORE), top('coins_total'),
       q("SELECT r.id, r.address a, p.name n, p.x_handle x, r.score, r.coins, r.last_tick ticks, r.flags, r.ended_at t FROM runs r LEFT JOIN players p ON p.address=r.address WHERE r.status='held' ORDER BY r.ended_at DESC LIMIT 50").all(),
-      q('SELECT p.address a, p.name n, p.glyph_name g, p.picture pic, p.x_handle x, (p.x_id IS NOT NULL) xv, p.last_ip ip, p.updated_at t, (SELECT 1 FROM bans b WHERE b.address=p.address) banned FROM players p ORDER BY p.updated_at DESC LIMIT 1000').all(),
+      q(`SELECT p.address a, p.name n, p.glyph_name g, ${picSql(req)} pic, p.x_handle x, (p.x_id IS NOT NULL) xv, p.last_ip ip, p.updated_at t, (SELECT 1 FROM bans b WHERE b.address=p.address) banned FROM players p ORDER BY p.updated_at DESC LIMIT 1000`).all(),
       q('SELECT lat, lon, country, city, COUNT(*) c FROM visitors WHERE lat IS NOT NULL AND lon IS NOT NULL GROUP BY ROUND(lat,1), ROUND(lon,1) ORDER BY MAX(last_seen) DESC LIMIT 1500').all(),
       q('SELECT ts, ip, country, city, vid FROM hits ORDER BY id DESC LIMIT 200').all(),
       q('SELECT COUNT(*) c FROM bans').first(),
@@ -519,6 +554,11 @@ async function handleAdmin(env, req, url) {
     await env.DB.prepare("UPDATE runs SET status='abandoned', snapshot=NULL WHERE address=?1 AND status='open'").bind(a).run();
     return out({ ok: true, banned: a });
   }
+  if (path === 'rmavatar' && req.method === 'POST') {
+    if (!isAddress(b.address || '')) return out({ error: 'bad address' }, 400);
+    await env.DB.prepare('UPDATE players SET avatar=NULL WHERE address=?1').bind(String(b.address).toLowerCase()).run();
+    return out({ ok: true });
+  }
   if (path === 'unban' && req.method === 'POST') {
     await env.DB.prepare('DELETE FROM bans WHERE address=?1').bind(String(b.address || '').toLowerCase()).run();
     return out({ ok: true });
@@ -532,7 +572,7 @@ async function handleBoard(env, req, url) {
   const col = kind === 'run' ? SCORE : 'coins_total';
   const limit = Math.max(5, Math.min(100, Number(url.searchParams.get('limit')) || 50));
   const week = weekNow();
-  const rows = (await env.DB.prepare(`SELECT s.address a, ${col} v, p.name n, p.picture pic FROM scores s JOIN players p ON p.address=s.address
+  const rows = (await env.DB.prepare(`SELECT s.address a, ${col} v, p.name n, ${picSql(req)} pic FROM scores s JOIN players p ON p.address=s.address
       WHERE s.week=?1 AND ${col}>0 ORDER BY ${col} DESC, s.updated_at ASC LIMIT ?2`).bind(week, limit).all()).results || [];
   const total = (await env.DB.prepare(`SELECT COUNT(*) c FROM scores WHERE week=?1 AND ${col}>0`).bind(week).first()).c;
   const sess = await readToken(env, req);
@@ -560,6 +600,8 @@ export default {
       if (url.pathname === '/api/run/chunk' && req.method === 'POST') return handleRunChunk(env, req);
       if (url.pathname === '/api/leaderboard' && req.method === 'GET') return handleBoard(env, req, url);
       if (url.pathname === '/api/hit' && req.method === 'POST') return handleHit(env, req);
+      if (url.pathname === '/api/avatar' && req.method === 'POST') return handleAvatarPost(env, req);
+      if (url.pathname.startsWith('/api/avatar/') && req.method === 'GET') return handleAvatarGet(env, req, url);
       if (url.pathname === '/api/top9' && req.method === 'GET') return handleTop9(env, req);
       if (url.pathname === '/api/send/status' && req.method === 'GET') return handleSendStatus(env, req);
       if (url.pathname === '/api/transfer' && req.method === 'POST') return handleTransfer(env, req);

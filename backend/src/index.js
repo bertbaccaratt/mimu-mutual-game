@@ -88,7 +88,15 @@ async function readToken(env, req) {
   try {
     if (!safeEq(unb64u(sig), await hmac(env.SESSION_SECRET, body))) return null;
     const p = JSON.parse(new TextDecoder().decode(unb64u(body)));
-    return p.exp > Date.now() ? p : null;
+    return p.sub && p.exp > Date.now() ? p : null;          // sign-in sessions only (X proofs and OAuth state carry no "sub")
+  } catch { return null; }
+}
+async function readSigned(env, token, kind) {                   // verify one of our other signed blobs (X proof, OAuth state)
+  try {
+    const [body, sig] = String(token || '').split('.');
+    if (!body || !sig || !safeEq(unb64u(sig), await hmac(env.SESSION_SECRET, body))) return null;
+    const p = JSON.parse(new TextDecoder().decode(unb64u(body)));
+    return p.k === kind && p.exp > Date.now() ? p : null;
   } catch { return null; }
 }
 
@@ -184,13 +192,14 @@ async function handleAuth(env, req) {
   let gates;
   try { gates = await checkGates(env, addr); } catch (e) { console.error('holdings check failed', String(e && e.message || e)); return json(env, req, { error: 'holdings check failed' }, 502); }
   if (!gates.allowed) return json(env, req, { error: 'not allowed', gates }, 403);   // blocked wallets are never stored
-  const name = cleanName(b.name) || shortId(addr), picture = cleanPic(b.picture);
+  const glyphName = cleanName(b.name) || shortId(addr), picture = cleanPic(b.picture);
   const now = Date.now();
-  await env.DB.prepare('INSERT INTO players(address,name,picture,updated_at) VALUES(?1,?2,?3,?4) ON CONFLICT(address) DO UPDATE SET name=?2,picture=?3,updated_at=?4')
-    .bind(addr.toLowerCase(), name, picture, now).run();
-  const exp = now + SESSION_MS;
   const mine = await env.DB.prepare('SELECT x_handle FROM players WHERE address=?1').bind(addr.toLowerCase()).first();
-  return json(env, req, { token: await signToken(env, { sub: addr.toLowerCase(), exp }), expiresAt: exp, gates, x: (mine && mine.x_handle) || '' });
+  const name = mine && mine.x_handle ? '@' + mine.x_handle : glyphName;      // once X is connected, the X @handle is the player's name everywhere
+  await env.DB.prepare('INSERT INTO players(address,name,picture,glyph_name,last_ip,updated_at) VALUES(?1,?2,?3,?4,?5,?6) ON CONFLICT(address) DO UPDATE SET name=?2,picture=?3,glyph_name=?4,last_ip=?5,updated_at=?6')
+    .bind(addr.toLowerCase(), name, picture, glyphName, clientIp(req), now).run();
+  const exp = now + SESSION_MS;
+  return json(env, req, { token: await signToken(env, { sub: addr.toLowerCase(), exp }), expiresAt: exp, gates, x: (mine && mine.x_handle) || '', needX: !!env.X_CLIENT_ID && !(mine && mine.x_handle) });
 }
 
 /* ---------- verified runs ---------- */
@@ -221,6 +230,10 @@ async function handleRunStart(env, req) {
   if (!sess) return json(env, req, { error: 'sign in first' }, 401);
   if (await limited(env, 'RL_RUN', sess.sub)) return tooMany(env, req);
   if (await isBanned(env, sess.sub)) return json(env, req, { error: 'blocked' }, 403);
+  if (env.X_CLIENT_ID) {                                           // when X login is on, every player needs a connected X account
+    const me = await env.DB.prepare('SELECT x_id FROM players WHERE address=?1').bind(sess.sub).first();
+    if (!me || !me.x_id) return json(env, req, { error: 'connect your X account first', needX: true }, 403);
+  }
   let b = {}; try { b = await req.json(); } catch { /* optional body */ }
   if (!(await humanOk(env, b.cf, clientIp(req)))) return json(env, req, { error: 'human check failed' }, 403);
   const wallet = Math.max(0, Math.min(10000000, Math.floor(Number(b.wallet) || 0)));
@@ -311,16 +324,60 @@ async function handleHit(env, req) {
   return json(env, req, { ok: true });
 }
 
-/* ---------- player profile: X username (typed by the player, not verified by Glyph) ---------- */
-async function handleProfileX(env, req) {
+/* ---------- Sign in with X (OAuth 2.0 + PKCE). The X @handle becomes the player's name; it is read from X, never typed. ---------- */
+const X_AUTH = (env) => env.X_AUTH_URL || 'https://x.com/i/oauth2/authorize';
+const X_API = (env) => String(env.X_API_BASE || 'https://api.x.com').replace(/\/$/, '');
+const xRedirect = (req) => new URL(req.url).origin + '/api/x/callback';
+async function sha256b64u(s) { return b64u(new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode(s)))); }
+const jsonForScript = (o) => JSON.stringify(o).replace(/</g, '\\u003c').split(String.fromCharCode(8232)).join('').split(String.fromCharCode(8233)).join('');
+function xPage(origin, payload, message) {
+  const html = `<!doctype html><meta charset="utf-8"><title>X</title><body style="background:#0b0907;color:#f2e7d0;font:15px system-ui;display:grid;place-items:center;height:100vh;margin:0"><p>${message}</p>` +
+    `<script>try{window.opener&&window.opener.postMessage(${jsonForScript(payload)},${jsonForScript(origin || 'null')})}catch(e){}setTimeout(function(){window.close()},350)</script>`;
+  return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'", 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff' } });
+}
+async function handleXStart(env, req, url) {
+  if (!env.X_CLIENT_ID || !env.X_CLIENT_SECRET) return new Response('X login is not set up yet.', { status: 503 });
+  const origin = url.searchParams.get('o') || '';
+  if (!allowedOrigins(env).includes(origin)) return new Response('This site is not allowed to use X login.', { status: 403 });
+  const verifier = b64u(crypto.getRandomValues(new Uint8Array(32)));
+  const state = await signToken(env, { k: 'xs', v: verifier, o: origin, exp: Date.now() + 10 * 60 * 1000 });
+  const q = new URLSearchParams({ response_type: 'code', client_id: env.X_CLIENT_ID, redirect_uri: xRedirect(req), scope: 'users.read tweet.read', state, code_challenge: await sha256b64u(verifier), code_challenge_method: 'S256' });
+  return Response.redirect(X_AUTH(env) + '?' + q.toString(), 302);
+}
+async function handleXCallback(env, req, url) {
+  const st = await readSigned(env, url.searchParams.get('state'), 'xs');
+  if (!st) return xPage('', { type: 'mimu-x', error: 'expired' }, 'That sign-in link expired. Close this window and try again.');
+  const fail = (m) => xPage(st.o, { type: 'mimu-x', error: m }, 'Could not connect X. You can close this window.');
+  const code = url.searchParams.get('code');
+  if (!code || url.searchParams.get('error')) return fail('cancelled');
+  try {
+    const tr = await fetch(X_API(env) + '/2/oauth2/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Authorization: 'Basic ' + btoa(env.X_CLIENT_ID + ':' + env.X_CLIENT_SECRET) },
+      body: new URLSearchParams({ code, grant_type: 'authorization_code', client_id: env.X_CLIENT_ID, redirect_uri: xRedirect(req), code_verifier: st.v }),
+    });
+    const tj = await tr.json();
+    if (!tr.ok || !tj.access_token) { console.error('x token', tr.status, JSON.stringify(tj).slice(0, 200)); return fail('token'); }
+    const mr = await fetch(X_API(env) + '/2/users/me?user.fields=profile_image_url', { headers: { Authorization: 'Bearer ' + tj.access_token } });
+    const mj = await mr.json();
+    const u = mj && mj.data;
+    if (!mr.ok || !u || !/^\d{1,25}$/.test(String(u.id)) || !/^[A-Za-z0-9_]{1,15}$/.test(String(u.username))) { console.error('x me', mr.status, JSON.stringify(mj).slice(0, 200)); return fail('profile'); }
+    const proof = await signToken(env, { k: 'x', id: String(u.id), u: u.username, exp: Date.now() + 30 * 24 * 3600 * 1000 });
+    return xPage(st.o, { type: 'mimu-x', proof, x: u.username, pic: cleanPic(u.profile_image_url ? String(u.profile_image_url).replace('_normal.', '_400x400.') : '') }, 'Connected as @' + String(u.username) + '. You can close this window.');
+  } catch (e) { console.error('x callback', String(e && e.message || e)); return fail('network'); }
+}
+async function handleXLink(env, req) {                              // attach a verified X account to the signed-in wallet
   const sess = await readToken(env, req);
   if (!sess) return json(env, req, { error: 'sign in first' }, 401);
   if (await limited(env, 'RL_AUTH', sess.sub)) return tooMany(env, req);
   let b = {}; try { b = await req.json(); } catch { return json(env, req, { error: 'bad json' }, 400); }
-  const x = String(b.x || '').trim().replace(/^@/, '').replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, '').replace(/[/?#].*$/, '');
-  if (!/^[A-Za-z0-9_]{1,15}$/.test(x)) return json(env, req, { error: 'That does not look like an X username (letters, numbers and _ only, up to 15).' }, 400);
-  await env.DB.prepare('UPDATE players SET x_handle=?1 WHERE address=?2').bind(x, sess.sub).run();
-  return json(env, req, { ok: true, x });
+  const p = await readSigned(env, b.proof, 'x');
+  if (!p) return json(env, req, { error: 'X sign-in expired. Connect X again.' }, 401);
+  const other = await env.DB.prepare('SELECT address FROM players WHERE x_id=?1 AND address<>?2').bind(p.id, sess.sub).first();
+  if (other) return json(env, req, { error: 'That X account is already connected to another wallet.' }, 409);
+  try { await env.DB.prepare("UPDATE players SET x_handle=?1, x_id=?2, name='@'||?1 WHERE address=?3").bind(p.u, p.id, sess.sub).run(); }
+  catch { return json(env, req, { error: 'That X account is already connected to another wallet.' }, 409); }
+  return json(env, req, { ok: true, x: p.u });
 }
 
 /* ---------- admin: dashboard, held runs, bans (needs the admin password, checked here on the server) ---------- */
@@ -351,7 +408,7 @@ async function handleAdmin(env, req, url) {
       q('SELECT COUNT(*) c FROM visitors WHERE last_seen>?1', Date.now() - 24 * 3600 * 1000).first(),
       top('run_best'), top('coins_total'),
       q("SELECT r.id, r.address a, p.name n, p.x_handle x, r.score, r.coins, r.last_tick ticks, r.flags, r.ended_at t FROM runs r LEFT JOIN players p ON p.address=r.address WHERE r.status='held' ORDER BY r.ended_at DESC LIMIT 50").all(),
-      q('SELECT p.address a, p.name n, p.picture pic, p.x_handle x, p.updated_at t, (SELECT 1 FROM bans b WHERE b.address=p.address) banned FROM players p ORDER BY p.updated_at DESC LIMIT 1000').all(),
+      q('SELECT p.address a, p.name n, p.glyph_name g, p.picture pic, p.x_handle x, p.last_ip ip, p.updated_at t, (SELECT 1 FROM bans b WHERE b.address=p.address) banned FROM players p ORDER BY p.updated_at DESC LIMIT 1000').all(),
       q('SELECT lat, lon, country, city, COUNT(*) c FROM visitors WHERE lat IS NOT NULL AND lon IS NOT NULL GROUP BY ROUND(lat,1), ROUND(lon,1) ORDER BY MAX(last_seen) DESC LIMIT 1500').all(),
       q('SELECT ts, ip, country, city, vid FROM hits ORDER BY id DESC LIMIT 200').all(),
       q('SELECT COUNT(*) c FROM bans').first(),
@@ -420,7 +477,7 @@ export default {
     const url = new URL(req.url);
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(env, req) });
     try {
-      if (url.pathname === '/api/health') return json(env, req, { ok: true, week: weekNow(), gates: { mimu: !!env.GATE_MIMU, pass: !!env.GATE_PASS, dengs: !!env.GATE_DENGS } });
+      if (url.pathname === '/api/health') return json(env, req, { ok: true, week: weekNow(), gates: { mimu: !!env.GATE_MIMU, pass: !!env.GATE_PASS, dengs: !!env.GATE_DENGS }, xLogin: !!(env.X_CLIENT_ID && env.X_CLIENT_SECRET) });
       if (!env.SESSION_SECRET) return json(env, req, { error: 'server not configured' }, 500);
       if (url.pathname === '/api/nonce' && req.method === 'GET') { if (await limited(env, 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleNonce(env, req); }
       if (url.pathname === '/api/auth' && req.method === 'POST') { if (await limited(env, 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleAuth(env, req); }
@@ -428,7 +485,9 @@ export default {
       if (url.pathname === '/api/run/chunk' && req.method === 'POST') return handleRunChunk(env, req);
       if (url.pathname === '/api/leaderboard' && req.method === 'GET') return handleBoard(env, req, url);
       if (url.pathname === '/api/hit' && req.method === 'POST') return handleHit(env, req);
-      if (url.pathname === '/api/profile/x' && req.method === 'POST') return handleProfileX(env, req);
+      if (url.pathname === '/api/x/start' && req.method === 'GET') { if (await limited(env, 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleXStart(env, req, url); }
+      if (url.pathname === '/api/x/callback' && req.method === 'GET') { if (await limited(env, 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleXCallback(env, req, url); }
+      if (url.pathname === '/api/x/link' && req.method === 'POST') return handleXLink(env, req);
       if (url.pathname.startsWith('/api/admin/')) { if (await limited(env, 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleAdmin(env, req, url); }
       return json(env, req, { error: 'not found' }, 404);
     } catch (e) {

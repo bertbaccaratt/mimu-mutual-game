@@ -117,7 +117,7 @@ td.n{width:44px;white-space:nowrap;color:var(--gold);font-weight:600}td.r{text-a
 
   <section class="sec"><h2>Review queue <small>held or flagged runs</small></h2><div id="q"></div></section>
 
-  <section class="sec"><h2>Players <small id="ucount">Glyph + X</small></h2><div class="scroll" id="users"></div></section>
+  <section class="sec"><h2>Players <small id="ucount">Glyph + X + IP</small></h2><div class="scroll" id="users"></div></section>
 
   <section class="sec"><h2>Where people log on from <small id="mcount"></small></h2>
     <div id="mapbox"><canvas id="map"></canvas><div id="mtip"></div><div class="mleg"><span>● each dot = a place with visitors</span><span id="mcap"></span></div></div>
@@ -216,11 +216,11 @@ function render(d){
     <td><div class="btns"><button class="btn ok" data-ap="${esc(h.id)}">Approve</button><button class="btn no" data-dn="${esc(h.id)}">Deny</button><button class="btn ghost" data-bn="${esc(h.a)}">Ban wallet</button></div></td></tr>`).join('')+'</tbody></table></div>'
     :'<div class="empty">Nothing waiting. Flagged runs show up here for you to approve or deny.</div>';
   // players
-  $('#ucount').textContent=nf(d.users.length)+' players · Glyph + X';
-  $('#users').innerHTML=d.users.length?'<table><thead><tr><th>Glyph</th><th>Wallet</th><th>X username</th><th>Last seen</th><th></th></tr></thead><tbody>'+d.users.map(u=>`<tr>
-    <td>${u.pic&&/^https:\/\//.test(u.pic)?`<img class="av" src="${esc(u.pic)}" alt="" referrerpolicy="no-referrer" loading="lazy">`:''}${esc(u.n)}${u.banned?' <span class="tag bad">banned</span>':''}</td>
+  $('#ucount').textContent=nf(d.users.length)+' players · Glyph + X + IP';
+  $('#users').innerHTML=d.users.length?'<table><thead><tr><th>Glyph</th><th>Wallet</th><th>X account</th><th>IP address</th><th>Last seen</th><th></th></tr></thead><tbody>'+d.users.map(u=>`<tr>
+    <td>${u.pic&&/^https:\/\//.test(u.pic)?`<img class="av" src="${esc(u.pic)}" alt="" referrerpolicy="no-referrer" loading="lazy">`:''}${esc(u.g||u.n)}${u.banned?' <span class="tag bad">banned</span>':''}</td>
     <td>${wal(u.a)}<br><span style="color:var(--muted);font-size:10px">${esc(u.a)}</span></td>
-    <td>${xlink(u.x)}</td><td>${ago(u.t)}</td>
+    <td>${xlink(u.x)}</td><td style="font-size:11px">${esc(u.ip||"unknown")}</td><td>${ago(u.t)}</td>
     <td>${u.banned?`<button class="btn ghost" data-ub="${esc(u.a)}">Unban</button>`:`<button class="btn ghost" data-bn="${esc(u.a)}">Ban</button>`}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">No players yet.</div>';
   // ips
   $('#ips').innerHTML=d.ips.length?'<table><thead><tr><th>When</th><th>IP address</th><th>Place</th><th>Visitor</th></tr></thead><tbody>'+d.ips.map(h=>`<tr><td title="${esc(new Date(h.ts).toLocaleString())}">${ago(h.ts)}</td><td>${esc(h.ip)}</td><td>${esc([h.city,h.country].filter(Boolean).join(', ')||'unknown')}</td><td style="color:var(--muted)">${esc((h.vid||'').slice(0,8))}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">No visits recorded yet.</div>';

@@ -2,7 +2,10 @@ CREATE TABLE IF NOT EXISTS players (
   address    TEXT PRIMARY KEY,         -- lowercase wallet address
   name       TEXT NOT NULL,            -- Glyph username (sanitised)
   picture    TEXT NOT NULL DEFAULT '', -- Glyph profile picture (https only)
-  x_handle   TEXT,                     -- X username typed by the player (not verified)
+  x_handle   TEXT,                     -- X @handle from Sign in with X (verified by X); shown as the player's name
+  x_id       TEXT,                     -- X numeric account id (one X account per wallet)
+  glyph_name TEXT,                     -- the name Glyph reported
+  last_ip    TEXT,                     -- IP address at the last sign-in
   updated_at INTEGER NOT NULL
 );
 
@@ -87,3 +90,5 @@ CREATE TABLE IF NOT EXISTS admin_fails (
   at    INTEGER NOT NULL,
   until INTEGER NOT NULL DEFAULT 0
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_players_xid ON players (x_id) WHERE x_id IS NOT NULL;

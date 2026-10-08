@@ -256,7 +256,14 @@ body.native #screen,body.native #screen:after{border-radius:0}
 .app-i .ic{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;position:relative;box-shadow:0 8px 18px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.28),inset 0 -8px 14px rgba(0,0,0,.2)}
 .app-i .ic svg{width:34px;height:34px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4))}
 .app-i.lk{opacity:.5}
-.dock{position:absolute;left:14px;right:14px;bottom:30px;height:88px;border-radius:32px;background:rgba(43,31,33,.55);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-around;align-items:center;padding:0 10px}
+.cdw{margin-top:22px;border-radius:26px;padding:13px 16px 14px;background:rgba(43,31,33,.62);backdrop-filter:blur(16px);border:1px solid rgba(217,178,95,.28);box-shadow:0 10px 24px rgba(0,0,0,.3);text-align:center}
+.cdw .cdh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;font:600 10px var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.cdw .cdl{color:var(--gold)}.cdw .cdd{color:var(--muted)}
+.cdw .cdt{display:flex;justify-content:center;align-items:flex-start;gap:6px}
+.cdw .cdt div{min-width:50px}.cdw .cdt b{display:block;font:600 28px/1 var(--mono);color:var(--cream);font-variant-numeric:tabular-nums}
+.cdw .cdt i{display:block;margin-top:4px;font:500 9px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-style:normal}
+.cdw .cdt em{font:600 24px/1.05 var(--mono);color:var(--gold);opacity:.7;font-style:normal}
+.cdw[data-phase=live] .cdl{color:var(--up)}.cdw[data-phase=done] .cdt{opacity:.45}.dock{position:absolute;left:14px;right:14px;bottom:30px;height:88px;border-radius:32px;background:rgba(43,31,33,.55);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-around;align-items:center;padding:0 10px}
 #apps{z-index:10;pointer-events:none}
 .app{position:absolute;inset:0;background:var(--bg2);transform:scale(.1);opacity:0;border-radius:46px;overflow:hidden;pointer-events:auto;transition:transform .6s var(--spring),opacity .3s,border-radius .6s}
 .app.on{transform:none;opacity:1;border-radius:0}
@@ -1067,12 +1074,33 @@ function buildHome(anim){
    <div class="grid">${APPS.map(a=>`<button class="app-i" data-open="${a.id}"><div class="ic" style="background:${a.bg}">${a.ic}${a.id==='top5'&&P.coins>0?'<i class="bd">♥</i>':''}</div>${a.n}</button>`).join('')}
     <button class="app-i lk" data-act="soon"><div class="ic" style="background:linear-gradient(135deg,#4a4a52,#2a2a30)">${IC.lock}</div>Dengs Desk</button>
     <button class="app-i lk" data-act="soon"><div class="ic" style="background:linear-gradient(135deg,#4a4a52,#2a2a30)">${IC.lock}</div>Mimu Mail</button>
-   </div></div>
+   </div>
+   <div class="cdw" id="cdw" aria-live="off"><div class="cdh"><span class="cdl" id="cdl"></span><span class="cdd" id="cdd"></span></div>
+    <div class="cdt"><div><b id="cd-d">00</b><i>days</i></div><em>:</em><div><b id="cd-h">00</b><i>hrs</i></div><em>:</em><div><b id="cd-m">00</b><i>min</i></div><em>:</em><div><b id="cd-s">00</b><i>sec</i></div></div></div></div>
    <div class="dock">${DOCK.map(a=>`<button class="app-i" data-open="${a.id}" style="font-size:0"><div class="ic" style="background:${a.bg}">${a.ic}${a.id==='msg'&&unreadN()?`<i class="bd">${unreadN()}</i>`:''}</div></button>`).join('')}</div>`;
+  startCampaignClock();
   {const wc=$('#wallc');if(m.hero){wc.width=wc.height=160;wc.className='hero'}mimuFront(wc,m)}paintAll();
   if(anim){const h=$('#home');h.style.opacity=0;requestAnimationFrame(()=>{h.style.opacity=1})}
 }
-function relPos(el){let x=el.offsetWidth/2,y=el.offsetHeight/2,e=el;while(e&&e.id!=='screen'){x+=e.offsetLeft;y+=e.offsetTop;e=e.offsetParent}return[x,y]}
+/* Campaign countdown widget: opens Sat Oct 10 2026 9:00 PM Eastern (EDT, UTC-4), closes Wed Oct 14 2026 9:00 AM Eastern */
+const CAMPAIGN={open:Date.UTC(2026,9,11,1,0,0),close:Date.UTC(2026,9,14,13,0,0)};
+let _cdTimer=null;
+function startCampaignClock(){
+  clearInterval(_cdTimer);
+  const tick=()=>{
+    const w=$('#cdw');if(!w){clearInterval(_cdTimer);return}
+    const now=Date.now();let phase,target;
+    if(now<CAMPAIGN.open){phase='pre';target=CAMPAIGN.open}else if(now<CAMPAIGN.close){phase='live';target=CAMPAIGN.close}else{phase='done';target=now}
+    w.dataset.phase=phase;
+    $('#cdl').textContent=phase==='pre'?'Campaign opens in':phase==='live'?'Campaign closes in':'Campaign closed';
+    $('#cdd').textContent=phase==='pre'?'Sat · 9 PM ET':phase==='live'?'Wed · 9 AM ET':'Thanks for playing';
+    let s=Math.max(0,Math.floor((target-now)/1000));
+    const d=Math.floor(s/86400);s-=d*86400;const h=Math.floor(s/3600);s-=h*3600;const m=Math.floor(s/60);s-=m*60;
+    const set=(id,v)=>{const e=$('#'+id);const x=String(v).padStart(2,'0');if(e&&e.textContent!==x)e.textContent=x};
+    set('cd-d',d);set('cd-h',h);set('cd-m',m);set('cd-s',s);
+  };
+  tick();_cdTimer=setInterval(tick,1000);
+}function relPos(el){let x=el.offsetWidth/2,y=el.offsetHeight/2,e=el;while(e&&e.id!=='screen'){x+=e.offsetLeft;y+=e.offsetTop;e=e.offsetParent}return[x,y]}
 /* =====================================================================
    SYSTEM APPS (dock): Phone, Messages, Camera, Settings
    ===================================================================== */

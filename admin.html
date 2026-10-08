@@ -321,7 +321,7 @@ function logout(bad){
   PW='';clearInterval(timer);$('#app').hidden=true;$('#login').hidden=false;$('#pw').value='';
   $('#lerr').textContent=bad?'Wrong password.':'';$('#pw').focus();
 }
-$('#out').onclick=()=>logout(false);
+$('#out').onclick=()=>{logout(false);location.replace('./')};
 $('#lf').onsubmit=async e=>{
   e.preventDefault();const v=$('#pw').value;if(!v)return;
   PW=v;$('#lerr').textContent='';

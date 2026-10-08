@@ -35,6 +35,7 @@ const identity = () => {
   return { name: u.name || '', picture: u.picture || '', address };
 };
 
+const SIGN_IN_RE = /^Sign in to Chair Run × Mutual Mimu\nThis only proves you own this wallet\. It costs nothing, sends no transaction and cannot move your assets\.\n\nDomain: ([A-Za-z0-9.\-:]+)\nAddress: (0x[0-9a-fA-F]{40})\nNonce: [A-Za-z0-9_.\-]+\nIssued: \d{10,14}$/;
 const ERC721 = parseAbi(['function balanceOf(address owner) view returns (uint256)']);
 const RPCS = {
   33139: ['https://apechain.calderachain.xyz/http', 'https://rpc.apechain.com/http'],
@@ -50,7 +51,7 @@ async function holds(gate, owner) {
   return n > 0n;
 }
 
-window.MimuGlyph = {
+const api = {
   getUser: identity,
   connect() {
     return new Promise((resolve, reject) => {
@@ -67,8 +68,12 @@ window.MimuGlyph = {
     });
   },
   async signMessage(message) {
+    // Safety: this bridge will only ever sign our plain-English sign-in message for THIS site.
+    // It exposes no transactions, approvals or typed-data signing, and refuses any other text.
+    const m = SIGN_IN_RE.exec(String(message));
+    if (!m || m[1] !== location.host || !S.address || m[2].toLowerCase() !== S.address.toLowerCase()) throw new Error('Refusing to sign an unexpected message');
     if (!S.glyph) throw new Error('Glyph is not ready');
-    return S.glyph.signMessage({ message });
+    return S.glyph.signMessage({ message: String(message) });
   },
   async checkHoldings(gates, address) {
     const out = { mimu: null, pass: null, dengs: null };
@@ -84,6 +89,9 @@ window.MimuGlyph = {
     try { if (S.wagmiDisconnect) S.wagmiDisconnect(); } catch (e) {}
   },
 };
+
+Object.freeze(api);
+Object.defineProperty(window, 'MimuGlyph', { value: api, writable: false, configurable: false });
 
 const el = document.createElement('div');
 el.id = 'mimu-glyph-root';

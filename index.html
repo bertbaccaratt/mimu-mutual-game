@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' data: blob:; connect-src 'self' https: wss:; frame-src https:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<script>if(window.top!==window.self){try{window.top.location=window.self.location}catch(e){document.documentElement.innerHTML=''}}</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <title>Chair Run × Mutual Mimu — TMF × Mimu On Ape</title>
 <meta name="description" content="A collab game by Mimu On Ape and TheMutual.fun. Run the halls, hop the chairs, vote at the closing bell and climb the leaderboard.">
@@ -682,7 +685,7 @@ body.enter .footbar{animation-name:chromeInB}
       <div class="gd-grid">
         <div><b>Chair Run</b><span>The runner. Beat your best score every day.</span></div>
         <div><b>Mutual Mimu</b><span>The boardroom: stake $TMF, vote and join the lobby. A closing bell rings every 4h 20m and settles the round.</span></div>
-        <div><b>Leaderboards</b><span>Weekly rank for runners and for net $TMF. See where you sit against the field.</span></div>
+        <div><b>Leaderboards</b><span>Weekly boards for the best run and for $TMF found. Every score is checked by the server, which replays your run, so everyone is ranked fairly.</span></div>
         <div><b>Season Vault</b><span>Your season meter, badges, chair gallery (jump 25 of each to unlock), patron status and career stats.</span></div>
         <div><b>Top 5</b><span>See the five runners leading the week. Backing a runner with your $TMF is coming soon.</span></div>
         <div><b>Phone, Messages, Camera, Settings</b><span>The dock. Read your texts, dial a number, snap a photo, or flip sound on and off. Locked apps (Dengs Desk, Mimu Mail) come later.</span></div>
@@ -718,6 +721,7 @@ body.enter .footbar{animation-name:chromeInB}
       <h3>3 · Eligibility</h3><p>You must be old enough to enter a binding agreement where you live, and at least 18 to be considered for any reward. Where the law restricts promotions or digital-asset rewards in your region, you may not be eligible.</p>
       <h3>4 · In-game currency and points</h3><p>“$TMF” coins and “Season Points” shown inside the Game are virtual items for gameplay only. They have no cash value, cannot be sold or redeemed, and are not the $TMF token or any other digital asset. The only way to give coins away is the in-game “Top 5” app; those gifts are virtual and final.</p>
       <h3>5 · Leaderboards and recognition</h3><p>The Game has a leaderboard that resets each week, and you are welcome to keep playing to beat your own best score. Top players may be considered for recognition, which could include a TMF Pass or another item, but nothing is promised. No TMF Passes have been allocated to the Game at this time. Whether any recognition is given, who is considered, how many items exist and when are decided solely by MIMU ON APE and THEMUTUAL.FUN, and may change or end at any time. Leaderboard results may be reviewed and adjusted to remove cheating or errors. A score, rank or badge does not entitle anyone to a reward.</p>
+      <h3>5b · Fair play</h3><p>Every leaderboard score is checked by our server, which replays your run from the moves you made. Runs that can&rsquo;t be verified, or that come from bots, scripts, edited code or exploits, don&rsquo;t count and may be removed along with the account&rsquo;s results. Chair Run runs on your device, so keep your connection open until the &ldquo;run complete&rdquo; screen finishes ranking you.</p>
       <h3>5a · Connecting Glyph and your data</h3><p>Chair Run asks you to connect a Glyph wallet. We read your Glyph username, profile picture and wallet address, and we check which NFTs that wallet holds: you need a Mimu On Ape to play, and wallets holding a TMF Pass or a Dengs can&rsquo;t play. Your username, picture and scores are shown publicly on the leaderboards, and we store them (plus your wallet address) to run the leaderboards. Connecting only asks for a signature that proves you own the wallet. It costs nothing, sends no transaction and can&rsquo;t move your assets. Disconnect any time in Settings.</p>
       <h3>6 · Not financial advice</h3><p>Mutual Mimu is a simulation. It does not involve real money, real investments or real markets, and nothing in it is investment, legal or tax advice. Past in-game results say nothing about real-world performance.</p>
       <h3>7 · Fair play</h3><p>Do not use bots, scripts, exploits, automated input or multiple identities to gain an advantage, and do not interfere with the Game or other players. We may remove scores or restrict access where we reasonably suspect misuse.</p>
@@ -731,6 +735,7 @@ body.enter .footbar{animation-name:chromeInB}
   </div>
 </div>
 
+<script src="assets/sim.js?v=1"></script>
 <script>
 'use strict';
 /* =====================================================================
@@ -1258,7 +1263,7 @@ const API={
   /* proves the visitor owns the wallet (one signature, no transaction) and returns the server's holdings verdict */
   async login(){
     const n=await API.j('/api/nonce'),addr=P.glyph.address;
-    const msg=`Sign in to Chair Run × Mutual Mimu\nThis only proves you own this wallet. It costs nothing and sends no transaction.\n\nAddress: ${addr}\nNonce: ${n.nonce}\nIssued: ${n.issuedAt}`;
+    const msg=`Sign in to Chair Run × Mutual Mimu\nThis only proves you own this wallet. It costs nothing, sends no transaction and cannot move your assets.\n\nDomain: ${location.host}\nAddress: ${addr}\nNonce: ${n.nonce}\nIssued: ${n.issuedAt}`;
     const sig=await window.MimuGlyph.signMessage(msg);
     const r=await API.j('/api/auth',{method:'POST',body:JSON.stringify({address:addr,nonce:n.nonce,issuedAt:n.issuedAt,signature:sig,name:P.glyph.name,picture:P.glyph.picture})});
     API.token=r.token;return r;
@@ -1353,7 +1358,7 @@ function runGate(root,ctl,enter){
     show(`<div class="gl-gem">${GEM_SVG}</div><h2>Connect <em>Glyph</em></h2>
       <p>Run the halls as yourself. We only read your <b>Glyph username</b> and <b>profile picture</b>.</p>
       <ul class="gl-req"><li><i>1</i>Hold a Mimu On Ape</li><li class="no"><i>2</i>No TMF Pass in the wallet</li><li class="no"><i>3</i>No Dengs in the wallet</li></ul>
-      <div class="acts"><button class="btn gold" id="gc" style="padding:16px">Connect with Glyph</button><div class="sm">Read-only. Nothing is spent or sent on-chain.</div></div>`);
+      <div class="acts"><button class="btn gold" id="gc" style="padding:16px">Connect with Glyph</button><div class="sm">Only a free sign-in signature. Never a transaction, approval or seed phrase.</div></div>`);
     $('#gc',root).onclick=()=>{beep(520);connect()};
   };
 
@@ -1462,16 +1467,15 @@ function buildRunGame(root){
   const avatars=[...P.rivals.slice(0,6).map(r=>r.m),mimu].map(m=>{const c=document.createElement('canvas');c.width=c.height=m.hero?160:32;mimuFront(c,m);if(m.hero)heroImg.addEventListener('load',()=>mimuFront(c,m));return c});
   const FOG='#1a0f12',pal={cA:[],cB:[],mA:[],mB:[],gd:[]};
   for(let i=0;i<16;i++){const t=Math.pow(i/15,1.3)*.92;pal.cA.push(mix('#7a2430',FOG,t));pal.cB.push(mix('#5f1b26',FOG,t));pal.mA.push(mix('#cdbda3',FOG,t));pal.mB.push(mix('#b9a98f',FOG,t));pal.gd.push(mix('#d9b25f',FOG,t))}
-  const S={st:'idle',alive:true,dist:0,speed:3,lane:0,px:0,vx:0,py:0,vy:0,slide:0,lives:3,shield:0,magnet:0,mult:0,coins:0,score:0,inv:0,time:0,obj:[],pend:[],spawnZ:60,gateZ:700,shake:0,part:[],cleared:[0,0,0,0,0,0,0,0],slow:0,combo:0,cid:0,weather:0,bestShown:false,chain:0,ct:0,mxChain:0,revived:false,nextMs:250,cm:1};
-  let raf,last=performance.now(),msgN=0;
+  const freshSeed=()=>1+Math.floor(Math.random()*4294967294);
+  let sim=MimuSim.create(freshSeed(),{wallet:0}),S=sim.S;Object.assign(S,{st:'idle',part:[],shake:0,bestShown:false,near:false});
+  let raf,last=performance.now(),msgN=0,acc=0,pv=null,inputs=[],runSession=null,verified=false,alive=true,lastChain=-1,lastCm=-1,pwSig='';
   const hud={sc:$('#rsc',root),co:$('#rco',root),lv:$$('#rlv i',root),pw:$('#rpw',root),msg:$('#rmsg',root),card:$('#rcard',root),cn:$('#rcn',root),fl:$('#rfl',root)};
   function msg(t,cls=''){const d=document.createElement('div');d.className=cls;d.textContent=t;d.style.top=(msgN++%3)*28+'px';hud.msg.appendChild(d);setTimeout(()=>d.remove(),2300)}
   /* ---- chain / streak: every coin and clean chair hop builds it, 4s without a gain breaks it ---- */
   const cmbEl=$('#rcmb',root);
   function cmbUI(pop){cmbEl.classList.toggle('on',S.chain>=3);cmbEl.firstChild.innerHTML='x'+S.cm+' <em>'+S.chain+'</em>';cmbEl.querySelector('i').style.width=Math.max(0,S.ct/4*100)+'%';
     if(pop){cmbEl.classList.remove('pop');void cmbEl.offsetWidth;cmbEl.classList.add('pop')}}
-  function gain(n){S.chain+=n;S.ct=4;S.mxChain=Math.max(S.mxChain,S.chain);const m=Math.min(5,1+Math.floor(S.chain/10));if(m>S.cm){msg('🔥 Chain x'+m,'big');sfx.power()}S.cm=m;cmbUI(true)}
-  function breakChain(){if(S.chain>=10)msg('Chain broken','bad');S.chain=0;S.cm=1;S.ct=0;cmbUI(false)}
   /* ---- daily streak + three daily quests ---- */
   const dayKey=d=>d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
   const QT=[{k:'coins',t:'Collect {n} $TMF',g:[120,200,320],sp:60},{k:'clear',t:'Hop {n} chairs',g:[20,35,50],sp:60},{k:'dist',t:'Run {n}m in total',g:[1500,2500,4000],sp:70},{k:'runs',t:'Finish {n} runs',g:[3,4,6],sp:50},{k:'chain',t:'Reach a x{n} chain',g:[2,3,4],sp:80},{k:'score',t:'Score {n} in one run',g:[2500,4000,6000],sp:90}];
@@ -1496,47 +1500,12 @@ function buildRunGame(root){
       if(q.p>=q.goal){q.done=true;q.p=q.goal;done.push(q)}});
     return done;
   }
-  function reset(){
-    Object.assign(S,{dist:0,speed:11,lane:0,px:0,vx:0,py:0,vy:0,slide:0,lives:3,shield:0,magnet:0,mult:0,coins:0,score:0,inv:0,time:0,obj:[],pend:[],spawnZ:55,gateZ:650,shake:0,part:[],cleared:[0,0,0,0,0,0,0,0],slow:0,combo:0,weather:0,bestShown:false,chain:0,ct:0,mxChain:0,revived:false,nextMs:250,cm:1,near:false});
-    cmbUI(false);hud.lv.forEach(i=>i.className='');hud.sc.textContent='0';hud.co.textContent='0';updPW();
-  }
+  function reset(){newRun(freshSeed(),P.coins);cmbUI(false);hud.lv.forEach(i=>i.className='');hud.sc.textContent='0';hud.co.textContent='0';updPW()}
   function updPW(){const a=[];if(S.shield>0)a.push('🛡 SHIELD');if(S.magnet>0)a.push('🔔 MAGNET '+Math.ceil(S.magnet));if(S.mult>0)a.push('✦ x2 '+Math.ceil(S.mult));hud.pw.innerHTML=a.map(x=>`<span>${x}</span>`).join('')}
-  /* ---- spawning ---- */
-  const obj=o=>{o.id=S.cid++;S.obj.push(o);return o};
-  const chair=(l,z,roll)=>{const d=Math.min(1,S.dist/3500);const t=wpick([34,22,24,16,7+d*3,5+d*4,3+d*3,1+d*6]);return obj({t:'chair',type:t,x:l,z,h:CHAIRS[t].h,roll:!!roll})};
-  const coin=(l,z,y=.6)=>obj({t:'coin',x:l,z,y});
-  const coinLine=(l,z,n)=>{for(let i=0;i<n;i++)coin(l,z+i*1.6)};
-  const coinArc=(l,z,n)=>{for(let i=0;i<n;i++){const k=i/(n-1);coin(l,z+i*1.4,.55+Math.sin(k*Math.PI)*1.9)}};
-  const other=l=>rp([-1,0,1].filter(x=>x!==l));
-  function pattern(){
-    const z=S.spawnZ,d=Math.min(1,S.dist/3500),r=Math.random(),L=Math.floor(Math.random()*3)-1;let len=8;
-    if(r<.2){chair(L,z);coinLine(other(L),z-3,6);len=9}
-    else if(r<.36){[-1,0,1].forEach(l=>{if(l!==L)chair(l,z)});coinLine(L,z-3,7);len=9}
-    else if(r<.5){chair(L,z);coinArc(L,z-4,8);len=10}
-    else if(r<.62){const n=1+(d>.35&&Math.random()<.6?1:0);const ls=[-1,0,1].sort(()=>Math.random()-.5).slice(0,n);ls.forEach(l=>obj({t:'banner',x:l,z}));coinLine(other(ls[0]),z-2,5);len=7}
-    else if(r<.74){let l=Math.random()<.5?-1:1;for(let i=0;i<3;i++){chair(l,z+i*8);coinLine(0,z+i*8+3,3);l=-l}len=22}
-    else if(r<.83&&d>.15){[-1,0,1].forEach(l=>chair(l,z));coinArc(0,z-4,8);len=10}
-    else if(r<.9&&d>.12){chair(L,z+12,true);coinLine(other(L),z,6);len=10}
-    else{let l=L;for(let i=0;i<2;i++){coinLine(l,z+i*7,5);l=other(l)}len=14}
-    if(Math.random()<.11)obj({t:'pick',k:rp(['magnet','shield','x2']),x:rp([-1,0,1]),z:z-5});
-    S.spawnZ+=len+Math.max(7,S.speed*(1.15-.45*d));
-  }
-  function spawnGate(){
-    const pick=cs=>rp(ASSETS.filter(a=>cs.includes(a.c)));
-    const opts=[pick(['safe','hard']),pick(['bal','growth']),pick(['degen','growth'])];
-    const w=clamp(S.weather*.5+gauss()*.6,-1,1);S.weather=w;
-    obj({t:'gate',z:S.gateZ,opts,w,f:clamp(w*.7+gauss()*.4,-1,1),done:false});
-    for(let l=-1;l<=1;l++)coinLine(l,S.gateZ-9,3);
-    S.gateZ+=900;
-  }
   /* ---- input ---- */
   function act(a){
     if(S.st!=='run')return;
-    if(a==='L'&&S.lane>-1){S.lane--;sfx.lane()}
-    else if(a==='R'&&S.lane<1){S.lane++;sfx.lane()}
-    else if(a==='U'&&S.py<.05){S.vy=9.4;S.slide=0;S.buf=0;sfx.jump();dust(6)}
-    else if(a==='U'&&S.vy<=0&&S.py<1.4){S.buf=.16}
-    else if(a==='D'){if(S.py>.05){S.vy=-16}else if(S.slide<=0){S.slide=.65;sfx.slide()}}
+    inputs.push([S.tick,{L:0,R:1,U:2,D:3}[a]]);sim.act(a);handleEvents();
   }
   let sx0=null,sy0=null,done=false,t0=0;
   const sc=$('.run',root);
@@ -1554,7 +1523,7 @@ function buildRunGame(root){
     if(S.st==='run'){S.st='paused';showCard(`<div class="h2" style="font-size:26px">Paused</div><div class="sub2" style="margin:6px 0 16px">The hall can wait.</div><button class="btn gold" id="rb1">Resume</button><button class="btn ghost" id="rb2" style="margin-top:8px">End run</button>`);
       $('#rb1',root).onclick=()=>resumeCount();$('#rb2',root).onclick=()=>{hideCard();gameOver(true)}}
   }
-  function resumeCount(){hideCard();S.st='resume';let n=3;const step=()=>{if(!S.alive||S.st!=='resume')return;hud.cn.innerHTML=n>0?`<span>${n}</span>`:'';tone(n>0?440:660,0,.08,.04,'triangle');if(n===0){S.st='run';return}n--;setTimeout(step,450)};step()}
+  function resumeCount(){hideCard();S.st='resume';let n=3;const step=()=>{if(!alive||S.st!=='resume')return;hud.cn.innerHTML=n>0?`<span>${n}</span>`:'';tone(n>0?440:660,0,.08,.04,'triangle');if(n===0){S.st='run';return}n--;setTimeout(step,450)};step()}
   const vis=()=>{if(document.hidden)pause()};document.addEventListener('visibilitychange',vis);
   function showCard(h){hud.card.classList.remove('on');hud.card.innerHTML=h;requestAnimationFrame(()=>requestAnimationFrame(()=>hud.card.classList.add('on')))}
   function hideCard(){hud.card.classList.remove('on')}
@@ -1568,27 +1537,37 @@ function buildRunGame(root){
     paintAll();$('#rgo',root).onclick=()=>{ac();startCount()};
   }
   function startCount(){
-    if(S.st!=='idle')return;hideCard();reset();S.st='count';let n=3;
-    const step=()=>{if(!S.alive)return;hud.cn.innerHTML=n>0?`<span>${n}</span>`:`<span style="font-size:80px">RUN</span>`;tone(n>0?440:880,0,n>0?.1:.25,.05,'triangle');
-      if(n===0){S.st='run';S.speed=11;setTimeout(()=>{hud.cn.innerHTML=''},700);return}n--;setTimeout(step,700)};
+    if(S.st!=='idle')return;hideCard();reset();S.st='count';let n=3;verified=false;runSession=null;
+    const online=GATE.ok&&API.on();
+    const sessionP=(online&&API.token)?API.j('/api/run/start',{method:'POST',body:JSON.stringify({wallet:P.coins})}).catch(()=>null):Promise.resolve(null);
+    const begin=async()=>{
+      let r=null;try{r=await Promise.race([sessionP,sleep(4000).then(()=>null)])}catch(e){}
+      if(!alive)return;
+      if(r&&r.runId){newRun(r.seed,r.wallet);runSession=r;verified=true}
+      else if(online)toast(API.token?'📡 <span>Couldn&rsquo;t reach the leaderboard. This run won&rsquo;t count.</span>':'🔒 <span>Your session ended. Reconnect Glyph in Chair Run so runs count.</span>',4200);
+      S.st='run';acc=0;last=performance.now();setTimeout(()=>{hud.cn.innerHTML=''},700);
+    };
+    const step=()=>{if(!alive)return;hud.cn.innerHTML=n>0?`<span>${n}</span>`:`<span style="font-size:80px">RUN</span>`;tone(n>0?440:880,0,n>0?.1:.25,.05,'triangle');
+      if(n===0){begin();return}n--;setTimeout(step,700)};
     step();
   }
   function gameOver(quit){
     if(S.st==='over')return;S.st='over';
     const score=Math.floor(S.score),prevBest=P.best;if(score>P.best)P.best=score;
-    P.runs++;P.dist+=S.dist;P.coins+=S.coins;P.totalCoins+=S.coins;S.cleared.forEach((n,i)=>P.cleared[i]+=n);
+    const dist=S.deadDist!==undefined?S.deadDist:S.dist;
+    P.runs++;P.dist+=dist;P.coins+=S.coins;P.totalCoins+=S.coins;S.cleared.forEach((n,i)=>P.cleared[i]+=n);
     const qd=trackQ(score);let pp=Math.floor(score/5)+S.coins*2;qd.forEach(q=>pp+=q.sp);
     const before=passMeter(),passes=addPP(pp),rank=myRank('run');saveP();
-    if(GATE.ok&&API.on())API.submit('run',score,Math.floor(S.dist),Math.max(P.coins,P.nwBest)).then(r=>{const e=$('#rkv',root);if(e)e.textContent=r&&r.rank?('#'+r.rank+(r.rank<=10?' · top 10':'')):'—';return refreshBoards()});
+    if(verified&&API.on())submitRun().then(r=>{const e=$('#rkv',root);if(e)e.textContent=r&&r.rank?('#'+r.rank+(r.rank<=10?' · top 10':'')):'—';if(r&&r.final&&r.score!==score)console.warn('server score differs',r.score,score);return refreshBoards()});
     const gap=prevBest-score,hook=score>prevBest&&score>0?'':gap>0&&prevBest>0?(gap<prevBest*.25?`Only <b>${fmt(gap)}</b> short of your best. One more run?`:`Best this week: <b>${fmt(prevBest)}</b>`):'';
     const nb=score>prevBest&&score>0;sfx[nb?'win':'fail']();if(nb)confetti(40);
     showCard(`<div class="lbl" style="color:var(--gold)">${quit?'Run ended':'You got benched'}</div><div class="h2" style="font-size:28px;margin:4px 0">${nb?'New weekly <em>best</em>':'Run <em>complete</em>'}</div>
-    <div class="stats"><div><b>${fmt(score)}</b><span>score</span></div><div><b>${fmt(S.dist)}m</b><span>distance</span></div><div><b>${fmt(S.coins)}</b><span>$TMF</span></div></div>
+    <div class="stats"><div><b>${fmt(score)}</b><span>score</span></div><div><b>${fmt(dist)}m</b><span>distance</span></div><div><b>${fmt(S.coins)}</b><span>$TMF</span></div></div>
     ${S.mxChain>=10?`<div class="row" style="margin-bottom:8px"><div class="lbl">Best chain</div><div class="sp"></div><b class="mono" style="color:var(--gold2)">🔥 ${S.mxChain}</b></div>`:''}
     ${qd.map(q=>`<div class="row" style="margin-bottom:8px"><div class="lbl" style="color:var(--gold2)">✓ Quest · ${q.t.replace('{n}',fmt(q.goal))}</div><div class="sp"></div><b class="mono" style="color:var(--gold2)">+${q.sp} SP</b></div>`).join('')}
     <div class="row" style="margin-bottom:6px"><div class="lbl">Season points</div><div class="sp"></div><b class="mono" style="color:var(--gold2)">+${fmt(pp)} SP</b></div>
     <div class="bar" style="margin-bottom:12px"><i id="rpm" style="width:${before*100}%"></i></div>
-    <div class="row" style="margin-bottom:14px"><div class="lbl">Weekly rank</div><div class="sp"></div><b class="mono" id="rkv">${GATE.ok&&API.on()?'…':'#'+rank+(rank<=10?' · top 10':'')}</b></div>
+    <div class="row" style="margin-bottom:14px"><div class="lbl">Weekly rank</div><div class="sp"></div><b class="mono" id="rkv">${verified&&API.on()?'…':(GATE.ok&&API.on()?'not counted':'#'+rank+(rank<=10?' · top 10':''))}</b></div>
     ${hook?`<div class="close">${hook}</div>`:''}
     <button class="btn gold" id="ra">Run again</button><div class="row" style="margin-top:8px"><button class="btn ghost" id="rl">Leaderboards</button><button class="btn ghost" id="rh">Home</button></div>`);
     setTimeout(()=>{const b=$('#rpm',root);if(b)b.style.width=(passes.length?100:passMeter()*100)+'%'},500);
@@ -1601,79 +1580,83 @@ function buildRunGame(root){
   function P3(x,y,z){const dz=z-S.dist,s=F/dz;return[CX+(x+Xat(dz))*s,HZ+(CH-y)*s]}
   function dust(n){const [sx,sy]=P3(S.px,0,S.dist+D0);for(let i=0;i<n;i++)S.part.push({x:sx+gauss()*14,y:sy,vx:gauss()*40,vy:-20-Math.random()*40,l:.5,m:.5,c:'#cdbda3',s:3})}
   function spark(sx,sy,n,c='#f0d28a'){for(let i=0;i<n;i++){const a=Math.random()*6.28,v=60+Math.random()*120;S.part.push({x:sx,y:sy,vx:Math.cos(a)*v,vy:Math.sin(a)*v-40,l:.6,m:.6,c,s:3})}}
-  /* ---- update ---- */
-  function update(dt){
-    S.time+=dt;
-    const target=Math.min(23,11+S.dist/230)*(S.slow>0?.62:1);S.speed+=(target-S.speed)*Math.min(1,dt*1.6);S.slow=Math.max(0,S.slow-dt);
-    S.dist+=S.speed*dt;
-    S.px+=(S.lane-S.px)*Math.min(1,dt*13);S.vx=S.lane-S.px;
-    if(S.py>0||S.vy>0){S.vy-=G*dt;S.py+=S.vy*dt;if(S.py<=0){S.py=0;if(S.vy<-6){sfx.land();dust(7)}S.vy=0}}
-    if(S.buf>0){S.buf-=dt;if(S.py<.05&&S.vy===0){S.buf=0;act('U')}}
-    if(S.slide>0)S.slide-=dt;S.inv=Math.max(0,S.inv-dt);S.shake=Math.max(0,S.shake-dt*2.2);
-    if(S.magnet>0){S.magnet-=dt;if(S.magnet<=0)updPW()}if(S.mult>0){S.mult-=dt;if(S.mult<=0)updPW()}
-    if(Math.floor(S.time*2)!==Math.floor((S.time-dt)*2)&&(S.magnet>0||S.mult>0))updPW();
-    while(S.spawnZ<S.dist+FAR)pattern();
-    if(S.gateZ<S.dist+FAR)spawnGate();
-    const mult=S.mult>0?2:1;
-    for(const o of S.obj){
-      if(o.roll)o.z-=7*dt;
-      const dz=o.z-S.dist;
-      if(o.t==='coin'&&S.magnet>0&&dz<D0+11&&dz>D0-1){o.x+=(S.px-o.x)*Math.min(1,dt*9);o.y+=(.7-o.y)*Math.min(1,dt*5);o.z-=(dz-D0)*Math.min(1,dt*3)}
-      if(o.dead)continue;
-      const inx=Math.abs(o.x-S.px);
-      if(o.t==='coin'){if(dz<D0+.55&&dz>D0-.6&&inx<.65&&Math.abs(o.y-(S.py+.7))<1.15){o.dead=true;S.coins+=mult;S.combo++;S.score+=10*mult*S.cm;gain(1);sfx.coin(S.combo);const [sx,sy]=P3(o.x,o.y,o.z);spark(sx,sy,5)}}
-      else if(o.t==='pick'){if(dz<D0+.6&&dz>D0-.6&&inx<.7){o.dead=true;sfx.power();const [sx,sy]=P3(o.x,1,o.z);spark(sx,sy,14,'#fff');
-        if(o.k==='magnet'){S.magnet=9;msg('🔔 Coin magnet')}else if(o.k==='shield'){S.shield=1;msg('💼 Briefcase shield')}else{S.mult=10;msg('✦ Gilded x2 for 10s')}updPW()}}
-      else if(o.t==='chair'||o.t==='banner'){
-        if(!o.hit&&dz<D0+.45&&dz>D0-.45&&inx<.62){const bad=o.t==='chair'?S.py<o.h*.82:!(S.slide>0&&S.py<.25);if(bad)hit(o)}
-        if(!o.hit&&!o.clr&&dz<D0-.55){o.clr=true;if(o.t==='chair'&&inx<.7&&S.py>.2){S.cleared[o.type]++;S.score+=15*mult*S.cm;S.combo=0;gain(3);const [px2,py2]=P3(S.px,.4,S.dist+D0);spark(px2,py2,8,'#fff3d0');if(S.chain%5<3&&S.cleared.reduce((a,b)=>a+b,0)%5===0)msg('✓ Clean hop','')}}
-      }
-      else if(o.t==='gate'){
-        if(!o.done&&dz<D0){o.done=true;o.pick=clamp(Math.round(S.px),-1,1)+1;const a=o.opts[o.pick];S.pend.push({a,f:o.f,at:o.z+110});msg('🗳 Voted '+a.sym+' · bell in 110m','big');sfx.select()}
+  /* ---- the game itself lives in assets/sim.js (shared with the leaderboard server, which replays every run) ---- */
+  const SD=MimuSim.DT;
+  function newRun(seed,wallet){
+    const keep=S?{st:S.st,part:S.part}:{st:'idle',part:[]};
+    sim=MimuSim.create(seed,{wallet});S=sim.S;
+    Object.assign(S,{st:keep.st,part:keep.part,shake:0,bestShown:false,near:false,deadDist:undefined});
+    inputs=[];acc=0;pv=null;lastChain=-1;lastCm=-1;
+  }
+  function stepSim(realDt){
+    acc+=realDt;let n=0;
+    while(acc>=SD&&n<6&&S.st==='run'){
+      pv={d:S.dist,x:S.px,y:S.py,t:S.time};
+      sim.step();acc-=SD;n++;handleEvents();
+    }
+    if(n===6)acc=0;
+  }
+  function handleEvents(){
+    for(const e of sim.drain()){
+      switch(e.t){
+        case 'lane':sfx.lane();break;
+        case 'jump':sfx.jump();dust(6);break;
+        case 'slide':sfx.slide();break;
+        case 'land':sfx.land();dust(7);break;
+        case 'coin':{sfx.coin(e.combo);const [sx,sy]=P3(e.x,e.y,e.z);spark(sx,sy,5);break}
+        case 'pop':cmbUI(true);break;
+        case 'chainup':msg('🔥 Chain x'+e.m,'big');sfx.power();break;
+        case 'chainbreak':msg('Chain broken','bad');break;
+        case 'pick':{sfx.power();const [sx,sy]=P3(e.x,1,e.z);spark(sx,sy,14,'#fff');msg(e.k==='magnet'?'🔔 Coin magnet':e.k==='shield'?'💼 Briefcase shield':'✦ Gilded x2 for 10s');break}
+        case 'hop':{const [px2,py2]=P3(S.px,.4,S.dist+D0);spark(px2,py2,8,'#fff3d0');if(e.nice)msg('✓ Clean hop','');break}
+        case 'vote':msg('🗳 Voted '+e.sym+' · bell in 110m','big');sfx.select();break;
+        case 'bell':sfx.bell();hud.co.textContent=S.coins;msg(`🔔 Closing Bell · ${e.sym} ${pct(e.ret)}`,'big');{const d=e.d;setTimeout(()=>msg(d>=0?`+${d} $TMF dividend`:`${d} $TMF drawdown`,d>=0?'':'bad'),500);if(d>0)confetti(18)}break;
+        case 'mile':{msg('📍 '+fmt(e.m)+'m · +'+e.b,'big');sfx.win();const [mx,my]=P3(S.px,1.4,S.dist+D0);spark(mx,my,16,'#f0d28a');break}
+        case 'shield':{S.shake=.5;sfx.power();msg('💼 Shield broke');const [sx,sy]=P3(S.px,1,S.dist+D0);spark(sx,sy,18,'#7ac8ff');break}
+        case 'hit':{S.shake=1;sfx.hit();try{navigator.vibrate&&navigator.vibrate(60)}catch(x){}hud.fl.classList.remove('go');void hud.fl.offsetWidth;hud.fl.classList.add('go');
+          hud.lv.forEach((el,i)=>el.className=i>=S.lives?'x':'');const [sx,sy]=P3(S.px,.8,S.dist+D0);spark(sx,sy,22,'#e0675f');break}
+        case 'msg':msg(e.a,e.b);break;
+        case 'offer':offerRevive();break;
+        case 'dead':if(S.st==='run'){S.st='dying';S.deadDist=S.dist;setTimeout(()=>gameOver(false),800)}break;
       }
     }
-    for(const p of S.pend){if(!p.res&&S.dist>=p.at){p.res=true;resolveGate(p)}}
-    S.pend=S.pend.filter(p=>!p.res);
-    S.obj=S.obj.filter(o=>o.z-S.dist>NEAR-2&&!o.dead);
-    S.score+=S.speed*dt*mult*S.cm;
-    if(S.chain>0){S.ct-=dt;if(S.ct<=0)breakChain();else cmbEl.querySelector('i').style.width=(S.ct/4*100)+'%'}
-    if(S.dist>=S.nextMs){const k=Math.round(S.nextMs/250),b=50*k*S.cm;S.nextMs+=250;S.score+=b;msg('📍 '+fmt(Math.round(S.nextMs-250))+'m · +'+b,'big');sfx.win();const [mx,my]=P3(S.px,1.4,S.dist+D0);spark(mx,my,16,'#f0d28a')}
-    if(P.best>0&&S.best!==1&&!S.near&&S.score>P.best*.85&&S.score<=P.best){S.near=true;msg('So close to your best…','')}
-    if(P.best>0&&S.score>P.best&&!S.bestShown){S.bestShown=true;msg('🏆 New weekly best!','big');sfx.win()}
-    for(const p of S.part){p.l-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=240*dt}S.part=S.part.filter(p=>p.l>0);
-  }
-  function hit(o){
-    o.hit=true;if(S.inv>0)return;
-    if(S.shield>0){S.shield=0;S.inv=1.2;updPW();sfx.power();msg('💼 Shield broke');S.shake=.5;const [sx,sy]=P3(S.px,1,S.dist+D0);spark(sx,sy,18,'#7ac8ff');return}
-    S.lives--;S.inv=1.5;S.slow=1.1;S.shake=1;S.combo=0;breakChain();sfx.hit();try{navigator.vibrate&&navigator.vibrate(60)}catch(e){}hud.fl.classList.remove('go');void hud.fl.offsetWidth;hud.fl.classList.add('go');
-    hud.lv.forEach((el,i)=>el.className=i>=S.lives?'x':'');
-    const [sx,sy]=P3(S.px,.8,S.dist+D0);spark(sx,sy,22,'#e0675f');
-    if(S.lives<=0){if(!S.revived&&S.coins+P.coins>=30)offerRevive();else{S.st='dying';setTimeout(()=>gameOver(false),800)}}else msg(S.lives===1?'⚠ Last chance':'💥 Stumble','bad');
   }
   /* second wind: once per run, pay 30 $TMF to keep your score and chain going */
   function offerRevive(){
-    S.st='revive';let t=5,tm;
+    S.st='revive';let tm;
     showCard(`<div class="lbl" style="color:var(--gold)">Benched?</div><div class="h2" style="font-size:28px;margin:4px 0">Second <em>wind</em></div>
     <div class="sub2" style="margin-bottom:12px">Keep your ${fmt(Math.floor(S.score))} score${S.mxChain>=10?' and chain':''}. Costs <b style="color:var(--gold2)">30 $TMF</b> and you only get one per run.</div>
     <div class="bar" style="margin-bottom:12px"><i id="rvb" style="width:100%;transition:width 5s linear"></i></div>
     <button class="btn gold" id="rv1">Keep running · 30 $TMF</button><button class="btn ghost" id="rv2" style="margin-top:8px">End run</button>`);
     requestAnimationFrame(()=>requestAnimationFrame(()=>{const b=$('#rvb',root);if(b)b.style.width='0%'}));
-    const end=()=>{clearTimeout(tm);hideCard();S.st='dying';setTimeout(()=>gameOver(false),500)};
+    const end=()=>{clearTimeout(tm);hideCard();inputs.push([S.tick,5]);sim.decline();sim.drain();S.st='dying';S.deadDist=S.dist;setTimeout(()=>gameOver(false),500)};
     tm=setTimeout(()=>{if(S.st==='revive')end()},5000);
     $('#rv2',root).onclick=end;
     $('#rv1',root).onclick=()=>{
-      clearTimeout(tm);let c=30;const a=Math.min(c,S.coins);S.coins-=a;c-=a;P.coins-=c;saveP();hud.co.textContent=S.coins;
-      S.revived=true;S.lives=1;S.inv=2.6;S.slow=.8;S.obj=S.obj.filter(o=>o.t==='gate'||o.z-S.dist>D0+22);
+      clearTimeout(tm);inputs.push([S.tick,4]);sim.revive();sim.drain();
+      if(S.walletPaid>0){P.coins-=S.walletPaid;saveP()}hud.co.textContent=S.coins;
       hud.lv.forEach((el,i)=>el.className=i>=1?'x':'');hideCard();S.st='run';sfx.power();msg('✦ Second wind','big');const [sx,sy]=P3(S.px,1,S.dist+D0);spark(sx,sy,24,'#fff3d0');
     };
   }
-  function resolveGate(g){
-    const a=g.a,ret=a.mu+BETA[a.c]*g.f*.035+a.sg*gauss();let d=Math.round((20+S.coins)*ret*9);d=Math.max(d,-S.coins);
-    S.coins+=d;S.score+=d*10;sfx.bell();hud.co.textContent=S.coins;
-    msg(`🔔 Closing Bell · ${a.sym} ${pct(ret)}`,'big');
-    setTimeout(()=>msg(d>=0?`+${d} $TMF dividend`:`${d} $TMF drawdown`,d>=0?'':'bad'),500);
-    if(d>0)confetti(18);
+  /* ---- send the finished run to the leaderboard server as its recorded inputs; the server replays it and decides the score ---- */
+  async function submitRun(){
+    if(!verified||!runSession||!API.token||!API.on())return null;
+    const id=runSession.runId,total=S.tick,CH=2000;let from=0,seq=0,res=null;
+    const cuts=[];for(let t=0;t<total;t+=CH)cuts.push(Math.min(total,t+CH));if(!cuts.length)cuts.push(0);
+    for(let k=0;k<cuts.length;k++){
+      const to=cuts[k],fin=k===cuts.length-1;
+      const part=inputs.filter(i=>i[0]>=from&&(i[0]<to||(fin&&i[0]===to)));
+      let r=null;
+      for(let attempt=0;attempt<5&&!r;attempt++){
+        try{r=await API.j('/api/run/chunk',{method:'POST',body:JSON.stringify({runId:id,seq,to,inputs:part,final:fin})})}
+        catch(e){if(e.status===401||e.status===409||e.status===422||e.status===404)return {error:e.message,status:e.status};await sleep(900*(attempt+1))}
+      }
+      if(!r)return {error:'network'};
+      from=to;seq++;res=r;
+    }
+    return res;
   }
+
   /* ---- render ---- */
   function quad(pts,fill,alpha){const c=ctx;c.globalAlpha=alpha;c.fillStyle=fill;c.beginPath();c.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)c.lineTo(pts[i][0],pts[i][1]);c.closePath();c.fill()}
   function render(){
@@ -1816,16 +1799,28 @@ function buildRunGame(root){
   }
   /* ---- loop ---- */
   function frame(now){
-    if(!S.alive)return;raf=requestAnimationFrame(frame);
-    const dt=Math.min(.033,(now-last)/1000);last=now;
-    if(S.st==='run')update(dt);
+    if(!alive)return;raf=requestAnimationFrame(frame);
+    const dt=Math.min(.1,(now-last)/1000);last=now;
+    if(S.st==='run'){
+      stepSim(dt);
+      S.shake=Math.max(0,S.shake-dt*2.2);
+      for(const p of S.part){p.l-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=240*dt}S.part=S.part.filter(p=>p.l>0);
+      if(P.best>0&&!S.near&&S.score>P.best*.85&&S.score<=P.best){S.near=true;msg('So close to your best…','')}
+      if(P.best>0&&S.score>P.best&&!S.bestShown){S.bestShown=true;msg('🏆 New weekly best!','big');sfx.win()}
+      if(S.chain!==lastChain||S.cm!==lastCm){lastChain=S.chain;lastCm=S.cm;cmbUI(false)}else if(S.chain>0)cmbEl.querySelector('i').style.width=Math.max(0,S.ct/4*100)+'%';
+      const sig=(S.shield>0?'S':'')+(S.magnet>0?'M'+Math.ceil(S.magnet):'')+(S.mult>0?'X'+Math.ceil(S.mult):'');if(sig!==pwSig){pwSig=sig;updPW()}
+    }
     else if(S.st==='dying'){S.shake=Math.max(0,S.shake-dt*2);S.time+=dt;S.speed*=.94;S.dist+=S.speed*dt}
     else if(S.st==='idle'||S.st==='over'||S.st==='count'){S.time+=dt;S.dist+=3*dt;S.px+=(0-S.px)*.1;S.vx=0}
+    /* draw between the last two fixed ticks so motion is smooth at any refresh rate */
+    let keep=null;
+    if(S.st==='run'&&pv&&acc>0){const al=acc/SD;keep=[S.dist,S.px,S.py,S.time];S.dist=pv.d+(S.dist-pv.d)*al;S.px=pv.x+(S.px-pv.x)*al;S.py=pv.y+(S.py-pv.y)*al;S.time=pv.t+(S.time-pv.t)*al}
     render();
+    if(keep){S.dist=keep[0];S.px=keep[1];S.py=keep[2];S.time=keep[3]}
     if(S.st==='run'){const t=fmt(Math.floor(S.score));if(hud.sc.textContent!==t)hud.sc.textContent=t;const cc=String(S.coins);if(hud.co.textContent!==cc)hud.co.textContent=cc}
   }
   reset();raf=requestAnimationFrame(frame);showStart();
-  return{destroy(){S.alive=false;cancelAnimationFrame(raf);removeEventListener('keydown',key);document.removeEventListener('visibilitychange',vis)}};
+  return{destroy(){alive=false;cancelAnimationFrame(raf);removeEventListener('keydown',key);document.removeEventListener('visibilitychange',vis)}};
 }
 
 /* ---------------- TMF Pass ceremony (earned by playing, not minted) ---------------- */
@@ -1852,7 +1847,7 @@ function buildLB(root){
      <div class="scroll" style="padding-bottom:30px">
       <div class="card" style="padding:14px"><div class="row"><div style="flex:1"><div class="lbl" style="color:var(--gold)">Weekly leaderboard</div><div class="h2" style="font-size:19px;margin-top:3px">Beat your best, <em>every day</em></div><div class="sub2" style="font-size:12px;margin-top:3px">Keep climbing. Top scorers may be considered for a TMF Pass, but it isn’t guaranteed. Resets weekly. ${LIVE.on?'Real runners, updated live.':'Rivals are simulated in this demo.'}</div></div>
         <div style="width:64px;height:44px;border-radius:8px;background:linear-gradient(135deg,#8b2e35,#3a1318);border:1.5px solid var(--gold);display:grid;place-items:center;font:italic 700 13px var(--serif);color:var(--gold2);transform:rotate(-6deg)">🏆</div></div></div>
-      <div class="seg"><div class="ind" style="transform:translateX(${kind==='run'?0:100}%)"></div><button class="${kind==='run'?'on':''}" data-k="run">Chair Run</button><button class="${kind==='nw'?'on':''}" data-k="nw">Net $TMF</button></div>
+      <div class="seg"><div class="ind" style="transform:translateX(${kind==='run'?0:100}%)"></div><button class="${kind==='run'?'on':''}" data-k="run">Chair Run</button><button class="${kind==='nw'?'on':''}" data-k="nw">$TMF found</button></div>
       ${me?`<div class="row" style="margin:0 4px 10px"><div class="lbl">Your rank</div><div class="sp"></div><b class="mono ${meIdx<10?'up':''}">#${meIdx+1} · ${fmt(me.v)} ${unit}</b></div>`:`<div class="sub2" style="margin:0 4px 10px;font-size:12px">${GATE.ok?'Finish a run to put your name on the board.':'Connect Glyph in Chair Run to put your name on the board.'}</div>`}${LIVE.on&&!rows.length?'<div class="card" style="text-align:center"><div class="h2" style="font-size:18px">Nobody has run yet this week</div><div class="sub2" style="margin-top:4px">Be the first name on the board.</div></div>':''}
       ${meIdx>=10?`<div class="sub2" style="margin:-4px 4px 10px;font-size:12px">${fmt(gap)} more to reach the top 10.</div>`:''}
       ${rows.slice(0,10).map(li).join('')}<div class="zone">top 10 ends</div>${rows.slice(10,22).map((r,i)=>li(r,i+10)).join('')}${meIdx>=22?'<div class="zone">…</div>'+li(me,meIdx):''}

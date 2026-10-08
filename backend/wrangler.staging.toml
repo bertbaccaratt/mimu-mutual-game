@@ -1,4 +1,4 @@
-name = "mimu-mutual-api"
+name = "mimu-mutual-api-staging"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
 workers_dev = true
@@ -7,32 +7,32 @@ preview_urls = false
 # Per-IP / per-player rate limits (Cloudflare Workers Rate Limiting). limit = requests per period seconds.
 [[ratelimits]]
 name = "RL_AUTH"          # sign-in: nonce + auth, per IP
-namespace_id = "1001"
+namespace_id = "2001"
 simple = { limit = 10, period = 60 }
 
 [[ratelimits]]
 name = "RL_RUN"           # starting runs and uploading run chunks, per player
-namespace_id = "1002"
+namespace_id = "2002"
 simple = { limit = 120, period = 60 }
 
 [[ratelimits]]
 name = "RL_READ"          # leaderboard reads, per IP
-namespace_id = "1003"
+namespace_id = "2003"
 simple = { limit = 120, period = 60 }
 
 [[d1_databases]]
 binding = "DB"
-database_name = "mimu-mutual"
-database_id = "b326ca8d-30b0-4551-ac4a-9cf647a222e9"
+database_name = "mimu-mutual-staging"
+database_id = "43749af3-bb92-4b23-ad47-7cd8be61ac9f"
 
 [vars]
 ALLOWED_ORIGINS = "https://mutualmimu.fun,https://www.mutualmimu.fun,http://localhost:8765"
 
 # Holdings rules. Format "chainId:0xContract" (ERC-721) or "chainId:0xContract:tokenId" (ERC-1155).
 # Leave empty until the contracts are known: an empty rule is simply not enforced.
-GATE_MIMU  = "33139:0xa511c29eDc004e3D6A91a94dF1e1f0C0fd8A41db"   # Mimu On Ape (ApeChain, ERC-721): must HOLD one to play
-GATE_PASS  = "4663:0xED37605FF0e513e46d50B26244DEb2024189751a"   # TMF Pass (Robinhood Chain, ERC-721): holding one BLOCKS play
-GATE_DENGS = "33139:0x2CF92fe634909A9cF5e41291f54e5784d234cF8d"   # Dengs (ApeChain, ERC-721): holding one BLOCKS play
+GATE_MIMU  = ""   # Mimu On Ape (ApeChain, ERC-721): must HOLD one to play
+GATE_PASS  = ""   # TMF Pass (Robinhood Chain, ERC-721): holding one BLOCKS play
+GATE_DENGS = ""   # Dengs (ApeChain, ERC-721): holding one BLOCKS play
 
 # Public RPC per chain id used for the holdings checks (swap for your own provider key if you like).
 RPC_33139 = "https://apechain.calderachain.xyz/http"

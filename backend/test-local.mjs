@@ -1,7 +1,7 @@
 // Local end-to-end check of the API: node test-local.mjs [baseUrl]
 import { privateKeyToAccount, generatePrivateKey } from 'viem/accounts';
 const base = process.argv[2] || 'http://localhost:8787';
-const origin = 'http://localhost:8765';
+const origin = process.argv[3] || 'http://localhost:8765';   // pass https://mutualmimu.fun to test the live origin rules
 const call = async (path, opt = {}, token) => {
   const r = await fetch(base + path, { ...opt, headers: { 'Content-Type': 'application/json', Origin: origin, ...(token ? { Authorization: 'Bearer ' + token } : {}) } });
   return { status: r.status, body: await r.json().catch(() => ({})), cors: r.headers.get('access-control-allow-origin') };
@@ -11,7 +11,7 @@ const ok = (name, cond, extra = '') => { console.log((cond ? 'PASS ' : 'FAIL ') 
 const acct = privateKeyToAccount(generatePrivateKey());
 const login = async (account, name) => {
   const n = await call('/api/nonce');
-  const msg = `Sign in to Chair Run × Mutual Mimu\nThis only proves you own this wallet. It costs nothing and sends no transaction.\n\nAddress: ${account.address}\nNonce: ${n.body.nonce}\nIssued: ${n.body.issuedAt}`;
+  const msg = `Sign in to Chair Run × Mutual Mimu\nThis only proves you own this wallet. It costs nothing, sends no transaction and cannot move your assets.\n\nDomain: ${new URL(origin).host}\nAddress: ${account.address}\nNonce: ${n.body.nonce}\nIssued: ${n.body.issuedAt}`;
   const signature = await account.signMessage({ message: msg });
   return call('/api/auth', { method: 'POST', body: JSON.stringify({ address: account.address, nonce: n.body.nonce, issuedAt: n.body.issuedAt, signature, name, picture: 'https://example.com/a.png' }) });
 };
@@ -43,5 +43,5 @@ if (h.body.gates.mimu) {
 }
 const bad = await call('/api/auth', { method: 'POST', body: JSON.stringify({ address: acct.address, nonce: 'x.y', issuedAt: Date.now(), signature: '0x00' }) });
 ok('forged nonce rejected', bad.status === 401);
-const forged = await call('/api/score', { method: 'POST', body: JSON.stringify({ kind: 'run', value: 10 }) }, 'abc.def');
+const forged = await call('/api/run/start', { method: 'POST', body: JSON.stringify({}) }, 'abc.def');
 ok('forged token rejected', forged.status === 401);

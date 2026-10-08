@@ -665,7 +665,7 @@ body.enter .footbar{animation-name:chromeInB}
     <div class="sig">
       <div class="sgrid">
         <div><div class="pad" id="ndaPad"><canvas></canvas><span class="x">&times;</span><span class="hint">sign here</span></div><div class="cap">Signature of the Player</div><input class="typed" id="ndaTyped" maxlength="28" placeholder="Type your name" autocomplete="off"></div>
-        <div><div class="dtl" id="ndaDate"></div><div class="cap">Date (Pacific)</div></div>
+        <div><div class="dtl" id="ndaDate"></div><div class="cap">Date (PST)</div></div>
       </div>
       <div class="row2"><label class="chk"><input type="checkbox" id="ndaChk"> I have read this. (I scrolled.)</label><span class="lnk" id="ndaSwap">type instead</span><span class="lnk" id="ndaClr">clear</span><button class="go-btn" id="ndaGo" disabled>Sign &amp; enter</button></div>
     </div>
@@ -1154,7 +1154,7 @@ function startCampaignClock(){syncAlarm();
     if(now<CAMPAIGN.open){phase='pre';target=CAMPAIGN.open}else if(now<CAMPAIGN.close){phase='live';target=CAMPAIGN.close}else{phase='done';target=now}
     w.dataset.phase=phase;
     $('#cdl').textContent=phase==='pre'?'Campaign opens in':phase==='live'?'Campaign closes in':'Campaign closed';
-    $('#cdd').textContent=phase==='pre'?'Sat · 9 PM EST':phase==='live'?'Wed · 9 AM EST':'Thanks for playing';
+    $('#cdd').textContent=phase==='pre'?'Sat · 6 PM PST':phase==='live'?'Wed · 6 AM PST':'Thanks for playing';
     let s=Math.max(0,Math.floor((target-now)/1000));
     const d=Math.floor(s/86400);s-=d*86400;const h=Math.floor(s/3600);s-=h*3600;const m=Math.floor(s/60);s-=m*60;
     const set=(id,v)=>{const e=$('#'+id);const x=String(v).padStart(2,'0');if(e&&e.textContent!==x)e.textContent=x};
@@ -1302,7 +1302,7 @@ function buildSet(root){
      <div class="sgrp">
       <button class="srow" id="sm"><div class="si" style="background:#e0443c">🔊</div>Sound<div class="sw ${muted?'':'on'}"></div></button>
       <div class="srow"><div class="si" style="background:#e07a3c">🎚</div>Volume<input id="volrange" type="range" min="0" max="10" step="1" value="${volStep}" style="flex:1;margin:0 10px 0 6px;accent-color:#f0d28a"><span class="v" id="volval" style="margin-left:0;min-width:16px;text-align:right">${volStep}</span></div>
-      <div class="srow"><div class="si" style="background:#3478f6">🕒</div>Clock<span class="v">12-hour · Pacific</span></div>
+      <div class="srow"><div class="si" style="background:#3478f6">🕒</div>Clock<span class="v">12-hour · PST</span></div>
       <div class="srow"><div class="si" style="background:#8e5af7">🔔</div>Closing bell<span class="v">every 4h 20m</span></div>
      </div>
      <div class="sgl">About</div>
@@ -2243,16 +2243,16 @@ const patronTier=()=>{const p=P.patron||0;let n='—';TIERS.forEach(x=>{if(p>=x[
 function buildAlarm(root){
   const cell=(id,l)=>`<div><b id="${id}">00</b><i>${l}</i></div>`;
   const STEPS=[
-    {k:'open',t:'Campaign opens',when:'Sat Oct 10 &middot; 9:00 PM EST',alt:'6:00 PM PST',d:'<b>Start gaming.</b> Chair Run and Mutual Mimu are open and every run earns $TMF and points.'},
-    {k:'stop',t:'Gaming stops',when:'Tue Oct 13 &middot; 6:00 AM PST',alt:'9:00 AM EST',d:'<b>No more Chair Runs and no more acquiring points.</b> Your score and $TMF total are final.'},
-    {k:'give',t:'24-hour donation window',when:'Tue 6:00 AM PST to Wed 9:00 AM EST',alt:'24 hours',d:'For 24 hours, players can <b>donate their $TMF to the top 9</b> in the Top 9 app.'},
-    {k:'close',t:'Campaign closes',when:'Wed Oct 14 &middot; 9:00 AM EST',alt:'6:00 AM PST',d:'<b>The end.</b> The campaign is over and the final standings stand.'}];
+    {k:'open',t:'Campaign opens',when:'Sat Oct 10 &middot; 6:00 PM PST',alt:'',d:'<b>Start gaming.</b> Chair Run and Mutual Mimu are open and every run earns $TMF and points.'},
+    {k:'stop',t:'Gaming stops',when:'Tue Oct 13 &middot; 6:00 AM PST',alt:'',d:'<b>No more Chair Runs and no more acquiring points.</b> Your score and $TMF total are final.'},
+    {k:'give',t:'24-hour donation window',when:'Tue 6:00 AM to Wed 6:00 AM PST',alt:'24 hours',d:'For 24 hours, players can <b>donate their $TMF to the top 9</b> in the Top 9 app.'},
+    {k:'close',t:'Campaign closes',when:'Wed Oct 14 &middot; 6:00 AM PST',alt:'',d:'<b>The end.</b> The campaign is over and the final standings stand.'}];
   /* red-framed countdowns that sit between the squares: what is the next thing and how long until it */
   const BETWEEN=[
     {id:'a',label:'Gaming stops in',at:()=>ALARM_AT,done:()=>Date.now()>=ALARM_AT?'Gaming has stopped':''},
     {id:'b',label:'Donations open in',at:()=>ALARM_AT,done:()=>Date.now()>=CAMPAIGN.close?'Donation window closed':Date.now()>=ALARM_AT?'Donation window is open':''},
     {id:'c',label:'Campaign closes in',at:()=>CAMPAIGN.close,done:()=>Date.now()>=CAMPAIGN.close?'Campaign closed':''}];
-  const step=s=>`<div class="alst" id="al-${s.k}" data-n="${STEPS.indexOf(s)+1}"><span class="chip" id="al-c-${s.k}"></span><h3>${s.t}</h3><div class="wh">${s.when} <span style="color:var(--muted)">&middot; ${s.alt}</span></div><p>${s.d}</p></div>`;
+  const step=s=>`<div class="alst" id="al-${s.k}" data-n="${STEPS.indexOf(s)+1}"><span class="chip" id="al-c-${s.k}"></span><h3>${s.t}</h3><div class="wh">${s.when}${s.alt?` <span style="color:var(--muted)">&middot; ${s.alt}</span>`:''}</div><p>${s.d}</p></div>`;
   const between=b=>`<div class="alcd" id="alb-${b.id}"><span class="l">${b.label}</span><b class="v" id="alv-${b.id}">0d 00h 00m 00s</b></div>`;
   root.innerHTML=`<div class="sc alarmsc"><div class="ah"><div><h1>Alarm</h1><div class="sub">campaign schedule</div></div><div class="sp"></div><span class="tag" id="al-ph"></span></div>
     <div class="alfit"><div class="cdw"><div class="cdh"><span class="cdl" id="al-l"></span></div>

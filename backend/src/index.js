@@ -102,7 +102,7 @@ function parseGate(v) {            // "chainId:0xAddress" or "chainId:0xAddress:
 async function holdsOnChain(env, gate, owner) {
   const rpc = env['RPC_' + gate.chainId];
   if (!rpc) throw new Error('No RPC configured for chain ' + gate.chainId);
-  const urls = String(rpc).split(',').map((s) => s.trim()).filter(Boolean);   // several URLs = automatic fallback
+  const urls = [env['RPC_PRIMARY_' + gate.chainId], ...String(rpc).split(',')].map((s) => (s || '').trim()).filter(Boolean);   // optional keyed primary (a secret) first, free servers as backup   // several URLs = automatic fallback
   const client = createPublicClient({ transport: urls.length > 1 ? fallback(urls.map((u) => http(u, { retryCount: 1 }))) : http(urls[0], { retryCount: 2 }) });
   const n = gate.tokenId == null
     ? await client.readContract({ address: gate.address, abi: ERC721, functionName: 'balanceOf', args: [owner] })

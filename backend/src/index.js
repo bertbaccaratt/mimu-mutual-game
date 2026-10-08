@@ -9,7 +9,7 @@
  * Wallet ownership is proven by a signed message. Holdings gates (Mimu required, TMF Pass / Dengs blocked) are
  * enforced here too, so the front-end gate is only the friendly version of the same rule.
  */
-import { createPublicClient, http, verifyMessage, parseAbi, isAddress, getAddress } from 'viem';
+import { createPublicClient, http, fallback, verifyMessage, parseAbi, isAddress, getAddress } from 'viem';
 
 const EPOCH = Date.UTC(2024, 0, 5, 20);          // must match the front-end weekKey()
 const WEEK_MS = 604800000;
@@ -77,7 +77,8 @@ function parseGate(v) {            // "chainId:0xAddress" or "chainId:0xAddress:
 async function holds(env, gate, owner) {
   const rpc = env['RPC_' + gate.chainId];
   if (!rpc) throw new Error('No RPC configured for chain ' + gate.chainId);
-  const client = createPublicClient({ transport: http(rpc) });
+  const urls = String(rpc).split(',').map((s) => s.trim()).filter(Boolean);   // several URLs = automatic fallback
+  const client = createPublicClient({ transport: urls.length > 1 ? fallback(urls.map((u) => http(u, { retryCount: 1 }))) : http(urls[0], { retryCount: 2 }) });
   const n = gate.tokenId == null
     ? await client.readContract({ address: gate.address, abi: ERC721, functionName: 'balanceOf', args: [owner] })
     : await client.readContract({ address: gate.address, abi: ERC1155, functionName: 'balanceOf', args: [owner, gate.tokenId] });
@@ -128,7 +129,7 @@ async function handleAuth(env, req) {
   if (!ok) return json(env, req, { error: 'bad signature' }, 401);
 
   let gates;
-  try { gates = await checkGates(env, addr); } catch (e) { return json(env, req, { error: 'holdings check failed' }, 502); }
+  try { gates = await checkGates(env, addr); } catch (e) { console.error('holdings check failed', String(e && e.message || e)); return json(env, req, { error: 'holdings check failed' }, 502); }
   const name = cleanName(b.name) || shortId(addr), picture = cleanPic(b.picture);
   const now = Date.now();
   await env.DB.prepare('INSERT INTO players(address,name,picture,updated_at) VALUES(?1,?2,?3,?4) ON CONFLICT(address) DO UPDATE SET name=?2,picture=?3,updated_at=?4')

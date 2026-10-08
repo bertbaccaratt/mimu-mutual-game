@@ -1,4 +1,4 @@
-﻿/* Bridge between the plain-HTML site and Glyph's React kit.
+/* Bridge between the plain-HTML site and Glyph's React kit.
  * Loaded only when someone opens Chair Run. Exposes window.MimuGlyph:
  *   connect()            -> { name, picture, address }   opens Glyph sign-in if needed
  *   getUser()            -> the connected Glyph user or null
@@ -40,6 +40,7 @@ const RPCS = {
   33139: ['https://apechain.calderachain.xyz/http', 'https://rpc.apechain.com/http'],
   1: ['https://ethereum-rpc.publicnode.com'],
   8453: ['https://base-rpc.publicnode.com'],
+  4663: ['https://robinhood-rpc.publicnode.com', 'https://robinhood.drpc.org', 'https://4663.rpc.thirdweb.com', 'https://rpc.mainnet.chain.robinhood.com'],   // Robinhood Chain (TMF Pass)
 };
 async function holds(gate, owner) {
   const urls = RPCS[gate.chainId];

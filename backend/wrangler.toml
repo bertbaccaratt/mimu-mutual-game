@@ -15,9 +15,10 @@ ALLOWED_ORIGINS = "https://mutualmimu.fun,https://www.mutualmimu.fun,http://loca
 # Holdings rules. Format "chainId:0xContract" (ERC-721) or "chainId:0xContract:tokenId" (ERC-1155).
 # Leave empty until the contracts are known: an empty rule is simply not enforced.
 GATE_MIMU  = "33139:0xa511c29eDc004e3D6A91a94dF1e1f0C0fd8A41db"   # Mimu On Ape (ApeChain, ERC-721): must HOLD one to play
-GATE_PASS  = ""   # TMF Pass: holding one BLOCKS play. Contract 0xED37605FF0e513e46d50B26244DEb2024189751a, chain still to confirm: set to "<chainId>:0xED37605FF0e513e46d50B26244DEb2024189751a"
+GATE_PASS  = "4663:0xED37605FF0e513e46d50B26244DEb2024189751a"   # TMF Pass (Robinhood Chain, ERC-721): holding one BLOCKS play
 GATE_DENGS = "33139:0x2CF92fe634909A9cF5e41291f54e5784d234cF8d"   # Dengs (ApeChain, ERC-721): holding one BLOCKS play
 
 # Public RPC per chain id used for the holdings checks (swap for your own provider key if you like).
 RPC_33139 = "https://apechain.calderachain.xyz/http"
 RPC_1     = "https://cloudflare-eth.com"
+RPC_4663  = "https://robinhood-rpc.publicnode.com,https://robinhood.drpc.org,https://4663.rpc.thirdweb.com,https://rpc.mainnet.chain.robinhood.com"   # several = automatic fallback

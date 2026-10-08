@@ -60,14 +60,14 @@ input{font:inherit;color:inherit;-webkit-user-select:text;user-select:text}
 .prop img{display:block;width:100%;height:auto;-webkit-user-drag:none;user-select:none}
 .p-paper{left:2.4%;top:5.5%;width:440px}
 .p-paper img{transform:rotate(-24deg);transform-origin:50% 50%}
-.p-bell{left:2%;bottom:105px;width:300px}
+.p-bell{left:1.8%;bottom:92px;width:260px}
 /* the bell: swings from its yoke on hover, rings on click (and then opens the leaderboard) */
-.p-bell img{transform-origin:50% 92%;filter:drop-shadow(10px 14px 10px rgba(0,0,0,.45))}
-.p-bell .bell-hit{position:absolute;inset:0;z-index:3;pointer-events:auto;cursor:pointer;clip-path:polygon(45.5% 0,55% 0,56% 25%,60% 30%,75% 36%,87% 70%,100% 76%,100% 98%,0 98%,0 76%,13% 70%,25% 36%,40% 30%,44% 25%)}
+.p-bell img{transform-origin:50% 88%;filter:drop-shadow(10px 14px 10px rgba(0,0,0,.45))}
+.p-bell .bell-hit{position:absolute;inset:0;z-index:3;pointer-events:auto;cursor:pointer;clip-path:ellipse(49% 48% at 50% 52%)}
 .p-bell.wig:not(.ring) img{animation:bellWig .55s ease-in-out infinite}
 .p-bell.ring img{animation:bellRing 1.6s ease-out both}
-@keyframes bellWig{0%,100%{transform:rotate(0)}25%{transform:rotate(-3deg)}50%{transform:rotate(0)}75%{transform:rotate(3deg)}}
-@keyframes bellRing{0%{transform:rotate(0)}8%{transform:rotate(-10deg)}20%{transform:rotate(8.5deg)}33%{transform:rotate(-6.5deg)}46%{transform:rotate(5deg)}60%{transform:rotate(-3.4deg)}74%{transform:rotate(2.2deg)}88%{transform:rotate(-1deg)}100%{transform:rotate(0)}}
+@keyframes bellWig{0%,100%{transform:none}30%{transform:translateY(-4px) scale(1.015,1.03) rotate(-1.2deg)}60%{transform:translateY(0) scale(1.01,.99) rotate(1.2deg)}}
+@keyframes bellRing{0%{transform:none}10%{transform:translateY(7px) scale(1.04,.82)}22%{transform:translateY(-6px) scale(.98,1.06)}36%{transform:translateY(2px) scale(1.02,.96)}52%{transform:translateY(-2px) scale(.995,1.015)}70%{transform:none}100%{transform:none}}
 .p-sticky{right:6%;top:41%;width:262px}
 .p-mug{right:11%;top:3%;width:410px}
 .p-mug .steam{position:absolute;left:43%;top:36%;width:14%;height:22%;pointer-events:none}
@@ -526,7 +526,7 @@ body.enter .footbar{animation-name:chromeInB}
   <!-- props: real photos, cut out, graded and shadowed to match the desk lamp -->
   <div class="prop p-paper"><img src="assets/notebook.webp?v=3" alt=""></div>
   <div class="prop p-sticky"><img src="assets/postit.webp?v=3" alt=""></div>
-  <div class="prop p-bell"><img src="assets/bell.webp?v=3" alt=""><div class="bell-hit"></div></div>
+  <div class="prop p-bell"><img src="assets/easy.webp?v=1" alt=""><div class="bell-hit"></div></div>
   <div class="prop p-mug"><img src="assets/latte.webp" alt=""><div class="steam"><i></i><i></i><i></i></div><div class="liq-hit"></div><canvas class="liq-cv"></canvas></div>
   <div class="prop p-penshell"><img class="pen-shadow" src="assets/pen-shadow.webp?v=3" alt=""><div class="p-pen"><img src="assets/pen.webp?v=3" alt=""></div><div class="pen-hit"></div></div>
   <!-- landing page: top bar -->
@@ -601,7 +601,7 @@ body.enter .footbar{animation-name:chromeInB}
       <h3>Secrets on the desk</h3>
       <div class="gd-grid">
         <div><b>The pen</b><span>Hover to wiggle it. Click it and it taps the phone while RGB lights glow under the desk.</span></div>
-        <div><b>The bell</b><span>Hover to swing it. Click to ring it and jump straight to the Leaderboards.</span></div>
+        <div><b>The Easy button</b><span>Hover to make it wiggle. Press it and jump straight to the Leaderboards.</span></div>
         <div><b>The coffee</b><span>Touch the liquid and it ripples through the Mimu in the foam.</span></div>
         <div><b>The post-it</b><span>Click it and the whole site turns 8-bit. Click again to come back.</span></div>
         <div><b>The paper</b><span>Your daily to-do list. Yes, including the phone bill.</span></div>
@@ -2005,7 +2005,7 @@ function setVolStep(n,quiet){
 
 /* keyboard + screen-reader access for the desk easter eggs */
 (function(){
-  [['.sticky-hit','Turn the whole site 8-bit'],['.pen-hit','Click the pen'],['.bell-hit','Ring the bell and open the leaderboard'],['.liq-hit','Touch the coffee']].forEach(([s,l])=>{
+  [['.sticky-hit','Turn the whole site 8-bit'],['.pen-hit','Click the pen'],['.bell-hit','Press the Easy button and open the leaderboards'],['.liq-hit','Touch the coffee']].forEach(([s,l])=>{
     const el=document.querySelector(s);if(!el)return;el.setAttribute('role','button');el.setAttribute('tabindex','0');el.setAttribute('aria-label',l);
     el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click()}});
   });

@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS scores (
   address     TEXT NOT NULL,
   week        INTEGER NOT NULL,        -- weeks since the game epoch (matches the front end)
   run_best    INTEGER NOT NULL DEFAULT 0,
+  boost       INTEGER NOT NULL DEFAULT 0,   -- points added by $TMF given to a top-9 runner
   coins_total INTEGER NOT NULL DEFAULT 0,   -- $TMF collected in verified runs this week
   runs        INTEGER NOT NULL DEFAULT 0,
   updated_at  INTEGER NOT NULL,
@@ -96,4 +97,4 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_players_xid ON players (x_id) WHERE x_id I
 CREATE UNIQUE INDEX IF NOT EXISTS idx_players_xhandle ON players (lower(x_handle)) WHERE x_handle IS NOT NULL;
 
 -- $TMF sent between players in the Top 9 app
-CREATE TABLE IF NOT EXISTS transfers (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, week INTEGER NOT NULL, sender TEXT NOT NULL, recipient TEXT NOT NULL, amount INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS transfers (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, week INTEGER NOT NULL, sender TEXT NOT NULL, recipient TEXT NOT NULL, amount INTEGER NOT NULL, boost INTEGER NOT NULL DEFAULT 0);

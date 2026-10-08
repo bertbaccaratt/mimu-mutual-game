@@ -42,11 +42,19 @@ try {
   ok('top-9 runner cannot send', a.s === 403 && a.b.top9 === true, String(a.s));
   const b = await send(8, 10, 5);
   ok('the 9th runner still cannot send', b.s === 403);
+  const board = async () => Object.fromEntries(((await call('/api/leaderboard?kind=run&limit=100')).b.rows || []).map((r) => [r.id, r.v]));
+  const b0 = await board();
+  const boostRes = await send(9, 0, 10);
+  ok('sending to a top-9 runner works and reports a boost', boostRes.s === 200 && boostRes.b.boosted === 20 && boostRes.b.balance === 30, JSON.stringify(boostRes.b));
+  const b1 = await board();
+  ok('the top-9 runner score went up by 2 points per $TMF', b1[addr(0)] === b0[addr(0)] + 20, b0[addr(0)] + ' -> ' + b1[addr(0)]);
   const c = await send(9, 10, 15);
-  ok('outside the top 9: sending works', c.s === 200 && c.b.balance === 25, JSON.stringify(c.b));
+  ok('outside the top 9: sending works', c.s === 200 && c.b.balance === 15 && c.b.boosted === 0, JSON.stringify(c.b));
   const s10 = await call('/api/send/status', {}, tok[10]);
   ok('recipient received it', s10.b.balance === 20, String(s10.b.balance));
-  ok('cannot send more than you have', (await send(9, 10, 26)).s === 409);
+  const b2 = await board();
+  ok('a player outside the top 9 gets the coins but no score boost', b2[addr(10)] === undefined || b2[addr(10)] === 50, String(b2[addr(10)]));
+  ok('cannot send more than you have', (await send(9, 10, 16)).s === 409);
   ok('cannot send to a player with no $TMF registered', (await send(9, 11, 1)).s === 409);
   ok('cannot send to an unknown address', (await send(9, '0x' + '1'.repeat(40), 1)).s === 409);
   ok('cannot send to yourself', (await send(9, 9, 1)).s === 400);
@@ -55,8 +63,8 @@ try {
   ok('fractions are refused', (await send(9, 10, 1.5)).s === 400);
   ok('sending needs a sign-in', (await call('/api/transfer', { method: 'POST', body: JSON.stringify({ to: addr(10), amount: 1 }) })).s === 401);
   const s9b = await call('/api/send/status', {}, tok[9]);
-  ok('balance only dropped by the one successful send', s9b.b.balance === 25, String(s9b.b.balance));
-  const all = await send(9, 10, 25);
+  ok('balance only dropped by the one successful send', s9b.b.balance === 15, String(s9b.b.balance));
+  const all = await send(9, 10, 15);
   ok('can send the whole balance', all.s === 200 && all.b.balance === 0);
   ok('with nothing left, sending is refused', (await send(9, 10, 1)).s === 409);
   if (process.env.ADMIN_TOKEN) {

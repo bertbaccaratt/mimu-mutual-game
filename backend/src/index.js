@@ -130,11 +130,11 @@ async function handleAuth(env, req) {
 
   let gates;
   try { gates = await checkGates(env, addr); } catch (e) { console.error('holdings check failed', String(e && e.message || e)); return json(env, req, { error: 'holdings check failed' }, 502); }
+  if (!gates.allowed) return json(env, req, { error: 'not allowed', gates }, 403);   // blocked wallets are never stored
   const name = cleanName(b.name) || shortId(addr), picture = cleanPic(b.picture);
   const now = Date.now();
   await env.DB.prepare('INSERT INTO players(address,name,picture,updated_at) VALUES(?1,?2,?3,?4) ON CONFLICT(address) DO UPDATE SET name=?2,picture=?3,updated_at=?4')
     .bind(addr.toLowerCase(), name, picture, now).run();
-  if (!gates.allowed) return json(env, req, { error: 'not allowed', gates }, 403);
   const exp = now + SESSION_MS;
   return json(env, req, { token: await signToken(env, { sub: addr.toLowerCase(), exp }), expiresAt: exp, gates });
 }
@@ -148,18 +148,24 @@ async function handleScore(env, req) {
   const sess = await readToken(env, req);
   if (!sess) return json(env, req, { error: 'sign in first' }, 401);
   let b; try { b = await req.json(); } catch { return json(env, req, { error: 'bad json' }, 400); }
-  const kind = b.kind === 'nw' ? 'nw' : b.kind === 'run' ? 'run' : null;
-  const value = Math.floor(Number(b.value));
-  if (!kind || !Number.isFinite(value) || value < 0 || value > MAX_SCORE[kind]) return json(env, req, { error: 'bad score' }, 400);
-  if (kind === 'run') {                                          // plausibility: score can't outrun the distance covered
-    const dist = Math.floor(Number(b.dist) || 0);
-    if (value > 60 * dist + 800) return json(env, req, { error: 'implausible run' }, 422);
+  /* one request may carry the run score ({kind:'run',value,dist}) and the net score (nw) together */
+  const items = [];
+  if (b.kind === 'run' || b.kind === 'nw') items.push({ kind: b.kind, value: Math.floor(Number(b.value)), dist: Math.floor(Number(b.dist) || 0) });
+  if (b.nw != null && b.kind !== 'nw') items.push({ kind: 'nw', value: Math.floor(Number(b.nw)), dist: 0 });
+  if (!items.length) return json(env, req, { error: 'bad score' }, 400);
+  for (const it of items) {
+    if (!Number.isFinite(it.value) || it.value < 0 || it.value > MAX_SCORE[it.kind]) return json(env, req, { error: 'bad score' }, 400);
+    if (it.kind === 'run' && it.value > 150 * it.dist + 6000) return json(env, req, { error: 'implausible run' }, 422);   // a score can't outrun the distance covered
   }
-  const col = kind === 'run' ? 'run_best' : 'nw_best', week = weekNow(), now = Date.now();
+  const week = weekNow(), now = Date.now();
   const last = await env.DB.prepare('SELECT updated_at FROM scores WHERE address=?1 AND week=?2').bind(sess.sub, week).first();
   if (last && now - last.updated_at < 2500) return json(env, req, { error: 'slow down' }, 429);
-  await env.DB.prepare(`INSERT INTO scores(address,week,${col},updated_at) VALUES(?1,?2,?3,?4)
-      ON CONFLICT(address,week) DO UPDATE SET ${col}=MAX(${col},?3), updated_at=?4`).bind(sess.sub, week, value, now).run();
+  for (const it of items) {
+    const col = it.kind === 'run' ? 'run_best' : 'nw_best';
+    await env.DB.prepare(`INSERT INTO scores(address,week,${col},updated_at) VALUES(?1,?2,?3,?4)
+        ON CONFLICT(address,week) DO UPDATE SET ${col}=MAX(${col},?3), updated_at=?4`).bind(sess.sub, week, it.value, now).run();
+  }
+  const first = items[0], col = first.kind === 'run' ? 'run_best' : 'nw_best';
   const mine = await env.DB.prepare(`SELECT ${col} AS v FROM scores WHERE address=?1 AND week=?2`).bind(sess.sub, week).first();
   return json(env, req, { ok: true, value: mine.v, rank: await rankOf(env, week, col, mine.v) });
 }

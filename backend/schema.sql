@@ -101,3 +101,9 @@ CREATE TABLE IF NOT EXISTS transfers (id INTEGER PRIMARY KEY AUTOINCREMENT, ts I
 
 -- uploaded profile picture (small JPEG/PNG/WebP, stored as 'mime|base64')
 -- (existing databases: ALTER TABLE players ADD COLUMN avatar TEXT)
+
+-- player-to-player texts and blocks (Messages app)
+CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, sender TEXT NOT NULL, recipient TEXT NOT NULL, body TEXT NOT NULL, read INTEGER NOT NULL DEFAULT 0);
+CREATE INDEX IF NOT EXISTS idx_msg_rcpt ON messages (recipient, read);
+CREATE INDEX IF NOT EXISTS idx_msg_pair ON messages (sender, recipient, id);
+CREATE TABLE IF NOT EXISTS blocks (blocker TEXT NOT NULL, blocked TEXT NOT NULL, PRIMARY KEY (blocker, blocked));

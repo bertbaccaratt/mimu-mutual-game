@@ -260,6 +260,21 @@ body.native #screen,body.native #screen:after{border-radius:0}
 .app-i.lk{opacity:.5}
 @keyframes alwig{0%,100%{transform:rotate(0)}15%{transform:rotate(-14deg)}30%{transform:rotate(12deg)}45%{transform:rotate(-10deg)}60%{transform:rotate(8deg)}75%{transform:rotate(-4deg)}}
 @keyframes alglow{0%,100%{box-shadow:0 0 10px 2px rgba(255,30,30,.7)}50%{box-shadow:0 0 26px 9px rgba(255,30,30,.95)}}
+.pmh{font:600 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--gold);padding:18px 16px 8px}
+.pmem{padding:6px 16px 12px;font:400 13px/1.4 var(--sans);color:var(--muted)}
+.pmlock{margin:0 14px;padding:14px;border-radius:16px;border:1px dashed #ffffff22;background:#ffffff08;display:flex;flex-direction:column;gap:4px;opacity:.8}
+.pmlock b{font:600 14px var(--sans)}.pmlock span{font:400 12.5px/1.4 var(--sans);color:var(--muted)}
+.pmsr{padding:0 14px 8px}.pmsr input{width:100%;padding:10px 14px;border-radius:12px;background:var(--panel);border:1px solid var(--line2);color:var(--cream);font:500 13px var(--mono);outline:0}
+.pmlist{max-height:330px;overflow-y:auto;scrollbar-width:thin}
+.bub.me{align-self:flex-end;background:linear-gradient(135deg,#e0bb6a,#b0802e);color:#2a1a08;border-radius:20px 20px 6px 20px;font-weight:500}
+.pmin{flex:none;display:flex;gap:8px;margin:6px 12px 10px}
+.pmin input{flex:1;min-width:0;padding:11px 16px;border-radius:22px;border:1px solid #ffffff22;background:#1a1315;color:var(--cream);font:400 14px var(--sans);outline:0}
+.pmin button{padding:0 18px;border-radius:22px;background:linear-gradient(180deg,#f0d28a,#c4962f);color:#2a1a08;font:700 13px var(--sans)}
+.pmin button:disabled{opacity:.5}
+.pmdon{flex:none;text-align:center;font:400 11.5px var(--sans);color:var(--dim);padding:6px 14px 0}.pmdon button{color:var(--gold2);text-decoration:underline}
+.pmerr{flex:none;min-height:14px;text-align:center;font:400 11.5px var(--sans);color:#e0675f;padding:2px 14px 0}
+.pmx{font:500 13px var(--sans);color:#ff8a80;padding:6px 4px}
+.pmblocked{flex:none;text-align:center;padding:14px;color:var(--muted);font:400 13px var(--sans)}
 .alst{position:relative;margin:0 0 12px;padding:14px 14px 14px 48px;border-radius:18px;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line)}
 .alst:before{content:attr(data-n);position:absolute;left:13px;top:15px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:600 12px var(--mono);background:#2b2022;color:var(--muted);border:1px solid var(--line2)}
 .alst.done:before{content:"\2713";background:#1f4029;color:var(--up);border-color:#2c6a43}
@@ -779,7 +794,7 @@ body.enter .footbar{animation-name:chromeInB}
       <h3>4 · In-game currency and points</h3><p>“$TMF” coins and “Season Points” shown inside the Game are virtual items for gameplay only. They have no cash value, cannot be sold or redeemed, and are not the $TMF token or any other digital asset. The only way to give coins away is the in-game “Top 9” app: the top 9 runners of the week cannot send, and anyone outside the top 9 can send to any player who has registered at least 1 $TMF point, and $TMF sent to a top 9 runner also adds points to their score. Those gifts are virtual and final.</p>
       <h3>5 · Leaderboards and recognition</h3><p>The Game has a leaderboard that resets each week, and you are welcome to keep playing to beat your own best score. Top players may be considered for recognition, which could include a TMF Pass or another item, but nothing is promised. No TMF Passes have been allocated to the Game at this time. Whether any recognition is given, who is considered, how many items exist and when are decided solely by MIMU ON APE and THEMUTUAL.FUN, and may change or end at any time. Leaderboard results may be reviewed and adjusted to remove cheating or errors. A score, rank or badge does not entitle anyone to a reward.</p>
       <h3>5b · Fair play</h3><p>Every leaderboard score is checked by our server, which replays your run from the moves you made. Runs that can&rsquo;t be verified, or that come from bots, scripts, edited code or exploits, don&rsquo;t count and may be removed along with the account&rsquo;s results. Chair Run runs on your device, so keep your connection open until the &ldquo;run complete&rdquo; screen finishes ranking you.</p>
-      <h3>5a · Connecting Glyph and your data</h3><p>Chair Run asks you to connect a Glyph wallet. We read your Glyph username, profile picture and wallet address, and we check which NFTs that wallet holds: you need a Mimu On Ape to play, and wallets holding a TMF Pass or a Dengs can&rsquo;t play. Your username, picture and scores are shown publicly on the leaderboards, and we store them (plus your wallet address) to run the leaderboards. You also give us an X username, which the team can see but which is not shown on the public leaderboards. Like most websites, we count visitors: when you open the site we record an anonymous browser ID, your IP address and the approximate place (city and country) your connection comes from, and we keep only the most recent records. Connecting only asks for a signature that proves you own the wallet. It costs nothing, sends no transaction and can&rsquo;t move your assets. Disconnect any time in Settings.</p>
+      <h3>5a · Connecting Glyph and your data</h3><p>Chair Run asks you to connect a Glyph wallet. We read your Glyph username, profile picture and wallet address, and we check which NFTs that wallet holds: you need a Mimu On Ape to play, and wallets holding a TMF Pass or a Dengs can&rsquo;t play. Your username, picture and scores are shown publicly on the leaderboards, and we store them (plus your wallet address) to run the leaderboards. You also give us an X username, which the team can see but which is not shown on the public leaderboards. Like most websites, we count visitors: when you open the site we record an anonymous browser ID, your IP address and the approximate place (city and country) your connection comes from, and we keep only the most recent records. Texts you send to other players in the Messages app are stored on our servers, can be read by the team, and may be deleted; keep it friendly, and we may remove players who harass others. Connecting only asks for a signature that proves you own the wallet. It costs nothing, sends no transaction and can&rsquo;t move your assets. Disconnect any time in Settings.</p>
       <h3>6 · Not financial advice</h3><p>Mutual Mimu is a simulation. It does not involve real money, real investments or real markets, and nothing in it is investment, legal or tax advice. Past in-game results say nothing about real-world performance.</p>
       <h3>7 · Fair play</h3><p>Do not use bots, scripts, exploits, automated input or multiple identities to gain an advantage, and do not interfere with the Game or other players. We may remove scores or restrict access where we reasonably suspect misuse.</p>
       <h3>8 · Intellectual property</h3><p>The MIMU ON APE name, characters and artwork belong to MIMU ON APE and its respective creators and rights holders. THEMUTUAL.FUN names, marks and chair artwork belong to their respective owners. The Game’s design and code belong to their authors. You may play the Game for personal, non-commercial use but may not copy or redistribute it without permission.</p>
@@ -1234,19 +1249,98 @@ const MSGS=[
   {id:'tmo',n:'T-Mobile',av:'T',bg:'linear-gradient(135deg,#e20074,#8c0049)',t:'9:02 AM',m:['Your phone bill of $139.34 is due Oct 16. Yes, this phone. The one running from chairs.']},
   {id:'tmf',n:'TMF',av:'TMF',bg:'linear-gradient(135deg,#a9404a,#6e1f26)',t:'Yesterday',m:['Season One is live','Mimu On Ape × The Mutual Fun. Run the halls, vote at the bell and chase the top of the leaderboard.']},
   {id:'mimu',n:'Your Mimu',img:'assets/mimu-icon.jpg',t:'Yesterday',m:['Your Mimu is waiting','The chairs aren’t going to jump themselves.']}];
-const unreadN=()=>MSGS.filter(x=>!(P.mr&&P.mr[x.id])).length;
+/* player-to-player texts (live): only after Glyph sign-in */
+const PM={unread:0,threads:[],top:null,topAt:0,timer:null,seen:0};
+const unreadN=()=>MSGS.filter(x=>!(P.mr&&P.mr[x.id])).length+(PM.unread||0);
+const pmOn=()=>!!(GATE.ok&&API.token&&API.on());
+const pAv=pic=>`<div class="av">${imgTag(safeUrl(pic)?pic:'assets/mimu-icon.jpg')}</div>`;
+const tmAgo=ts=>{const s=Math.max(0,Math.floor((Date.now()-ts)/1000));return s<60?'now':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d'};
+function refreshDockBadge(){
+  const b=document.querySelector('.dock .app-i[data-open=msg]');if(!b)return;
+  const n=unreadN();let d=b.querySelector('.bd');
+  if(n){if(!d){d=document.createElement('i');d.className='bd';b.querySelector('.ic').appendChild(d)}d.textContent=n}else if(d)d.remove();
+}
+async function pmPoll(){
+  if(!pmOn())return;
+  try{
+    const r=await API.j('/api/messages/threads'),before=PM.unread;
+    PM.threads=r.threads||[];PM.unread=r.unread||0;
+    if(PM.unread>before&&PM.seen){const t=PM.threads.find(x=>x.unread);toast(`&#128172; <span>New text from <b>${escH(t?t.name:'a player')}</b></span>`,3200)}
+    PM.seen=1;refreshDockBadge();if(window._pmList)window._pmList();
+  }catch(e){}
+}
+function startPMPoll(){stopPMPoll();if(!pmOn())return;pmPoll();PM.timer=setInterval(pmPoll,20000)}
+function stopPMPoll(){clearInterval(PM.timer);PM.timer=null;PM.unread=0;PM.threads=[];PM.seen=0;refreshDockBadge()}
 function buildMsgs(root){
   const av=x=>`<div class="av" style="background:${x.img?'#000 url('+x.img+') center/cover':x.bg};${x.av&&x.av.length>2?'font-size:12px':''}">${x.img?'':x.av}</div>`;
   const list=()=>{
-    root.innerHTML=`<div class="sc"><div class="sysh"><h1>Messages</h1></div><div class="scroll" style="padding:0 0 60px">${MSGS.map(x=>{const u=!(P.mr&&P.mr[x.id]);return`<button class="cv" data-th="${x.id}">${av(x)}<div class="mid"><b>${x.n}</b><span>${x.m[x.m.length-1]}</span></div><div class="tm">${x.t}</div>${u?'<i class="ud"></i>':''}</button>`}).join('')}</div></div>`;
+    root.innerHTML=`<div class="sc"><div class="sysh"><h1>Messages</h1></div><div class="scroll" style="padding:0 0 60px">${MSGS.map(x=>{const u=!(P.mr&&P.mr[x.id]);return`<button class="cv" data-th="${x.id}">${av(x)}<div class="mid"><b>${x.n}</b><span>${x.m[x.m.length-1]}</span></div><div class="tm">${x.t}</div>${u?'<i class="ud"></i>':''}</button>`}).join('')}<div id="pmbox"></div></div></div>`;
     $$('[data-th]',root).forEach(b=>b.onclick=()=>thread(b.dataset.th));
+    inList=true;paintPM();if(pmOn()){loadTop().then(()=>{if(inList)paintPM()});pmPoll()}
+  };
+  /* ---- live chats with other players ---- */
+  let inList=true,q='',thrTimer=null;
+  const me=()=>P.glyph&&P.glyph.address?P.glyph.address.toLowerCase():'';
+  const loadTop=()=>(PM.top&&Date.now()-PM.topAt<60000)?Promise.resolve():API.j('/api/top9').then(d=>{PM.top=d;PM.topAt=Date.now()}).catch(()=>{});
+  const paintPM=()=>{
+    const box=$('#pmbox',root);if(!box)return;
+    if(!pmOn()){box.innerHTML=`<div class="pmh">Leaderboard texts</div><div class="pmlock"><b>&#128274; Locked</b><span>Connect your Glyph in Chair Run to text the other players on the leaderboard.</span></div>`;return}
+    const th=PM.threads.map(t=>`<button class="cv" data-pt="${escH(t.with)}" data-nm="${escH(t.name)}" data-pc="${escH(t.picture||'')}">${pAv(t.picture)}<div class="mid"><b>${escH(t.name)}</b><span>${t.mine?'You: ':''}${escH(t.last)}</span></div><div class="tm">${tmAgo(t.ts)}</div>${t.unread?'<i class="ud"></i>':''}</button>`).join('');
+    const rows=(PM.top?PM.top.rows:[]).filter(r=>r.id!==me()&&(!q||String(r.name).toLowerCase().includes(q)));
+    box.innerHTML=`<div class="pmh">Your chats</div>${th||'<div class="pmem">No chats yet. Pick a player below and say something.</div>'}
+      <div class="pmh">Players on the leaderboard</div><div class="pmsr"><input id="pmq" placeholder="search a player" value="${escH(q)}" autocomplete="off"></div>
+      <div class="pmlist">${rows.length?rows.slice(0,150).map(r=>`<button class="cv" data-pt="${escH(r.id)}" data-nm="${escH(r.name)}" data-pc="${escH(r.picture||'')}">${pAv(r.picture)}<div class="mid"><b>${escH(r.name)}</b><span>#${r.rank} &middot; ${fmt(r.total)} points${r.top9?' &middot; top 9':''}</span></div><div class="tm">Text</div></button>`).join(''):`<div class="pmem">${PM.top?'No players match.':'Loading players&hellip;'}</div>`}</div>`;
+    $$('[data-pt]',box).forEach(b=>b.onclick=()=>{ac();sfx.tap();pmThread(b.dataset.pt,b.dataset.nm,b.dataset.pc)});
+    const qi=$('#pmq',box);if(qi)qi.oninput=()=>{q=qi.value.trim().toLowerCase();const pos=qi.selectionStart;paintPM();const n=$('#pmq',root);if(n){n.focus();n.setSelectionRange(pos,pos)}};
+  };
+  window._pmList=()=>{if(inList)paintPM()};
+  const pmThread=(addr,name,pic)=>{
+    inList=false;let last=0,blocked=false;
+    root.innerHTML=`<div class="sc"><div class="sysh"><button class="bk" id="mb">&lsaquo; Messages</button><div class="ttl" style="margin-right:0">${escH(name)}</div><button class="pmx" id="pmblk">Block</button></div>
+      <div class="thr" id="pmthr"></div><div id="pmbot"></div></div>`;
+    const thr=$('#pmthr',root),bot=$('#pmbot',root),blk=$('#pmblk',root);
+    const bubble=m=>{const d=document.createElement('div');d.className='bub'+(m.mine?' me':'');d.title=new Date(m.ts).toLocaleString();d.textContent=m.body;return d};
+    const add=arr=>{if(!arr.length)return;const atEnd=thr.scrollHeight-thr.scrollTop-thr.clientHeight<80;arr.forEach(m=>{thr.appendChild(bubble(m));last=Math.max(last,m.id)});if(atEnd||last===arr[arr.length-1].id)thr.scrollTop=thr.scrollHeight};
+    const drawBot=()=>{
+      blk.textContent=blocked?'Unblock':'Block';
+      bot.innerHTML=blocked?'<div class="pmblocked">You blocked this player. Unblock to text them again.</div>':`<div class="pmdon">Want to help ${escH(name)}? <button id="pmdn">Donate $TMF in Top 9</button></div><div class="pmerr" id="pmerr"></div><div class="pmin"><input id="pmt" maxlength="280" placeholder="Text message" autocomplete="off"><button id="pms">Send</button></div>`;
+      if(blocked)return;
+      const inp=$('#pmt',root),btn=$('#pms',root),er=$('#pmerr',root);
+      $('#pmdn',root).onclick=()=>{goHome();setTimeout(()=>openApp('top5'),700)};
+      const send=async()=>{
+        const body=inp.value.trim();if(!body)return;
+        btn.disabled=true;er.textContent='';
+        try{const r=await API.j('/api/messages/send',{method:'POST',body:JSON.stringify({to:addr,body:r0(body)})});inp.value='';add([{id:r.id,ts:r.ts,mine:true,body:r.body}]);sfx.select()}
+        catch(e){er.textContent=(e&&e.message)||'Could not send. Try again.'}
+        btn.disabled=false;inp.focus();
+      };
+      const r0=s=>s;
+      btn.onclick=send;inp.onkeydown=e=>{if(e.key==='Enter')send()};
+    };
+    const load=async()=>{
+      try{
+        const d=await API.j('/api/messages/thread?with='+encodeURIComponent(addr)+'&after='+last);
+        if(last===0){thr.innerHTML='';blocked=d.blocked;drawBot()}
+        add(d.messages.filter(m=>m.id>last));
+        if(last===0&&!d.messages.length)thr.innerHTML=`<div class="dt">Say hi to ${escH(name)}</div>`;
+        if(d.messages.some(m=>!m.mine))pmPoll();
+      }catch(e){if(last===0)thr.innerHTML='<div class="dt">Could not load this chat. Try again in a moment.</div>'}
+    };
+    blk.onclick=async()=>{
+      if(!blocked&&!confirm('Block '+name+'? They will not be able to text you.'))return;
+      try{const r=await API.j('/api/messages/block',{method:'POST',body:JSON.stringify({user:addr,block:!blocked})});blocked=r.blocked;drawBot();if(blocked)thr.innerHTML='';else{last=0;load()}}catch(e){}
+    };
+    drawBot();load();
+    thrTimer=setInterval(()=>{if(document.body.contains(root)&&!blocked)load()},4000);
+    $('#mb',root).onclick=()=>{clearInterval(thrTimer);ac();sfx.tap();list();pmPoll()};
+    tone(880,0,.08,.04,'sine');
   };
   const thread=id=>{
     const x=MSGS.find(y=>y.id===id);P.mr=P.mr||{};if(!P.mr[id]){P.mr[id]=1;saveP()}
     root.innerHTML=`<div class="sc"><div class="sysh"><button class="bk" id="mb">‹ Messages</button><div class="ttl">${x.n}</div></div><div class="thr"><div class="dt">${x.t==='now'?'Today':x.t}</div>${x.m.map((s,i)=>`<div class="bub ${x.g?'g':''}" style="animation-delay:${i*.18}s">${s}</div>`).join('')}</div><div class="tin">Text Message</div></div>`;
     $('#mb',root).onclick=()=>{ac();sfx.tap();list()};tone(880,0,.08,.04,'sine');
   };
-  list();return{destroy(){const d=$('.dock .app-i[data-open=msg] .bd');if(d){const n=unreadN();if(n)d.textContent=n;else d.remove()}}};
+  list();return{destroy(){clearInterval(thrTimer);window._pmList=null;refreshDockBadge()}};
 }
 function buildPhone(root){
   const K=[['1',''],['2','ABC'],['3','DEF'],['4','GHI'],['5','JKL'],['6','MNO'],['7','PQRS'],['8','TUV'],['9','WXYZ'],['*',''],['0','+'],['#','']];
@@ -1528,7 +1622,7 @@ function applyIdentity(){
 }
 function disconnectGlyph(){
   try{if(window.MimuGlyph)window.MimuGlyph.disconnect()}catch(e){}
-  P.glyph=null;API.token=null;GATE.ok=false;saveP();syncLocks();
+  P.glyph=null;API.token=null;GATE.ok=false;saveP();syncLocks();stopPMPoll();
 }
 function buildRun(root){
   const ctl={inner:null,dead:false,destroy(){ctl.dead=true;if(ctl.inner&&ctl.inner.destroy)ctl.inner.destroy()}};
@@ -1660,7 +1754,7 @@ function runGate(root,ctl,enter){
     };
   };
   const welcome=()=>{
-    GATE.ok=true;syncLocks();applyIdentity();refreshBoards();
+    GATE.ok=true;syncLocks();applyIdentity();refreshBoards();startPMPoll();
     sfx.win();confetti(46);
     const g=P.glyph;
     show(`<div class="gl-hero"><div class="badge">✓</div><div class="card3"><img src="mimu-hero.jpg" alt="Mimu On Ape"><div class="holo"></div><div class="tag"><span>Mimu On Ape</span><span>verified</span></div></div>

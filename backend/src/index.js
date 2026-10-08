@@ -359,6 +359,76 @@ async function handleAvatarGet(env, req, url) {
   return new Response(bytes, { headers: { 'Content-Type': type, 'Cache-Control': 'public, max-age=300', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; sandbox", 'Cross-Origin-Resource-Policy': 'cross-origin' } });
 }
 
+/* ---------- player-to-player texts (the Messages app) ----------
+ * Signed-in players can text anyone on the leaderboard. Messages live here, keyed by wallet, so both sides see the same
+ * thread on any device. Plain text only, 280 characters, rate limited, and a player can block someone. Admin can read and delete. */
+const MSG_MAX = 280;
+async function msgAuth(env, req) {
+  const sess = await readToken(env, req);
+  if (!sess) return { err: json(env, req, { error: 'sign in first' }, 401) };
+  if (await limited(env, 'RL_RUN', 'msg:' + sess.sub)) return { err: tooMany(env, req) };
+  return { me: sess.sub };
+}
+async function handleMsgThreads(env, req) {
+  const a = await msgAuth(env, req); if (a.err) return a.err;
+  const me = a.me;
+  const rows = (await env.DB.prepare(`SELECT other, MAX(id) lastid, SUM(CASE WHEN recipient=?1 AND read=0 THEN 1 ELSE 0 END) unread FROM (
+      SELECT id, recipient, read, CASE WHEN sender=?1 THEN recipient ELSE sender END AS other FROM messages
+      WHERE (sender=?1 OR recipient=?1) AND NOT (recipient=?1 AND sender IN (SELECT blocked FROM blocks WHERE blocker=?1))
+    ) GROUP BY other ORDER BY lastid DESC LIMIT 50`).bind(me).all()).results || [];
+  let threads = [];
+  if (rows.length) {
+    const ids = rows.map((r) => r.lastid);
+    const info = (await env.DB.prepare(`SELECT m.id, m.body, m.ts, m.sender, p.address a, p.name n, ${picSql(req)} pic FROM messages m JOIN players p ON p.address=(CASE WHEN m.sender=?1 THEN m.recipient ELSE m.sender END) WHERE m.id IN (${ids.map((_, i) => '?' + (i + 2)).join(',')})`).bind(me, ...ids).all()).results || [];
+    const byId = Object.fromEntries(info.map((r) => [r.id, r]));
+    threads = rows.map((r) => { const i = byId[r.lastid]; return i ? { with: r.other, name: i.n, picture: i.pic || '', last: i.body, ts: i.ts, mine: i.sender === me, unread: r.unread || 0 } : null; }).filter(Boolean);
+  }
+  return json(env, req, { unread: threads.reduce((s, t) => s + t.unread, 0), threads });
+}
+async function handleMsgThread(env, req, url) {
+  const a = await msgAuth(env, req); if (a.err) return a.err;
+  const me = a.me, other = String(url.searchParams.get('with') || '').toLowerCase(), after = Math.max(0, Number(url.searchParams.get('after')) || 0);
+  if (!/^0x[0-9a-f]{40}$/.test(other)) return json(env, req, { error: 'bad request' }, 400);
+  const who = await env.DB.prepare(`SELECT p.name n, ${picSql(req)} pic FROM players p WHERE p.address=?1`).bind(other).first();
+  if (!who) return json(env, req, { error: 'unknown player' }, 404);
+  const iBlocked = !!(await env.DB.prepare('SELECT 1 x FROM blocks WHERE blocker=?1 AND blocked=?2').bind(me, other).first());
+  const base = `SELECT id, ts, sender, body FROM messages WHERE ((sender=?1 AND recipient=?2) OR (sender=?2 AND recipient=?1)) AND NOT (sender=?2 AND ?4=1)`;
+  let msgs;
+  if (after > 0) msgs = (await env.DB.prepare(base + ' AND id>?3 ORDER BY id ASC LIMIT 200').bind(me, other, after, iBlocked ? 1 : 0).all()).results || [];
+  else msgs = ((await env.DB.prepare(base + ' AND id>?3 ORDER BY id DESC LIMIT 100').bind(me, other, 0, iBlocked ? 1 : 0).all()).results || []).reverse();
+  if (msgs.some((m) => m.sender === other)) await env.DB.prepare('UPDATE messages SET read=1 WHERE recipient=?1 AND sender=?2 AND read=0').bind(me, other).run();
+  return json(env, req, { with: other, name: who.n, picture: who.pic || '', blocked: iBlocked, messages: msgs.map((m) => ({ id: m.id, ts: m.ts, mine: m.sender === me, body: m.body })) });
+}
+async function handleMsgSend(env, req) {
+  const a = await msgAuth(env, req); if (a.err) return a.err;
+  const me = a.me;
+  let b = {}; try { b = await req.json(); } catch { return json(env, req, { error: 'bad json' }, 400); }
+  const to = String(b.to || '').toLowerCase();
+  const body = String(b.body || '').replace(/[\u0000-\u0008\u000b-\u001f\u007f​-‏‪-‮⁦-⁩]/g, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+  if (!/^0x[0-9a-f]{40}$/.test(to) || !body) return json(env, req, { error: 'Type a message first.' }, 400);
+  if (body.length > MSG_MAX) return json(env, req, { error: 'Keep it under ' + MSG_MAX + ' characters.' }, 400);
+  if (to === me) return json(env, req, { error: 'You cannot text yourself.' }, 400);
+  if (await isBanned(env, me)) return json(env, req, { error: 'blocked' }, 403);
+  const rcpt = await env.DB.prepare('SELECT 1 x FROM players WHERE address=?1').bind(to).first();
+  if (!rcpt || await isBanned(env, to)) return json(env, req, { error: 'That player cannot get texts right now.' }, 404);
+  if (await env.DB.prepare('SELECT 1 x FROM blocks WHERE blocker=?1 AND blocked=?2').bind(to, me).first()) return json(env, req, { error: 'This player is not taking texts from you.' }, 403);
+  const now = Date.now();
+  const recent = await env.DB.prepare('SELECT COUNT(*) c FROM messages WHERE sender=?1 AND ts>?2').bind(me, now - 60 * 1000).first();
+  const pair = await env.DB.prepare('SELECT COUNT(*) c FROM messages WHERE sender=?1 AND recipient=?2 AND ts>?3').bind(me, to, now - 10 * 60 * 1000).first();
+  if (recent.c >= 12 || pair.c >= 30) return json(env, req, { error: 'Slow down a little, then send again.' }, 429);
+  const r = await env.DB.prepare('INSERT INTO messages(ts,sender,recipient,body,read) VALUES(?1,?2,?3,?4,0)').bind(now, me, to, body).run();
+  return json(env, req, { ok: true, id: r.meta && r.meta.last_row_id, ts: now, body });
+}
+async function handleMsgBlock(env, req) {
+  const a = await msgAuth(env, req); if (a.err) return a.err;
+  let b = {}; try { b = await req.json(); } catch { return json(env, req, { error: 'bad json' }, 400); }
+  const other = String(b.user || '').toLowerCase();
+  if (!/^0x[0-9a-f]{40}$/.test(other) || other === a.me) return json(env, req, { error: 'bad request' }, 400);
+  if (b.block === false) await env.DB.prepare('DELETE FROM blocks WHERE blocker=?1 AND blocked=?2').bind(a.me, other).run();
+  else await env.DB.prepare('INSERT OR IGNORE INTO blocks(blocker,blocked) VALUES(?1,?2)').bind(a.me, other).run();
+  return json(env, req, { ok: true, blocked: b.block !== false });
+}
+
 /* ---------- Top 9: sending $TMF between players ----------
  * Rules (enforced here, not in the browser):
  *   - the top 9 runners of the week (Chair Run board) cannot send;
@@ -511,7 +581,7 @@ async function handleAdmin(env, req, url) {
   if (path === 'dashboard' && req.method === 'GET') {
     const week = weekNow(), q = (sql, ...a) => env.DB.prepare(sql).bind(...a);
     const top = (col) => q(`SELECT s.address a, ${col} v, p.name n, p.x_handle x FROM scores s JOIN players p ON p.address=s.address WHERE s.week=?1 AND ${col}>0 ORDER BY ${col} DESC, s.updated_at ASC LIMIT 10`, week).all();
-    const [vis, tot, today, run, nw, held, users, map, ips, banned, transfers] = await Promise.all([
+    const [vis, tot, today, run, nw, held, users, map, ips, banned, transfers, messages] = await Promise.all([
       q('SELECT COUNT(*) c FROM visitors').first(),
       q('SELECT COALESCE(SUM(visits),0) c FROM visitors').first(),
       q('SELECT COUNT(*) c FROM visitors WHERE last_seen>?1', Date.now() - 24 * 3600 * 1000).first(),
@@ -522,12 +592,13 @@ async function handleAdmin(env, req, url) {
       q('SELECT ts, ip, country, city, vid FROM hits ORDER BY id DESC LIMIT 200').all(),
       q('SELECT COUNT(*) c FROM bans').first(),
       q('SELECT t.ts, t.amount, t.boost, t.sender sa, t.recipient ra, ps.name sn, pr.name rn FROM transfers t LEFT JOIN players ps ON ps.address=t.sender LEFT JOIN players pr ON pr.address=t.recipient ORDER BY t.id DESC LIMIT 50').all(),
+      q('SELECT m.id, m.ts, m.body, m.sender sa, m.recipient ra, ps.name sn, pr.name rn FROM messages m LEFT JOIN players ps ON ps.address=m.sender LEFT JOIN players pr ON pr.address=m.recipient ORDER BY m.id DESC LIMIT 100').all(),
     ]);
     return out({
       week, visitors: vis.c, visits: tot.c, today: today.c, banned: banned.c,
       topRun: run.results || [], topNw: nw.results || [],
       held: (held.results || []).map((r) => ({ ...r, flags: JSON.parse(r.flags || '[]'), seconds: Math.round(r.ticks / 60) })),
-      users: users.results || [], map: map.results || [], ips: ips.results || [], transfers: transfers.results || [],
+      users: users.results || [], map: map.results || [], ips: ips.results || [], transfers: transfers.results || [], messages: messages.results || [],
     });
   }
   if (path === 'held' && req.method === 'GET') {
@@ -553,6 +624,10 @@ async function handleAdmin(env, req, url) {
     await env.DB.prepare('DELETE FROM scores WHERE address=?1').bind(a).run();
     await env.DB.prepare("UPDATE runs SET status='abandoned', snapshot=NULL WHERE address=?1 AND status='open'").bind(a).run();
     return out({ ok: true, banned: a });
+  }
+  if (path === 'delmsg' && req.method === 'POST') {
+    await env.DB.prepare('DELETE FROM messages WHERE id=?1').bind(Number(b.id) || 0).run();
+    return out({ ok: true });
   }
   if (path === 'rmavatar' && req.method === 'POST') {
     if (!isAddress(b.address || '')) return out({ error: 'bad address' }, 400);
@@ -600,6 +675,10 @@ export default {
       if (url.pathname === '/api/run/chunk' && req.method === 'POST') return handleRunChunk(env, req);
       if (url.pathname === '/api/leaderboard' && req.method === 'GET') return handleBoard(env, req, url);
       if (url.pathname === '/api/hit' && req.method === 'POST') return handleHit(env, req);
+      if (url.pathname === '/api/messages/threads' && req.method === 'GET') return handleMsgThreads(env, req);
+      if (url.pathname === '/api/messages/thread' && req.method === 'GET') return handleMsgThread(env, req, url);
+      if (url.pathname === '/api/messages/send' && req.method === 'POST') return handleMsgSend(env, req);
+      if (url.pathname === '/api/messages/block' && req.method === 'POST') return handleMsgBlock(env, req);
       if (url.pathname === '/api/avatar' && req.method === 'POST') return handleAvatarPost(env, req);
       if (url.pathname.startsWith('/api/avatar/') && req.method === 'GET') return handleAvatarGet(env, req, url);
       if (url.pathname === '/api/top9' && req.method === 'GET') return handleTop9(env, req);

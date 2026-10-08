@@ -112,6 +112,7 @@ td.n{width:44px;white-space:nowrap;color:var(--gold);font-weight:600}td.r{text-a
     <div class="digits" id="digits"></div>
     <div class="sub"><span><b id="s-today">0</b>last 24h</span><span><b id="s-visits">0</b>total visits</span><span><b id="s-users">0</b>players</span><span><b id="s-held">0</b>awaiting review</span><span><b id="s-ban">0</b>banned</span></div>
     <div class="camp" id="camp" hidden><span class="cl" id="camp-l"></span><b id="camp-t"></b></div>
+    <div class="camp" id="alm" hidden><span class="cl" id="alm-l"></span><b id="alm-t"></b></div>
   </div>
 
   <div class="two">
@@ -191,12 +192,23 @@ function showCount(n){
 
 /* ---------- campaign countdown (Sat Oct 10 2026 9 PM ET -> Wed Oct 14 2026 9 AM ET); shown until it ends ---------- */
 const CAMPAIGN={open:Date.UTC(2026,9,11,1,0,0),close:Date.UTC(2026,9,14,13,0,0)};
+const ALARM_AT=Date.UTC(2026,9,13,13,0,0);   /* gaming stops: Tue Oct 13 6:00 AM Los Angeles time */
 function campTick(){
   const el=$('#camp');if(!el)return;const now=Date.now();
-  if(now>=CAMPAIGN.close){el.hidden=true;return}
+  if(now>=CAMPAIGN.close){el.hidden=true;const a0=$('#alm');if(a0)a0.hidden=true;return}
   const pre=now<CAMPAIGN.open,target=pre?CAMPAIGN.open:CAMPAIGN.close;
   let s=Math.floor((target-now)/1000);const d=Math.floor(s/86400);s-=d*86400;const h=Math.floor(s/3600);s-=h*3600;const m=Math.floor(s/60);s-=m*60;
   el.hidden=false;el.classList.toggle('live',!pre);
+  const al=$('#alm');
+  if(al){
+    al.hidden=false;
+    if(now>=ALARM_AT){al.classList.add('live');$('#alm-l').textContent='Alarm is going off';$('#alm-t').textContent='Gaming has stopped'}
+    else{
+      al.classList.remove('live');$('#alm-l').textContent='Alarm goes off in';
+      let r=Math.floor((ALARM_AT-now)/1000);const dd=Math.floor(r/86400);r-=dd*86400;const hh=Math.floor(r/3600);r-=hh*3600;const mm=Math.floor(r/60);r-=mm*60;
+      $('#alm-t').textContent=dd+'d '+String(hh).padStart(2,'0')+'h '+String(mm).padStart(2,'0')+'m '+String(r).padStart(2,'0')+'s';
+    }
+  }
   $('#camp-l').textContent=pre?'Campaign opens in':'Campaign closes in';
   $('#camp-t').textContent=d+'d '+String(h).padStart(2,'0')+'h '+String(m).padStart(2,'0')+'m '+String(s).padStart(2,'0')+'s';
 }

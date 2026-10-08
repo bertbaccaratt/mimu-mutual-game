@@ -269,8 +269,9 @@ body.native #screen,body.native #screen:after{border-radius:0}
 .app.on{transform:none;opacity:1;border-radius:0}
 .app.out{transform:scale(.12);opacity:0;border-radius:46px;transition:transform .45s var(--ease),opacity .35s .1s,border-radius .45s}
 #homebar{position:absolute;left:50%;bottom:7px;width:134px;height:22px;margin-left:-67px;z-index:110;cursor:pointer;display:grid;place-items:center}
-#homebar i{display:block;width:120px;height:5px;border-radius:3px;background:rgba(242,231,208,.85);box-shadow:0 0 6px rgba(0,0,0,.5);transition:transform .3s var(--spring)}
-#homebar:hover i{transform:scaleX(1.12)}
+#homebar i{display:grid;place-items:center;width:122px;height:17px;border-radius:9px;background:linear-gradient(180deg,#f7ecd2,#e3cf9f);border:1px solid rgba(217,178,95,.9);box-shadow:0 0 0 1px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.55),0 0 12px rgba(217,178,95,.28);font:italic 700 10.5px/1 var(--serif);letter-spacing:.34em;text-indent:.34em;text-transform:lowercase;color:#3a2412;font-style:italic;transition:transform .3s var(--spring),box-shadow .3s;animation:hbglow 2.6s ease-in-out infinite}
+#homebar:hover i{transform:scaleX(1.06)}#homebar:active i{transform:scale(.95)}
+@keyframes hbglow{0%,100%{box-shadow:0 0 0 1px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.55),0 0 8px rgba(217,178,95,.2)}50%{box-shadow:0 0 0 1px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.55),0 0 16px rgba(217,178,95,.55)}}
 #lock{z-index:150;background:radial-gradient(520px 440px at 70% 0%,#6a2634aa,transparent 65%),radial-gradient(500px 500px at 0% 100%,#a57a2a44,transparent 60%),linear-gradient(180deg,#2a1219,#120a0d);
   display:flex;flex-direction:column;align-items:center;padding:96px 22px 38px;transition:transform .8s var(--ease),opacity .6s;touch-action:none;cursor:pointer}
 #lock.go{transform:translateY(-104%);opacity:.4}
@@ -660,7 +661,7 @@ body.enter .footbar{animation-name:chromeInB}
     <div id="apps" class="layer"></div>
     <div id="layer"></div>
     <div id="lock" class="layer"></div>
-    <div id="homebar"><i></i></div>
+    <div id="homebar" role="button" aria-label="Back to home"><i>back</i></div>
     <div class="toast" id="toast"></div>
   </div></div></div>
 </div>

@@ -38,3 +38,7 @@ GATE_DENGS = ""   # Dengs (ApeChain, ERC-721): holding one BLOCKS play
 RPC_33139 = "https://apechain.calderachain.xyz/http"
 RPC_1     = "https://cloudflare-eth.com"
 RPC_4663  = "https://robinhood-rpc.publicnode.com,https://robinhood.drpc.org,https://4663.rpc.thirdweb.com,https://rpc.mainnet.chain.robinhood.com"   # several = automatic fallback
+EXPLORER_4663 = "https://robinhoodchain.blockscout.com"   # keyless fallback if every RPC is busy
+
+# test server only: judge timing after 8 inputs instead of 40 so the hold/release flow can be tested quickly
+BOT_MIN = "8"

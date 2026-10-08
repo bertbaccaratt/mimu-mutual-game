@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' data: blob:; connect-src 'self' https: wss:; frame-src https:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' data: blob:; connect-src 'self' https: wss:; frame-src https:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <script>if(window.top!==window.self){try{window.top.location=window.self.location}catch(e){document.documentElement.innerHTML=''}}</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
@@ -1231,7 +1231,8 @@ function ensureRivals(){
    ===================================================================== */
 const GAME_CONFIG={
   api:'https://mimu-mutual-api.mutualmimu.workers.dev',   /* leaderboard + sign-in service (Cloudflare Worker + D1) */
-  glyphSrc:'assets/glyph-connect.js',      /* Glyph wallet kit, only loaded when someone opens Chair Run */
+  turnstile:'0x4AAAAAAFRNMAGNtYft7w2G',   /* public site key, safe to publish */
+ glyphSrc:'assets/glyph-connect.js',      /* Glyph wallet kit, only loaded when someone opens Chair Run */
   mimuUrl:'https://opensea.io/collection/mimuonape',
   /* holdings rules. Leave an address empty and that rule is simply not enforced yet. */
   gates:{
@@ -1253,7 +1254,22 @@ const cleanHandle=s=>String(s||'').normalize('NFKC').replace(/[^\p{L}\p{N}._\- ]
 const API={
   token:null,
   on:()=>!!GAME_CONFIG.api,
-  async j(path,opt){
+  /* invisible Cloudflare human check: one fresh single-use token per run (null if unavailable; the server decides if that is acceptable) */
+  human(){
+    const key=GAME_CONFIG.turnstile;if(!key)return Promise.resolve(null);
+    const load=API._tsLoad||(API._tsLoad=new Promise(res=>{
+      if(window.turnstile)return res(true);
+      const sc=document.createElement('script');sc.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';sc.async=true;
+      sc.onload=()=>res(true);sc.onerror=()=>{API._tsLoad=null;res(false)};document.head.appendChild(sc);
+    }));
+    return load.then(ok=>new Promise(res=>{
+      if(!ok||!window.turnstile)return res(null);
+      const box=document.createElement('div');box.style.cssText='position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden';document.body.appendChild(box);
+      let done=false;const fin=v=>{if(done)return;done=true;try{window.turnstile.remove(id)}catch(e){}box.remove();res(v)};
+      let id;try{id=window.turnstile.render(box,{sitekey:key,size:'invisible',callback:t=>fin(t),'error-callback':()=>fin(null),'timeout-callback':()=>fin(null)})}catch(e){return fin(null)}
+      setTimeout(()=>fin(null),9000);
+    }));
+  },  async j(path,opt){
     const h={'Content-Type':'application/json'};if(API.token)h.Authorization='Bearer '+API.token;
     const r=await fetch(GAME_CONFIG.api.replace(/\/$/,'')+path,Object.assign({headers:h},opt));
     const b=await r.json().catch(()=>({}));
@@ -1539,9 +1555,9 @@ function buildRunGame(root){
   function startCount(){
     if(S.st!=='idle')return;hideCard();reset();S.st='count';let n=3;verified=false;runSession=null;
     const online=GATE.ok&&API.on();
-    const sessionP=(online&&API.token)?API.j('/api/run/start',{method:'POST',body:JSON.stringify({wallet:P.coins})}).catch(()=>null):Promise.resolve(null);
+    const sessionP=(online&&API.token)?API.human().then(cf=>API.j('/api/run/start',{method:'POST',body:JSON.stringify({wallet:P.coins,cf})})).catch(()=>null):Promise.resolve(null);
     const begin=async()=>{
-      let r=null;try{r=await Promise.race([sessionP,sleep(4000).then(()=>null)])}catch(e){}
+      let r=null;try{r=await Promise.race([sessionP,sleep(10000).then(()=>null)])}catch(e){}
       if(!alive)return;
       if(r&&r.runId){newRun(r.seed,r.wallet);runSession=r;verified=true}
       else if(online)toast(API.token?'📡 <span>Couldn&rsquo;t reach the leaderboard. This run won&rsquo;t count.</span>':'🔒 <span>Your session ended. Reconnect Glyph in Chair Run so runs count.</span>',4200);

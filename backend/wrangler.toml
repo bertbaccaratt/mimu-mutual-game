@@ -38,3 +38,4 @@ GATE_DENGS = "33139:0x2CF92fe634909A9cF5e41291f54e5784d234cF8d"   # Dengs (ApeCh
 RPC_33139 = "https://apechain.calderachain.xyz/http"
 RPC_1     = "https://cloudflare-eth.com"
 RPC_4663  = "https://robinhood-rpc.publicnode.com,https://robinhood.drpc.org,https://4663.rpc.thirdweb.com,https://rpc.mainnet.chain.robinhood.com"   # several = automatic fallback
+EXPLORER_4663 = "https://robinhoodchain.blockscout.com"   # keyless fallback if every RPC is busy

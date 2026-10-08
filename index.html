@@ -258,9 +258,12 @@ body.native #screen,body.native #screen:after{border-radius:0}
 .app-i .ic{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;position:relative;box-shadow:0 8px 18px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.28),inset 0 -8px 14px rgba(0,0,0,.2)}
 .app-i .ic svg{width:34px;height:34px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4))}
 .app-i.lk{opacity:.5}
-.cdw{margin-top:22px;border-radius:26px;padding:13px 16px 14px;background:rgba(43,31,33,.62);backdrop-filter:blur(16px);border:1px solid rgba(217,178,95,.28);box-shadow:0 10px 24px rgba(0,0,0,.3);text-align:center}
+.cdw{margin-top:22px;border-radius:26px;padding:13px 16px 14px;background:rgba(43,31,33,.62);backdrop-filter:blur(16px);border:2px solid #e0332f;box-shadow:0 0 0 1px rgba(0,0,0,.45),0 0 18px rgba(224,51,47,.38),0 10px 24px rgba(0,0,0,.3);text-align:center;cursor:default;transform-origin:50% 60%}
+.cdw:hover{animation:cdwig .55s ease-in-out infinite}
+@keyframes cdwig{0%,100%{transform:rotate(0)}20%{transform:rotate(-2.4deg) translateX(-2px)}40%{transform:rotate(2.4deg) translateX(2px)}60%{transform:rotate(-1.7deg) translateX(-1px)}80%{transform:rotate(1.7deg) translateX(1px)}}
+@media(prefers-reduced-motion:reduce){.cdw:hover{animation:none}}
 .cdw .cdh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;font:600 10px var(--mono);letter-spacing:.14em;text-transform:uppercase}
-.cdw .cdl{color:var(--gold)}.cdw .cdd{color:var(--muted)}
+.cdw .cdl{color:#ff7a70}.cdw .cdd{color:var(--muted)}
 .cdw .cdt{display:flex;justify-content:center;align-items:flex-start;gap:6px}
 .cdw .cdt div{min-width:50px}.cdw .cdt b{display:block;font:600 28px/1 var(--mono);color:var(--cream);font-variant-numeric:tabular-nums}
 .cdw .cdt i{display:block;margin-top:4px;font:500 9px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-style:normal}
@@ -1088,8 +1091,8 @@ function buildHome(anim){
     <button class="app-i" type="button"><div class="ic" style="background:linear-gradient(135deg,#ff8a4c,#d4362f)">${IC.alarm}</div>Alarm</button>
     <button class="app-i lk" data-act="soon"><div class="ic" style="background:linear-gradient(135deg,#4a4a52,#2a2a30)">${IC.lock}</div>Mimu Mail</button>
    </div>
-   <div class="cdw" id="cdw" aria-live="off"><div class="cdh"><span class="cdl" id="cdl"></span><span class="cdd" id="cdd"></span></div>
-    <div class="cdt"><div><b id="cd-d">00</b><i>days</i></div><em>:</em><div><b id="cd-h">00</b><i>hrs</i></div><em>:</em><div><b id="cd-m">00</b><i>min</i></div><em>:</em><div><b id="cd-s">00</b><i>sec</i></div></div></div></div>
+   ${Date.now()<CAMPAIGN.close?`<div class="cdw" id="cdw" aria-live="off"><div class="cdh"><span class="cdl" id="cdl"></span><span class="cdd" id="cdd"></span></div>
+    <div class="cdt"><div><b id="cd-d">00</b><i>days</i></div><em>:</em><div><b id="cd-h">00</b><i>hrs</i></div><em>:</em><div><b id="cd-m">00</b><i>min</i></div><em>:</em><div><b id="cd-s">00</b><i>sec</i></div></div></div>`:''}</div>
    <div class="dock">${DOCK.map(a=>`<button class="app-i" data-open="${a.id}" style="font-size:0"><div class="ic" style="background:${a.bg}">${a.ic}${a.id==='msg'&&unreadN()?`<i class="bd">${unreadN()}</i>`:''}</div></button>`).join('')}</div>`;
   startCampaignClock();
   {const wc=$('#wallc');if(m.hero){wc.width=wc.height=160;wc.className='hero'}mimuFront(wc,m)}paintAll();
@@ -1101,7 +1104,7 @@ let _cdTimer=null;
 function startCampaignClock(){
   clearInterval(_cdTimer);
   const tick=()=>{
-    const w=$('#cdw');if(!w){clearInterval(_cdTimer);return}
+    const w=$('#cdw');if(!w){clearInterval(_cdTimer);return}if(Date.now()>=CAMPAIGN.close){w.remove();clearInterval(_cdTimer);return}
     const now=Date.now();let phase,target;
     if(now<CAMPAIGN.open){phase='pre';target=CAMPAIGN.open}else if(now<CAMPAIGN.close){phase='live';target=CAMPAIGN.close}else{phase='done';target=now}
     w.dataset.phase=phase;
@@ -1181,6 +1184,8 @@ const DOCK=[
 `;document.head.appendChild(s)})();
 const MSGS=[
   {id:'hype',n:'Hype',av:'H',bg:'linear-gradient(135deg,#46d36b,#1f8f43)',t:'now',g:1,m:['TIMES ALMOST UP! GO GO GO!']},
+  {id:'bert',n:'Bert',av:'B',bg:'linear-gradient(135deg,#46d36b,#1f8f43)',t:'now',g:1,m:['I AM BERT']},
+  {id:'joubrel',n:'Joubrel',av:'J',bg:'linear-gradient(135deg,#46d36b,#1f8f43)',t:'now',g:1,m:['HOLD MY HAND MIMU!']},
   {id:'tmo',n:'T-Mobile',av:'T',bg:'linear-gradient(135deg,#e20074,#8c0049)',t:'9:02 AM',m:['Your phone bill of $139.34 is due Oct 16. Yes, this phone. The one running from chairs.']},
   {id:'tmf',n:'TMF',av:'TMF',bg:'linear-gradient(135deg,#a9404a,#6e1f26)',t:'Yesterday',m:['Season One is live','Mimu On Ape × The Mutual Fun. Run the halls, vote at the bell and chase the top of the leaderboard.']},
   {id:'mimu',n:'Your Mimu',img:'assets/mimu-icon.jpg',t:'Yesterday',m:['Your Mimu is waiting','The chairs aren’t going to jump themselves.']}];

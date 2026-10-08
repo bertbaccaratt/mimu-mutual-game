@@ -89,6 +89,9 @@ td.n{width:44px;white-space:nowrap;color:var(--gold);font-weight:600}td.r{text-a
 .mleg{display:flex;justify-content:space-between;padding:0 4px;margin-top:8px;color:var(--muted);font-size:10px;letter-spacing:.14em;text-transform:uppercase}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:10px 18px;border-radius:12px;background:#000e;border:1px solid var(--gold);color:var(--cream);z-index:50;display:none}
 .xl{color:#9ad1ff}
+.camp{margin:16px auto 0;max-width:520px;padding:10px 16px;border:2px solid #e0332f;border-radius:14px;box-shadow:0 0 16px rgba(224,51,47,.3);background:#120706;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+.camp[hidden]{display:none}.camp .cl{color:#ff7a70;font-weight:600}.camp b{font:700 20px var(--cond);letter-spacing:.1em;color:var(--cream);font-variant-numeric:tabular-nums}
+.camp.live .cl{color:var(--up)}
 </style>
 </head>
 <body>
@@ -108,6 +111,7 @@ td.n{width:44px;white-space:nowrap;color:var(--gold);font-weight:600}td.r{text-a
     <div class="plate">Total site visitors</div>
     <div class="digits" id="digits"></div>
     <div class="sub"><span><b id="s-today">0</b>last 24h</span><span><b id="s-visits">0</b>total visits</span><span><b id="s-users">0</b>players</span><span><b id="s-held">0</b>awaiting review</span><span><b id="s-ban">0</b>banned</span></div>
+    <div class="camp" id="camp" hidden><span class="cl" id="camp-l"></span><b id="camp-t"></b></div>
   </div>
 
   <div class="two">
@@ -182,6 +186,19 @@ function showCount(n){
   FD.forEach((d,i)=>{if(d.dataset.v!==s[i])flipTo(d,s[i])});
   shown=n;
 }
+
+/* ---------- campaign countdown (Sat Oct 10 2026 9 PM ET -> Wed Oct 14 2026 9 AM ET); shown until it ends ---------- */
+const CAMPAIGN={open:Date.UTC(2026,9,11,1,0,0),close:Date.UTC(2026,9,14,13,0,0)};
+function campTick(){
+  const el=$('#camp');if(!el)return;const now=Date.now();
+  if(now>=CAMPAIGN.close){el.hidden=true;return}
+  const pre=now<CAMPAIGN.open,target=pre?CAMPAIGN.open:CAMPAIGN.close;
+  let s=Math.floor((target-now)/1000);const d=Math.floor(s/86400);s-=d*86400;const h=Math.floor(s/3600);s-=h*3600;const m=Math.floor(s/60);s-=m*60;
+  el.hidden=false;el.classList.toggle('live',!pre);
+  $('#camp-l').textContent=pre?'Campaign opens in':'Campaign closes in';
+  $('#camp-t').textContent=d+'d '+String(h).padStart(2,'0')+'h '+String(m).padStart(2,'0')+'m '+String(s).padStart(2,'0')+'s';
+}
+setInterval(campTick,1000);
 
 /* ---------- api ---------- */
 async function call(path,opt){
@@ -291,6 +308,7 @@ async function refresh(){
 function start(){
   $('#login').hidden=true;$('#app').hidden=false;
   buildDigits(0);showCount(0);
+  campTick();
   loadLand().then(()=>refresh());refresh();
   clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},15000);
 }

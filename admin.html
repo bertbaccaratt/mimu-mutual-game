@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Admin · Mimu</title>
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070605;--panel:#12100d;--panel2:#1a1712;--line:#2c261d;--cream:#f2e7d0;--muted:#8d8470;--gold:#d9b25f;--amber:#ffb000;--up:#6fd08c;--bad:#e0675f;--mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;--cond:'Oswald','Arial Narrow',Impact,sans-serif}
+*{box-sizing:border-box;margin:0}
+html{background:var(--bg)}
+body{min-height:100vh;color:var(--cream);font:400 13px/1.45 var(--mono);background:radial-gradient(1200px 600px at 50% -10%,#1d170f 0,transparent 60%),var(--bg);padding:22px 16px 60px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:var(--gold);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:1080px;margin:0 auto}
+
+/* login */
+#login{max-width:340px;margin:18vh auto 0;text-align:center}
+#login h1{font:700 22px var(--cond);letter-spacing:.2em;text-transform:uppercase;margin-bottom:6px}
+#login p{color:var(--muted);margin-bottom:18px}
+#login input{width:100%;padding:13px 14px;border-radius:12px;background:var(--panel);border:1px solid var(--line);color:var(--cream);font:500 15px var(--mono);outline:0;text-align:center}
+#login input:focus{border-color:var(--gold)}
+#login button{margin-top:12px;width:100%;padding:13px;border-radius:12px;background:linear-gradient(180deg,#f0cf85,#c9a24d);color:#2a1d08;font:600 13px var(--mono);letter-spacing:.14em;text-transform:uppercase}
+#lerr{min-height:20px;margin-top:12px;color:var(--bad)}
+
+/* top bar */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;color:var(--muted);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+.bar b{color:var(--cream);font-weight:600}
+.live{display:inline-flex;align-items:center;gap:7px}.live i{width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 8px var(--up);animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.bar button{padding:6px 12px;border:1px solid var(--line);border-radius:999px;color:var(--muted);letter-spacing:.14em}.bar button:hover{color:var(--cream);border-color:var(--gold)}
+
+/* flip clock */
+.case{margin:0 auto 18px;padding:20px 22px 16px;border-radius:26px;background:linear-gradient(180deg,#26221b,#0e0c09);border:1px solid #3a3326;box-shadow:0 30px 60px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.07),inset 0 -2px 6px rgba(0,0,0,.8);position:relative;text-align:center}
+.case:before,.case:after{content:"";position:absolute;top:12px;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#8a8272,#2b2720 70%);box-shadow:0 1px 0 #000}
+.case:before{left:14px}.case:after{right:14px}
+.plate{display:inline-block;margin-bottom:16px;padding:5px 18px;border-radius:6px;background:linear-gradient(180deg,#3b3426,#1b1711);border:1px solid #4a4130;font:600 11px var(--mono);letter-spacing:.42em;text-indent:.42em;text-transform:uppercase;color:var(--gold)}
+.digits{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:nowrap}
+.grp{display:flex;gap:5px}
+.fd{position:relative;width:clamp(44px,11vw,104px);height:clamp(66px,16.5vw,156px);perspective:700px;font:700 clamp(54px,13.4vw,128px)/1 var(--cond)}
+.fd .h{position:absolute;left:0;right:0;height:50%;overflow:hidden;background:linear-gradient(180deg,#232019,#15130f);color:#f6f1e4;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.fd .h span{position:absolute;left:0;right:0;height:200%;display:flex;align-items:center;justify-content:center}
+.fd .t,.fd .ft{top:0;border-radius:9px 9px 0 0;border-bottom:1px solid #000;transform-origin:50% 100%;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.fd .b,.fd .fb{bottom:0;border-radius:0 0 9px 9px;background:linear-gradient(180deg,#171510,#0f0d0a);transform-origin:50% 0;box-shadow:inset 0 -1px 0 rgba(255,255,255,.05)}
+.fd .t span,.fd .ft span{top:0}.fd .b span,.fd .fb span{bottom:0}
+.fd .ft,.fd .fb{visibility:hidden;z-index:3}
+.fd .fb{transform:rotateX(90deg)}
+.fd.go .ft{visibility:visible;animation:ft .16s ease-in forwards}
+.fd.go .fb{visibility:visible;animation:fb .16s .16s ease-out forwards}
+@keyframes ft{to{transform:rotateX(-90deg)}}
+@keyframes fb{to{transform:rotateX(0)}}
+.fd:after{content:"";position:absolute;left:-3px;right:-3px;top:50%;height:3px;margin-top:-1.5px;background:#050403;z-index:5;box-shadow:0 1px 0 rgba(255,255,255,.07)}
+.fd:before{content:"";position:absolute;left:-4px;top:calc(50% - 5px);width:6px;height:10px;border-radius:2px;background:#0b0a08;z-index:6;box-shadow:inset 0 1px 0 #3a3326}
+.sub{margin-top:14px;display:flex;justify-content:center;gap:22px;flex-wrap:wrap;color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.sub b{color:var(--cream);font-weight:600;font-size:13px;margin-right:5px}
+
+/* sections */
+.sec{margin-top:18px;border-radius:20px;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);overflow:hidden}
+.sec>h2{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:14px 18px 10px;font:700 15px var(--cond);letter-spacing:.2em;text-transform:uppercase;border-bottom:1px solid var(--line)}
+.sec>h2 small{font:500 10px var(--mono);letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}.two .sec{margin-top:18px}
+@media(max-width:820px){.two{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse}
+th{padding:8px 14px;text-align:left;color:var(--muted);font:500 10px var(--mono);letter-spacing:.14em;text-transform:uppercase;border-bottom:1px solid var(--line);position:sticky;top:0;background:#14110d;z-index:2}
+td{padding:9px 14px;border-bottom:1px solid #1f1b14;vertical-align:middle;word-break:break-word}
+tr:last-child td{border-bottom:0}
+td.n{width:44px;white-space:nowrap;color:var(--gold);font-weight:600}td.r{text-align:right;font-variant-numeric:tabular-nums;color:var(--cream)}
+.scroll{max-height:380px;overflow:auto}
+.empty{padding:22px 18px;color:var(--muted);text-align:center}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line);color:var(--muted)}
+.tag.bad{color:var(--bad);border-color:#5a2a26}.tag.warn{color:var(--amber);border-color:#5a4410}
+.av{width:26px;height:26px;border-radius:50%;object-fit:cover;background:#000;border:1px solid var(--line);vertical-align:middle;margin-right:8px}
+.wal{font-size:11px;color:var(--muted);cursor:copy}.wal:hover{color:var(--cream)}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+.btn{padding:6px 12px;border-radius:8px;border:1px solid var(--line);font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.btn.ok{background:#17301f;border-color:#2c6a43;color:var(--up)}.btn.ok:hover{background:#1f4029}
+.btn.no{background:#321a18;border-color:#6a2c28;color:var(--bad)}.btn.no:hover{background:#432220}
+.btn.ghost{color:var(--muted)}.btn.ghost:hover{color:var(--cream);border-color:var(--gold)}
+.btn:disabled{opacity:.4;cursor:default}
+.flags{display:flex;gap:5px;flex-wrap:wrap}
+#mapbox{position:relative;padding:14px 14px 10px}
+#map{width:100%;display:block;border-radius:12px;background:#0a0907}
+#mtip{position:absolute;pointer-events:none;display:none;padding:5px 9px;border-radius:8px;background:#000d;border:1px solid var(--gold);color:var(--cream);font-size:11px;white-space:nowrap;z-index:5}
+.mleg{display:flex;justify-content:space-between;padding:0 4px;margin-top:8px;color:var(--muted);font-size:10px;letter-spacing:.14em;text-transform:uppercase}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:10px 18px;border-radius:12px;background:#000e;border:1px solid var(--gold);color:var(--cream);z-index:50;display:none}
+.xl{color:#9ad1ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div id="login">
+  <h1>Admin</h1>
+  <p>Mimu control room</p>
+  <form id="lf" autocomplete="off"><input id="pw" type="password" placeholder="password" autocomplete="current-password" autofocus><button type="submit">Enter</button></form>
+  <div id="lerr"></div>
+</div>
+
+<div id="app" hidden>
+  <div class="bar"><span class="live"><i></i><b>Mimu admin</b> · live</span><span id="upd">—</span><button id="out" type="button">Log out</button></div>
+
+  <div class="case">
+    <div class="plate">Total site visitors</div>
+    <div class="digits" id="digits"></div>
+    <div class="sub"><span><b id="s-today">0</b>last 24h</span><span><b id="s-visits">0</b>total visits</span><span><b id="s-users">0</b>players</span><span><b id="s-held">0</b>awaiting review</span><span><b id="s-ban">0</b>banned</span></div>
+  </div>
+
+  <div class="two">
+    <section class="sec"><h2>Top 10 · Chair Run <small id="wk1">this week</small></h2><div id="t-run"></div></section>
+    <section class="sec"><h2>Top 10 · Mutual Mimu <small>$TMF found</small></h2><div id="t-nw"></div></section>
+  </div>
+
+  <section class="sec"><h2>Review queue <small>held or flagged runs</small></h2><div id="q"></div></section>
+
+  <section class="sec"><h2>Players <small id="ucount">Glyph + X</small></h2><div class="scroll" id="users"></div></section>
+
+  <section class="sec"><h2>Where people log on from <small id="mcount"></small></h2>
+    <div id="mapbox"><canvas id="map"></canvas><div id="mtip"></div><div class="mleg"><span>● each dot = a place with visitors</span><span id="mcap"></span></div></div>
+  </section>
+
+  <section class="sec"><h2>Recent visitors <small>latest 200</small></h2><div class="scroll" id="ips"></div></section>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(()=>{
+const API=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?'https://mimu-mutual-api-staging.mutualmimu.workers.dev':'https://mimu-mutual-api.mutualmimu.workers.dev';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf=n=>Number(n||0).toLocaleString('en-US');
+let PW='';try{PW=sessionStorage.getItem('mimu-admin')||''}catch(e){}
+let timer=null,DATA=null,LAND=null,busy=false;
+
+/* ---------- flip clock ---------- */
+const FD=[];
+function makeDigit(){
+  const d=document.createElement('div');d.className='fd';d.dataset.v='0';
+  d.innerHTML='<div class="h t"><span>0</span></div><div class="h b"><span>0</span></div><div class="h ft"><span>0</span></div><div class="h fb"><span>0</span></div>';
+  return d;
+}
+function setFace(d,old,nw){
+  d.querySelector('.t span').textContent=nw;d.querySelector('.b span').textContent=old;
+  d.querySelector('.ft span').textContent=old;d.querySelector('.fb span').textContent=nw;
+}
+function flipOnce(d,nw){
+  return new Promise(res=>{
+    const old=d.dataset.v;if(old===nw)return res();
+    d.classList.remove('go');void d.offsetWidth;
+    setFace(d,old,nw);d.classList.add('go');
+    const fb=d.querySelector('.fb');
+    const done=()=>{fb.removeEventListener('animationend',done);d.querySelector('.b span').textContent=nw;d.dataset.v=nw;d.classList.remove('go');res()};
+    fb.addEventListener('animationend',done);setTimeout(done,500);
+  });
+}
+async function flipTo(d,target){          // steps through each number in between, like a real flip clock
+  if(d._busy){d._want=target;return}
+  d._busy=true;
+  let cur=+d.dataset.v;const t=+target;
+  while(cur!==t){cur=(cur+1)%10;await flipOnce(d,String(cur));await new Promise(r=>setTimeout(r,40))}
+  d._busy=false;
+  if(d._want!=null&&d._want!==d.dataset.v){const w=d._want;d._want=null;flipTo(d,w)}else d._want=null;
+}
+function buildDigits(n){
+  const box=$('#digits');box.innerHTML='';FD.length=0;
+  const len=Math.max(5,String(n).length);
+  const groups=[];let i=len;while(i>0){groups.unshift(Math.min(3,i));i-=3}
+  // the first group takes the remainder so groups read 12 345 or 123 456
+  const first=len%3||3;const sizes=[first];for(let k=first;k<len;k+=3)sizes.push(3);
+  sizes.forEach(sz=>{const g=document.createElement('div');g.className='grp';for(let k=0;k<sz;k++){const d=makeDigit();FD.push(d);g.appendChild(d)}box.appendChild(g)});
+}
+let shown=-1;
+function showCount(n){
+  const len=Math.max(5,String(n).length);
+  if(FD.length!==len){buildDigits(n);shown=-1}
+  const s=String(n).padStart(FD.length,'0');
+  FD.forEach((d,i)=>{if(d.dataset.v!==s[i])flipTo(d,s[i])});
+  shown=n;
+}
+
+/* ---------- api ---------- */
+async function call(path,opt){
+  const r=await fetch(API+'/api/admin/'+path,Object.assign({headers:{'Content-Type':'application/json','X-Admin-Token':PW}},opt));
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){const e=new Error(j.error||('error '+r.status));e.status=r.status;throw e}
+  return j;
+}
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast._t);toast._t=setTimeout(()=>t.style.display='none',2600)}
+
+/* ---------- render ---------- */
+const short=a=>a?a.slice(0,6)+'…'+a.slice(-4):'';
+const xlink=x=>x?`<a class="xl" href="https://x.com/${encodeURIComponent(x)}" target="_blank" rel="noopener noreferrer">@${esc(x)}</a>`:'<span class="tag warn">no X yet</span>';
+const wal=a=>`<span class="wal" data-copy="${esc(a)}" title="Click to copy ${esc(a)}">${esc(short(a))}</span>`;
+function topTable(rows,unit){
+  if(!rows.length)return '<div class="empty">Nobody on the board yet this week.</div>';
+  return '<table><tbody>'+rows.map((r,i)=>`<tr><td class="n">${i+1}</td><td>${esc(r.n||short(r.a))}<br>${xlink(r.x)} · ${wal(r.a)}</td><td class="r">${nf(r.v)}<br><span style="color:var(--muted);font-size:10px">${unit}</span></td></tr>`).join('')+'</tbody></table>';
+}
+function ago(t){const s=Math.max(0,Math.floor((Date.now()-t)/1000));if(s<60)return s+'s ago';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago'}
+function render(d){
+  DATA=d;
+  showCount(d.visitors);
+  $('#s-today').textContent=nf(d.today);$('#s-visits').textContent=nf(d.visits);$('#s-users').textContent=nf(d.users.length);$('#s-held').textContent=nf(d.held.length);$('#s-ban').textContent=nf(d.banned);
+  $('#wk1').textContent='week '+d.week;
+  $('#t-run').innerHTML=topTable(d.topRun,'points');
+  $('#t-nw').innerHTML=topTable(d.topNw,'$TMF');
+  // review queue
+  $('#q').innerHTML=d.held.length?'<div class="scroll" style="max-height:340px"><table><thead><tr><th>Player</th><th>Run</th><th>Why flagged</th><th></th></tr></thead><tbody>'+d.held.map(h=>`<tr>
+    <td>${esc(h.n||short(h.a))}<br>${xlink(h.x)} · ${wal(h.a)}</td>
+    <td>${nf(h.score)} pts<br><span style="color:var(--muted);font-size:11px">${nf(h.coins)} $TMF · ${Math.floor(h.seconds/60)}m ${h.seconds%60}s · ${ago(h.t)}</span></td>
+    <td><div class="flags">${(h.flags||[]).map(f=>`<span class="tag warn">${esc(f)}</span>`).join('')}</div></td>
+    <td><div class="btns"><button class="btn ok" data-ap="${esc(h.id)}">Approve</button><button class="btn no" data-dn="${esc(h.id)}">Deny</button><button class="btn ghost" data-bn="${esc(h.a)}">Ban wallet</button></div></td></tr>`).join('')+'</tbody></table></div>'
+    :'<div class="empty">Nothing waiting. Flagged runs show up here for you to approve or deny.</div>';
+  // players
+  $('#ucount').textContent=nf(d.users.length)+' players · Glyph + X';
+  $('#users').innerHTML=d.users.length?'<table><thead><tr><th>Glyph</th><th>Wallet</th><th>X username</th><th>Last seen</th><th></th></tr></thead><tbody>'+d.users.map(u=>`<tr>
+    <td>${u.pic&&/^https:\/\//.test(u.pic)?`<img class="av" src="${esc(u.pic)}" alt="" referrerpolicy="no-referrer" loading="lazy">`:''}${esc(u.n)}${u.banned?' <span class="tag bad">banned</span>':''}</td>
+    <td>${wal(u.a)}<br><span style="color:var(--muted);font-size:10px">${esc(u.a)}</span></td>
+    <td>${xlink(u.x)}</td><td>${ago(u.t)}</td>
+    <td>${u.banned?`<button class="btn ghost" data-ub="${esc(u.a)}">Unban</button>`:`<button class="btn ghost" data-bn="${esc(u.a)}">Ban</button>`}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">No players yet.</div>';
+  // ips
+  $('#ips').innerHTML=d.ips.length?'<table><thead><tr><th>When</th><th>IP address</th><th>Place</th><th>Visitor</th></tr></thead><tbody>'+d.ips.map(h=>`<tr><td title="${esc(new Date(h.ts).toLocaleString())}">${ago(h.ts)}</td><td>${esc(h.ip)}</td><td>${esc([h.city,h.country].filter(Boolean).join(', ')||'unknown')}</td><td style="color:var(--muted)">${esc((h.vid||'').slice(0,8))}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">No visits recorded yet.</div>';
+  $('#upd').textContent='updated '+new Date().toLocaleTimeString();
+  drawMap();
+}
+
+/* ---------- world map (dot matrix) ---------- */
+async function loadLand(){
+  try{
+    const t=(await (await fetch('assets/landmask.txt?v=1')).text()).trim().split(/\r?\n/);
+    const [W,H,TOP,BOT]=t[0].split(' ').map(Number);LAND={W,H,TOP,BOT,rows:t.slice(1)};
+  }catch(e){LAND=null}
+}
+let dots=[];
+function drawMap(){
+  const cv=$('#map');if(!cv)return;
+  const pts=DATA?DATA.map:[];
+  $('#mcount').textContent=pts.reduce((a,p)=>a+p.c,0)+' visitors · '+new Set(pts.map(p=>p.country).filter(Boolean)).size+' countries';
+  if(!LAND){return}
+  const dpr=Math.min(2,window.devicePixelRatio||1),w=cv.parentElement.clientWidth-28,cell=w/LAND.W,h=cell*LAND.H;
+  cv.style.width=w+'px';cv.style.height=h+'px';cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
+  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  g.fillStyle='#4a3d24';
+  for(let r=0;r<LAND.H;r++){const row=LAND.rows[r];for(let c=0;c<LAND.W;c++)if(row[c]==='1'){g.beginPath();g.arc((c+.5)*cell,(r+.5)*cell,cell*.27,0,7);g.fill()}}
+  dots=[];
+  const x=lon=>(lon+180)/360*w, y=lat=>(LAND.TOP-lat)/(LAND.TOP-LAND.BOT)*h;
+  for(const p of pts){
+    const px=x(p.lon),py=y(p.lat);if(py<0||py>h)continue;
+    const rad=Math.min(9,3+Math.log2(1+p.c)*1.6);
+    const gr=g.createRadialGradient(px,py,0,px,py,rad*3);gr.addColorStop(0,'rgba(255,176,0,.55)');gr.addColorStop(1,'rgba(255,176,0,0)');
+    g.fillStyle=gr;g.beginPath();g.arc(px,py,rad*3,0,7);g.fill();
+    g.fillStyle='#ffc233';g.beginPath();g.arc(px,py,rad*.55,0,7);g.fill();
+    dots.push({x:px,y:py,r:Math.max(8,rad*1.4),p});
+  }
+  $('#mcap').textContent='equal-spaced world view';
+}
+$('#map').addEventListener('mousemove',e=>{
+  const b=e.currentTarget.getBoundingClientRect(),mx=e.clientX-b.left,my=e.clientY-b.top,tip=$('#mtip');
+  const hit=dots.find(d=>Math.hypot(d.x-mx,d.y-my)<=d.r);
+  if(!hit){tip.style.display='none';return}
+  tip.textContent=[hit.p.city,hit.p.country].filter(Boolean).join(', ')+' · '+hit.p.c+' visitor'+(hit.p.c===1?'':'s');
+  tip.style.display='block';tip.style.left=Math.min(b.width-160,mx+20)+'px';tip.style.top=(my+14)+'px';
+});
+$('#map').addEventListener('mouseleave',()=>$('#mtip').style.display='none');
+let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(drawMap,150)});
+
+/* ---------- actions ---------- */
+document.addEventListener('click',async e=>{
+  const t=e.target.closest('button,[data-copy]');if(!t)return;
+  try{
+    if(t.dataset.copy){await navigator.clipboard.writeText(t.dataset.copy);toast('Wallet copied');return}
+    if(t.dataset.ap){t.disabled=true;await call('release',{method:'POST',body:JSON.stringify({runId:t.dataset.ap})});toast('Approved: score added to the leaderboard');return refresh()}
+    if(t.dataset.dn){t.disabled=true;await call('reject',{method:'POST',body:JSON.stringify({runId:t.dataset.dn})});toast('Denied: run discarded');return refresh()}
+    if(t.dataset.bn){if(!confirm('Ban this wallet? It will be removed from the leaderboard and blocked from signing in.\n\n'+t.dataset.bn))return;
+      await call('ban',{method:'POST',body:JSON.stringify({address:t.dataset.bn,reason:'banned from admin page'})});toast('Wallet banned');return refresh()}
+    if(t.dataset.ub){await call('unban',{method:'POST',body:JSON.stringify({address:t.dataset.ub})});toast('Wallet unbanned');return refresh()}
+  }catch(err){toast(err.message);t.disabled=false}
+});
+
+/* ---------- session ---------- */
+async function refresh(){
+  if(busy)return;busy=true;
+  try{render(await call('dashboard'))}
+  catch(e){if(e.status===403){logout(true)}else $('#upd').textContent=e.message}
+  busy=false;
+}
+function start(){
+  $('#login').hidden=true;$('#app').hidden=false;
+  buildDigits(0);showCount(0);
+  loadLand().then(()=>refresh());refresh();
+  clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},15000);
+}
+function logout(bad){
+  try{sessionStorage.removeItem('mimu-admin')}catch(e){}
+  PW='';clearInterval(timer);$('#app').hidden=true;$('#login').hidden=false;$('#pw').value='';
+  $('#lerr').textContent=bad?'Wrong password.':'';$('#pw').focus();
+}
+$('#out').onclick=()=>logout(false);
+$('#lf').onsubmit=async e=>{
+  e.preventDefault();const v=$('#pw').value;if(!v)return;
+  PW=v;$('#lerr').textContent='';
+  try{await call('dashboard');try{sessionStorage.setItem('mimu-admin',PW)}catch(x){}start()}
+  catch(err){PW='';$('#lerr').textContent=err.status===403?'Wrong password.':err.message}
+};
+if(PW){call('dashboard').then(()=>start()).catch(()=>logout(false))}
+})();
+</script>
+</body>
+</html>

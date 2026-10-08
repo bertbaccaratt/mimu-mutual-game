@@ -144,6 +144,8 @@ input{font:inherit;color:inherit;-webkit-user-select:text;user-select:text}
 .topbar nav .cta:hover{color:#1a0f05;background:linear-gradient(180deg,#f8e1a2,#d4a63f)}
 @keyframes ctaPulse{0%,100%{box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 6px 18px rgba(217,178,95,.3)}50%{box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 6px 26px rgba(217,178,95,.6)}}
 .footbar .f1 b{color:var(--cream);font-weight:600}
+.footbar .f1 .adm{margin-left:18px;padding:4px 11px;border:1px solid rgba(217,178,95,.35);border-radius:999px;color:#bfae8c;font:600 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;opacity:.75;transition:opacity .3s,border-color .3s}
+.footbar .f1 .adm:hover{opacity:1;border-color:var(--gold)}.footbar .f1 .adm:after{display:none}
 .footbar .f1 span{color:var(--gold);margin:0 8px}
 .footbar .f2{position:absolute;left:50%;transform:translateX(-50%);font:italic 500 13px var(--serif);white-space:nowrap}
 .footbar .f3{display:flex;align-items:center;gap:20px}
@@ -648,7 +650,7 @@ body.enter .footbar{animation-name:chromeInB}
 
   <!-- landing page: footer -->
   <footer class="footbar">
-    <div class="f1">© 2026 <b>MIMU ON APE</b></div>
+    <div class="f1">© 2026 <b>MIMU ON APE</b><a class="adm" href="admin.html" rel="nofollow">Admin</a></div>
     <div class="f3"><a href="https://opensea.io/collection/mimuonape" target="_blank" rel="noopener">MIMU ON APE ↗</a><a href="https://themutual.fun" target="_blank" rel="noopener">THEMUTUAL.FUN ↗</a><button class="tosbtn" id="tosBtn" type="button">Terms of Service</button></div>
   </footer>
   <div class="prop p-card"><img src="assets/passcard.webp" alt=""><a class="card-hit" href="https://themutual.fun" target="_blank" rel="noopener" aria-label="TMF Pass: visit The Mutual Fun"></a></div>
@@ -737,7 +739,7 @@ body.enter .footbar{animation-name:chromeInB}
       <h3>4 · In-game currency and points</h3><p>“$TMF” coins and “Season Points” shown inside the Game are virtual items for gameplay only. They have no cash value, cannot be sold or redeemed, and are not the $TMF token or any other digital asset. The only way to give coins away is the in-game “Top 5” app; those gifts are virtual and final.</p>
       <h3>5 · Leaderboards and recognition</h3><p>The Game has a leaderboard that resets each week, and you are welcome to keep playing to beat your own best score. Top players may be considered for recognition, which could include a TMF Pass or another item, but nothing is promised. No TMF Passes have been allocated to the Game at this time. Whether any recognition is given, who is considered, how many items exist and when are decided solely by MIMU ON APE and THEMUTUAL.FUN, and may change or end at any time. Leaderboard results may be reviewed and adjusted to remove cheating or errors. A score, rank or badge does not entitle anyone to a reward.</p>
       <h3>5b · Fair play</h3><p>Every leaderboard score is checked by our server, which replays your run from the moves you made. Runs that can&rsquo;t be verified, or that come from bots, scripts, edited code or exploits, don&rsquo;t count and may be removed along with the account&rsquo;s results. Chair Run runs on your device, so keep your connection open until the &ldquo;run complete&rdquo; screen finishes ranking you.</p>
-      <h3>5a · Connecting Glyph and your data</h3><p>Chair Run asks you to connect a Glyph wallet. We read your Glyph username, profile picture and wallet address, and we check which NFTs that wallet holds: you need a Mimu On Ape to play, and wallets holding a TMF Pass or a Dengs can&rsquo;t play. Your username, picture and scores are shown publicly on the leaderboards, and we store them (plus your wallet address) to run the leaderboards. Connecting only asks for a signature that proves you own the wallet. It costs nothing, sends no transaction and can&rsquo;t move your assets. Disconnect any time in Settings.</p>
+      <h3>5a · Connecting Glyph and your data</h3><p>Chair Run asks you to connect a Glyph wallet. We read your Glyph username, profile picture and wallet address, and we check which NFTs that wallet holds: you need a Mimu On Ape to play, and wallets holding a TMF Pass or a Dengs can&rsquo;t play. Your username, picture and scores are shown publicly on the leaderboards, and we store them (plus your wallet address) to run the leaderboards. You also give us an X username, which the team can see but which is not shown on the public leaderboards. Like most websites, we count visitors: when you open the site we record an anonymous browser ID, your IP address and the approximate place (city and country) your connection comes from, and we keep only the most recent records. Connecting only asks for a signature that proves you own the wallet. It costs nothing, sends no transaction and can&rsquo;t move your assets. Disconnect any time in Settings.</p>
       <h3>6 · Not financial advice</h3><p>Mutual Mimu is a simulation. It does not involve real money, real investments or real markets, and nothing in it is investment, legal or tax advice. Past in-game results say nothing about real-world performance.</p>
       <h3>7 · Fair play</h3><p>Do not use bots, scripts, exploits, automated input or multiple identities to gain an advantage, and do not interfere with the Game or other players. We may remove scores or restrict access where we reasonably suspect misuse.</p>
       <h3>8 · Intellectual property</h3><p>The MIMU ON APE name, characters and artwork belong to MIMU ON APE and its respective creators and rights holders. THEMUTUAL.FUN names, marks and chair artwork belong to their respective owners. The Game’s design and code belong to their authors. You may play the Game for personal, non-commercial use but may not copy or redistribute it without permission.</p>
@@ -1401,6 +1403,14 @@ const myRank=kind=>board(kind).findIndex(x=>x.me)+1;
    CHAIR RUN GATE: connect Glyph, verify holdings, then play.
    Only Chair Run asks for this. The rest of the site stays open to everyone.
    ===================================================================== */
+/* anonymous visit counter: a random id kept in this browser, sent once per tab session (not on local test servers) */
+(function(){try{
+  if(!GAME_CONFIG.api||/^(localhost|127\.0\.0\.1)$/.test(location.hostname)||sessionStorage.getItem('mimu-hit'))return;
+  let v=localStorage.getItem('mimu-vid');
+  if(!/^[0-9a-f]{32}$/.test(v||'')){v=Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');localStorage.setItem('mimu-vid',v)}
+  sessionStorage.setItem('mimu-hit','1');
+  fetch(GAME_CONFIG.api.replace(/\/$/,'')+'/api/hit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid:v}),keepalive:true}).catch(()=>{});
+}catch(e){}})();
 const GATE={ok:false};
 const GEM_SVG='<svg viewBox="0 0 88 88"><defs><linearGradient id="gmA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3d0"/><stop offset=".5" stop-color="#d9b25f"/><stop offset="1" stop-color="#8a5a14"/></linearGradient><linearGradient id="gmB" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff7ad9"/><stop offset=".5" stop-color="#7aa7ff"/><stop offset="1" stop-color="#7affd2"/></linearGradient></defs><path d="M44 6l30 24-30 52L14 30z" fill="url(#gmA)"/><path d="M44 6l30 24H14z" fill="#fff" fill-opacity=".38"/><path d="M14 30h60L44 82z" fill="url(#gmB)" fill-opacity=".34"/><path d="M44 6v76M14 30l30 52 30-52" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1.4"/></svg>';
 const demoGate=()=>{if(gatesConfigured()&&!/^(localhost|127\.0\.0\.1)$/.test(location.hostname))return null;const m=/[?&]gate=(\w+)/.exec(location.search);return m?m[1]:null};
@@ -1437,7 +1447,7 @@ function runGate(root,ctl,enter){
 
   const intro=()=>{
     show(`<div class="gl-gem">${GEM_SVG}</div><h2>Connect <em>Glyph</em></h2>
-      <p>Run the halls as yourself. We only read your <b>Glyph username</b> and <b>profile picture</b>.</p>
+      <p>Run the halls as yourself. We read your <b>Glyph username</b>, <b>profile picture</b> and <b>wallet address</b>, and ask for your <b>X username</b>.</p>
       <ul class="gl-req"><li><i>1</i>Hold a Mimu On Ape</li><li class="no"><i>2</i>No TMF Pass in the wallet</li><li class="no"><i>3</i>No Dengs in the wallet</li></ul>
       <div class="acts"><button class="btn gold" id="gc" style="padding:16px">Connect with Glyph</button><div class="sm">Only a free sign-in signature. Never a transaction, approval or seed phrase.</div></div>`);
     $('#gc',root).onclick=()=>{beep(520);connect()};
@@ -1484,10 +1494,10 @@ function runGate(root,ctl,enter){
       rows[k].querySelector('.st').textContent=good?'✓':'✕';rows[k].querySelector('em').textContent=good?yes:no;beep(good?880:240,.1);
       await sleep(260);
     }
-    let reason=res.pass?'pass':res.dengs?'dengs':!res.mimu?'nomimu':'';
+    let reason=res.pass?'pass':res.dengs?'dengs':!res.mimu?'nomimu':'',needX=false;
     /* the server re-checks everything and is the source of truth once it is live */
     if(!reason&&API.on()&&!demo){
-      try{const r=await API.login();if(r&&r.gates&&!r.gates.allowed)reason=r.gates.reason}
+      try{const r=await API.login();if(r&&r.gates&&!r.gates.allowed)reason=r.gates.reason;else if(r&&!r.x)needX=true}
       catch(e){
         if(e.body&&e.body.gates&&e.body.gates.reason)reason=e.body.gates.reason;
         else{if(alive())problem('Couldn’t sign you in',e.status===401?'The signature was rejected. Try again.':'The leaderboard service didn’t answer. Try again in a moment.',verify);return}
@@ -1496,7 +1506,24 @@ function runGate(root,ctl,enter){
     await sleep(500);if(!alive())return;
     const ring=$('#gring',root);if(ring)ring.classList.add(reason?'bad':'done');
     await sleep(420);if(!alive())return;
-    reason?denied(reason):welcome();
+    reason?denied(reason):needX?askX():welcome();
+  };
+
+  /* every player gives an X username once (typed, not verified); the server keeps it with their Glyph wallet */
+  const askX=()=>{
+    show(`<div class="gl-gem">${GEM_SVG}</div><h2>Your <em>X</em> username</h2>
+      <p>One last thing. Add the X account you play under so the team can find you on the leaderboard. It is shown to the team, not on the public board.</p>
+      <input id="xh" maxlength="40" placeholder="@yourname" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%;padding:13px 14px;border-radius:14px;background:var(--panel);border:1px solid var(--line2);font:500 15px var(--mono);outline:0;text-align:center;margin:4px 0 8px">
+      <div class="hint" id="xe" style="min-height:18px;color:#e0675f"></div>
+      <div class="acts"><button class="btn gold" id="xs" style="padding:16px">Continue</button></div>`);
+    const inp=$('#xh',root),err=$('#xe',root),btn=$('#xs',root);
+    const go=async()=>{
+      const v=inp.value.trim();if(!v){err.textContent='Enter your X username to continue.';return}
+      btn.disabled=true;err.textContent='';
+      try{await API.j('/api/profile/x',{method:'POST',body:JSON.stringify({x:v})});if(alive()){beep(880,.1);welcome()}}
+      catch(e){btn.disabled=false;err.textContent=(e&&e.message)||'Could not save that. Try again.'}
+    };
+    btn.onclick=go;inp.onkeydown=e=>{if(e.key==='Enter')go()};setTimeout(()=>inp.focus(),300);
   };
 
   const welcome=()=>{

@@ -57,7 +57,7 @@ function cors(env, req) {
   const h = { 'Vary': 'Origin' };
   if (allowedOrigins(env).includes(origin)) {
     h['Access-Control-Allow-Origin'] = origin;
-    h['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
+    h['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Admin-Token';
     h['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
     h['Access-Control-Max-Age'] = '86400';
   }
@@ -189,7 +189,8 @@ async function handleAuth(env, req) {
   await env.DB.prepare('INSERT INTO players(address,name,picture,updated_at) VALUES(?1,?2,?3,?4) ON CONFLICT(address) DO UPDATE SET name=?2,picture=?3,updated_at=?4')
     .bind(addr.toLowerCase(), name, picture, now).run();
   const exp = now + SESSION_MS;
-  return json(env, req, { token: await signToken(env, { sub: addr.toLowerCase(), exp }), expiresAt: exp, gates });
+  const mine = await env.DB.prepare('SELECT x_handle FROM players WHERE address=?1').bind(addr.toLowerCase()).first();
+  return json(env, req, { token: await signToken(env, { sub: addr.toLowerCase(), exp }), expiresAt: exp, gates, x: (mine && mine.x_handle) || '' });
 }
 
 /* ---------- verified runs ---------- */
@@ -291,13 +292,77 @@ async function handleRunChunk(env, req) {
   return json(env, req, { ok: true, final: true, score, coins, dist, rank: mine ? await rankOf(env, week, 'run_best', mine.run_best) : null, best: mine ? mine.run_best : 0 });
 }
 
-/* ---------- admin: review runs that were held, block wallets (needs the ADMIN_TOKEN secret; not callable from browsers) ---------- */
+/* ---------- visitor counter (anonymous browser id + the approximate place Cloudflare reports for the connection) ---------- */
+async function handleHit(env, req) {
+  if (await limited(env, 'RL_READ', clientIp(req))) return tooMany(env, req);
+  let b = {}; try { b = await req.json(); } catch { /* no body */ }
+  const vid = typeof b.vid === 'string' && /^[0-9a-f]{32}$/.test(b.vid) ? b.vid : null;
+  if (!vid) return json(env, req, { error: 'bad request' }, 400);
+  const cf = req.cf || {}, ip = clientIp(req), now = Date.now();
+  const num = (v) => (v != null && Number.isFinite(Number(v)) ? Math.round(Number(v) * 100) / 100 : null);
+  const clean = (s, n) => String(s || '').replace(/[^\p{L}\p{N} .,'\-]/gu, '').slice(0, n);
+  const country = clean(cf.country, 2), city = clean(cf.city, 60), lat = num(cf.latitude), lon = num(cf.longitude);
+  const row = await env.DB.prepare('SELECT last_seen FROM visitors WHERE id=?1').bind(vid).first();
+  if (row && now - row.last_seen < 30 * 60 * 1000) return json(env, req, { ok: true });          // same visit
+  await env.DB.prepare(`INSERT INTO visitors(id,first_seen,last_seen,visits,ip,country,city,lat,lon) VALUES(?1,?2,?2,1,?3,?4,?5,?6,?7)
+      ON CONFLICT(id) DO UPDATE SET last_seen=?2, visits=visits+1, ip=?3, country=?4, city=?5, lat=?6, lon=?7`).bind(vid, now, ip, country, city, lat, lon).run();
+  await env.DB.prepare('INSERT INTO hits(ts,vid,ip,country,city) VALUES(?1,?2,?3,?4,?5)').bind(now, vid, ip, country, city).run();
+  await env.DB.prepare('DELETE FROM hits WHERE id <= (SELECT MAX(id) - 2000 FROM hits)').run();
+  return json(env, req, { ok: true });
+}
+
+/* ---------- player profile: X username (typed by the player, not verified by Glyph) ---------- */
+async function handleProfileX(env, req) {
+  const sess = await readToken(env, req);
+  if (!sess) return json(env, req, { error: 'sign in first' }, 401);
+  if (await limited(env, 'RL_AUTH', sess.sub)) return tooMany(env, req);
+  let b = {}; try { b = await req.json(); } catch { return json(env, req, { error: 'bad json' }, 400); }
+  const x = String(b.x || '').trim().replace(/^@/, '').replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//i, '').replace(/[/?#].*$/, '');
+  if (!/^[A-Za-z0-9_]{1,15}$/.test(x)) return json(env, req, { error: 'That does not look like an X username (letters, numbers and _ only, up to 15).' }, 400);
+  await env.DB.prepare('UPDATE players SET x_handle=?1 WHERE address=?2').bind(x, sess.sub).run();
+  return json(env, req, { ok: true, x });
+}
+
+/* ---------- admin: dashboard, held runs, bans (needs the admin password, checked here on the server) ---------- */
+async function adminLocked(env, ip) {
+  const r = await env.DB.prepare('SELECT n, until FROM admin_fails WHERE ip=?1').bind(ip).first();
+  return !!(r && r.until > Date.now());
+}
+async function adminFail(env, ip) {
+  const now = Date.now();
+  const r = await env.DB.prepare('SELECT n, at FROM admin_fails WHERE ip=?1').bind(ip).first();
+  const n = r && now - r.at < 15 * 60 * 1000 ? r.n + 1 : 1;
+  await env.DB.prepare('INSERT INTO admin_fails(ip,n,at,until) VALUES(?1,?2,?3,?4) ON CONFLICT(ip) DO UPDATE SET n=?2, at=?3, until=?4').bind(ip, n, now, n >= 6 ? now + 15 * 60 * 1000 : 0).run();
+}
 async function handleAdmin(env, req, url) {
+  const ip = clientIp(req);
+  const out = (o, st = 200) => new Response(JSON.stringify(o), { status: st, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...cors(env, req) } });
+  if (await adminLocked(env, ip)) return out({ error: 'too many wrong passwords, try again in 15 minutes' }, 429);
   const tok = req.headers.get('X-Admin-Token') || '';
-  if (!env.ADMIN_TOKEN || !safeEq(enc.encode(tok), enc.encode(env.ADMIN_TOKEN))) return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
-  const out = (o, st = 200) => new Response(JSON.stringify(o, null, 2), { status: st, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+  if (!env.ADMIN_TOKEN || !safeEq(enc.encode(tok), enc.encode(env.ADMIN_TOKEN))) { await adminFail(env, ip); return out({ error: 'forbidden' }, 403); }
   const path = url.pathname.replace('/api/admin/', '');
   let b = {}; if (req.method === 'POST') { try { b = await req.json(); } catch { return out({ error: 'bad json' }, 400); } }
+  if (path === 'dashboard' && req.method === 'GET') {
+    const week = weekNow(), q = (sql, ...a) => env.DB.prepare(sql).bind(...a);
+    const top = (col) => q(`SELECT s.address a, s.${col} v, p.name n, p.x_handle x FROM scores s JOIN players p ON p.address=s.address WHERE s.week=?1 AND s.${col}>0 ORDER BY s.${col} DESC, s.updated_at ASC LIMIT 10`, week).all();
+    const [vis, tot, today, run, nw, held, users, map, ips, banned] = await Promise.all([
+      q('SELECT COUNT(*) c FROM visitors').first(),
+      q('SELECT COALESCE(SUM(visits),0) c FROM visitors').first(),
+      q('SELECT COUNT(*) c FROM visitors WHERE last_seen>?1', Date.now() - 24 * 3600 * 1000).first(),
+      top('run_best'), top('coins_total'),
+      q("SELECT r.id, r.address a, p.name n, p.x_handle x, r.score, r.coins, r.last_tick ticks, r.flags, r.ended_at t FROM runs r LEFT JOIN players p ON p.address=r.address WHERE r.status='held' ORDER BY r.ended_at DESC LIMIT 50").all(),
+      q('SELECT p.address a, p.name n, p.picture pic, p.x_handle x, p.updated_at t, (SELECT 1 FROM bans b WHERE b.address=p.address) banned FROM players p ORDER BY p.updated_at DESC LIMIT 1000').all(),
+      q('SELECT lat, lon, country, city, COUNT(*) c FROM visitors WHERE lat IS NOT NULL AND lon IS NOT NULL GROUP BY ROUND(lat,1), ROUND(lon,1) ORDER BY MAX(last_seen) DESC LIMIT 1500').all(),
+      q('SELECT ts, ip, country, city, vid FROM hits ORDER BY id DESC LIMIT 200').all(),
+      q('SELECT COUNT(*) c FROM bans').first(),
+    ]);
+    return out({
+      week, visitors: vis.c, visits: tot.c, today: today.c, banned: banned.c,
+      topRun: run.results || [], topNw: nw.results || [],
+      held: (held.results || []).map((r) => ({ ...r, flags: JSON.parse(r.flags || '[]'), seconds: Math.round(r.ticks / 60) })),
+      users: users.results || [], map: map.results || [], ips: ips.results || [],
+    });
+  }
   if (path === 'held' && req.method === 'GET') {
     const rows = (await env.DB.prepare("SELECT r.id, r.address, p.name, r.score, r.coins, r.dist, r.last_tick ticks, r.flags, r.ended_at FROM runs r LEFT JOIN players p ON p.address=r.address WHERE r.status='held' ORDER BY r.ended_at DESC LIMIT 100").all()).results || [];
     return out({ count: rows.length, runs: rows.map((r) => ({ ...r, flags: JSON.parse(r.flags || '[]'), seconds: Math.round(r.ticks / 60), ended: new Date(r.ended_at).toISOString() })) });
@@ -362,6 +427,8 @@ export default {
       if (url.pathname === '/api/run/start' && req.method === 'POST') return handleRunStart(env, req);
       if (url.pathname === '/api/run/chunk' && req.method === 'POST') return handleRunChunk(env, req);
       if (url.pathname === '/api/leaderboard' && req.method === 'GET') return handleBoard(env, req, url);
+      if (url.pathname === '/api/hit' && req.method === 'POST') return handleHit(env, req);
+      if (url.pathname === '/api/profile/x' && req.method === 'POST') return handleProfileX(env, req);
       if (url.pathname.startsWith('/api/admin/')) { if (await limited(env, 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleAdmin(env, req, url); }
       return json(env, req, { error: 'not found' }, 404);
     } catch (e) {

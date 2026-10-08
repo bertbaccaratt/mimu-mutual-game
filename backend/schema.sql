@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS players (
   address    TEXT PRIMARY KEY,         -- lowercase wallet address
   name       TEXT NOT NULL,            -- Glyph username (sanitised)
   picture    TEXT NOT NULL DEFAULT '', -- Glyph profile picture (https only)
+  x_handle   TEXT,                     -- X username typed by the player (not verified)
   updated_at INTEGER NOT NULL
 );
 
@@ -53,4 +54,36 @@ CREATE TABLE IF NOT EXISTS holdings (
   held    INTEGER NOT NULL,
   expires INTEGER NOT NULL,
   PRIMARY KEY (address, gate)
+);
+
+-- anonymous visitor counter (random browser id + the approximate place Cloudflare reports)
+CREATE TABLE IF NOT EXISTS visitors (
+  id         TEXT PRIMARY KEY,
+  first_seen INTEGER NOT NULL,
+  last_seen  INTEGER NOT NULL,
+  visits     INTEGER NOT NULL DEFAULT 1,
+  ip         TEXT,
+  country    TEXT,
+  city       TEXT,
+  lat        REAL,
+  lon        REAL
+);
+CREATE INDEX IF NOT EXISTS idx_visitors_seen ON visitors (last_seen);
+
+-- most recent visits (trimmed to the last 2000)
+CREATE TABLE IF NOT EXISTS hits (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts      INTEGER NOT NULL,
+  vid     TEXT,
+  ip      TEXT,
+  country TEXT,
+  city    TEXT
+);
+
+-- wrong admin passwords, to lock out guessing
+CREATE TABLE IF NOT EXISTS admin_fails (
+  ip    TEXT PRIMARY KEY,
+  n     INTEGER NOT NULL,
+  at    INTEGER NOT NULL,
+  until INTEGER NOT NULL DEFAULT 0
 );

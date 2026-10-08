@@ -423,9 +423,105 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;bac
 .tk{width:78%;margin:0 auto;transform:translateY(-105%);animation:print 1.8s .3s var(--ease) forwards}
 @keyframes print{to{transform:none}}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+/* ================= NDA GATE ================= */
+#nda{position:fixed;inset:0;z-index:1000;background:#030203;display:grid;place-items:center;overflow:hidden;clip-path:circle(150% at 50% 42%);transition:clip-path 1.5s cubic-bezier(.75,0,.2,1)}
+#nda.out{clip-path:circle(0% at 50% 42%)}
+#nda .bgd{position:absolute;inset:-4%;background:#2a180d url(assets/desk.jpg) center/cover;filter:brightness(.32) saturate(.85) blur(1.5px);opacity:0;transform:scale(1.12);transition:opacity 2s ease 1.8s,transform 8s ease-out 1.8s}
+#nda.go .bgd{opacity:1;transform:scale(1)}
+#nda .spot{position:absolute;inset:0;background:radial-gradient(ellipse 52% 62% at 50% 46%,rgba(255,228,176,.42),rgba(255,228,176,.08) 48%,rgba(0,0,0,.0) 62%),radial-gradient(ellipse at 50% 50%,transparent 38%,rgba(0,0,0,.92) 88%);opacity:0;transition:opacity 1.6s ease 2.1s;pointer-events:none}
+#nda.go .spot{opacity:1}
+#nda .pres{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;pointer-events:none;font:500 12px var(--mono);letter-spacing:.42em;text-transform:uppercase;color:var(--gold2);animation:ndaPres 3.1s ease both}
+#nda .pres b{display:block;font:italic 700 clamp(22px,4.4vw,40px) var(--serif);letter-spacing:.06em;color:#fff3d0;margin:12px 0;text-transform:none}
+@keyframes ndaPres{0%{opacity:0;letter-spacing:.7em}22%{opacity:1;letter-spacing:.42em}74%{opacity:1}100%{opacity:0;visibility:hidden}}
+#nda .doc{position:relative;width:min(700px,92vw);max-height:92vh;display:flex;flex-direction:column;color:#1d1812;border-radius:3px;
+  background:linear-gradient(180deg,#fbf6e9,#f1e9d4);box-shadow:0 2px 0 #fff8 inset,0 40px 90px rgba(0,0,0,.75),0 0 0 1px #0007,0 0 120px rgba(255,214,150,.18);
+  transform:translateY(-135vh) rotate(-9deg);opacity:0;will-change:transform}
+#nda.go .doc{animation:ndaDrop 1.25s cubic-bezier(.2,.8,.25,1) 2.7s both}
+@keyframes ndaDrop{0%{transform:translateY(-135vh) rotate(-9deg);opacity:1}55%{transform:translateY(18px) rotate(1.6deg);opacity:1}72%{transform:translateY(-8px) rotate(-.6deg)}86%{transform:translateY(3px) rotate(.2deg)}100%{transform:none;opacity:1}}
+#nda .doc.shake{animation:ndaShake .38s linear}
+@keyframes ndaShake{0%,100%{transform:none}20%{transform:translate(-5px,3px) rotate(-.3deg)}40%{transform:translate(5px,-3px) rotate(.3deg)}60%{transform:translate(-3px,2px)}80%{transform:translate(3px,-1px)}}
+#nda .doc.leave{animation:ndaLeave 1.2s cubic-bezier(.6,0,.9,.4) both}
+@keyframes ndaLeave{0%{transform:none;opacity:1}100%{transform:translateY(-12vh) scale(.5) rotate(5deg);opacity:0}}
+#nda .doc:before{content:"CONFIDENTIAL";position:absolute;inset:0;display:grid;place-items:center;font:700 clamp(54px,12vw,110px) var(--sans);letter-spacing:.06em;color:rgba(160,30,24,.055);transform:rotate(-24deg);pointer-events:none;z-index:0;overflow:hidden}
+#nda .dh{position:relative;z-index:1;flex:none;display:flex;align-items:center;gap:14px;padding:20px 28px 12px;border-bottom:2px solid #1d1812}
+#nda .crest{width:46px;height:46px;border-radius:50%;background:#000 url(assets/mimu-icon.jpg) center/cover;border:2px solid #b3862a;box-shadow:0 0 0 3px #f1e9d4,0 0 0 4px #b3862a;flex:none}
+#nda .org{font:700 12px/1.3 var(--sans);letter-spacing:.2em;text-transform:uppercase}
+#nda .org small{display:block;font:500 9.5px var(--mono);letter-spacing:.14em;color:#6d6252;margin-top:3px}
+#nda .fno{margin-left:auto;text-align:right;font:500 9.5px/1.6 var(--mono);letter-spacing:.1em;color:#6d6252;text-transform:uppercase}
+#nda .fno b{color:#a1261f;font-weight:600}
+#nda .dt{position:relative;z-index:1;flex:none;text-align:center;padding:16px 28px 8px}
+#nda .dt h1{font:italic 700 clamp(20px,3.6vw,27px)/1.15 var(--serif);letter-spacing:.01em}
+#nda .dt p{font:500 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:#6d6252;margin-top:6px}
+#nda .db{position:relative;z-index:1;flex:1;min-height:70px;overflow-y:auto;padding:6px 28px 8px;font:400 13.5px/1.62 var(--serif);scrollbar-width:thin;scrollbar-color:#b3862a #0000}
+#nda .db p{margin:0 0 9px}
+#nda .db b.a{font:700 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:#7a1914;margin-right:6px}
+#nda .db em{font-style:italic;color:#4a4033}
+#nda .sig{position:relative;z-index:1;flex:none;padding:10px 28px 18px;border-top:1px solid #1d181255;background:linear-gradient(180deg,#0000,#00000008)}
+#nda .sgrid{display:grid;grid-template-columns:1fr 150px;gap:18px;align-items:end}
+#nda .pad{position:relative;height:92px}
+#nda .pad canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
+#nda .pad:after{content:"";position:absolute;left:0;right:0;bottom:14px;border-bottom:1.5px solid #1d1812;pointer-events:none}
+#nda .pad .x{position:absolute;left:2px;bottom:18px;font:700 20px var(--sans);color:#a1261f;pointer-events:none}
+#nda .pad .hint{position:absolute;left:34px;bottom:20px;font:italic 500 15px var(--serif);color:#9a8d78;pointer-events:none;transition:opacity .3s;animation:ndaHint 1.6s ease-in-out infinite}
+@keyframes ndaHint{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
+#nda .pad.has .hint{opacity:0}
+#nda .cap{font:500 9px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:#6d6252;margin-top:4px}
+#nda .dtl{border-bottom:1.5px solid #1d1812;font:500 14px var(--mono);padding:0 0 4px;text-align:center}
+#nda .row2{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+#nda .chk{display:flex;align-items:center;gap:9px;font:500 12.5px var(--sans);cursor:pointer;flex:1;min-width:210px}
+#nda .chk input{width:18px;height:18px;accent-color:#a1261f}
+#nda .lnk{font:500 11px var(--mono);letter-spacing:.06em;color:#6d6252;text-decoration:underline;cursor:pointer}
+#nda .typed{display:none;width:100%;margin-top:6px;padding:8px 10px;border:1px solid #1d181266;background:#fff8;font:700 22px Caveat,cursive;color:#1b2f8c;border-radius:4px}
+#nda .go-btn{padding:13px 22px;border-radius:999px;font:700 12px var(--sans);letter-spacing:.16em;text-transform:uppercase;color:#fff;background:linear-gradient(180deg,#d6443c,#9b1f1a);border:1px solid #6e120e;box-shadow:0 1px 0 #fff4 inset,0 8px 20px rgba(160,30,24,.4);transition:transform .2s,filter .3s,opacity .3s}
+#nda .go-btn:disabled{opacity:.38;filter:grayscale(.5);cursor:not-allowed;box-shadow:none}
+#nda .go-btn:not(:disabled):hover{transform:translateY(-2px)}
+#nda .stamp{position:absolute;z-index:3;left:50%;top:52%;width:min(360px,70%);margin-left:calc(min(360px,70%)/-2);padding:14px 10px;border:6px double #b3201a;border-radius:10px;color:#b3201a;text-align:center;font:800 clamp(34px,8vw,64px)/1 var(--sans);letter-spacing:.12em;mix-blend-mode:multiply;opacity:0;pointer-events:none;transform:rotate(-14deg) scale(3.2)}
+#nda .stamp small{display:block;font:700 11px var(--mono);letter-spacing:.3em;margin-top:8px}
+#nda .doc.signed .stamp{animation:ndaStamp .45s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes ndaStamp{0%{opacity:0;transform:rotate(-14deg) scale(3.2)}60%{opacity:1;transform:rotate(-11deg) scale(.92)}100%{opacity:.92;transform:rotate(-12deg) scale(1)}}
+#nda .flash{position:absolute;inset:0;background:#fff3d0;opacity:0;pointer-events:none;z-index:4}
+#nda .flash.on{animation:ndaFlash .7s ease-out}
+@keyframes ndaFlash{0%{opacity:.85}100%{opacity:0}}
+@media(max-width:560px){#nda .sgrid{grid-template-columns:1fr}#nda .dh,#nda .dt,#nda .db,#nda .sig{padding-left:18px;padding-right:18px}#nda .fno{display:none}}
+body.enter #desk{animation:deskIn 2.1s cubic-bezier(.2,.7,.2,1) both}
+body.enter .topbar,body.enter .footbar{animation:chromeIn 1.4s ease .5s both}
+@keyframes deskIn{from{transform:scale(1.2);filter:brightness(.35) blur(8px)}to{transform:none;filter:none}}
+@keyframes chromeIn{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+body.enter .footbar{animation-name:chromeInB}
+@keyframes chromeInB{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
 </style>
 </head>
 <body>
+<div id="nda" role="dialog" aria-modal="true" aria-labelledby="ndaT">
+  <div class="bgd"></div><div class="spot"></div>
+  <div class="pres">Mimu On Ape &times; TheMutual.fun<b>present</b>a very serious document</div>
+  <div class="doc" id="ndaDoc">
+    <div class="dh"><div class="crest"></div><div class="org">Mimu On Ape &times; TheMutual.fun<small>Office of the Halls &middot; Dept. of Fine Print</small></div><div class="fno">Form <b>MM-NDA-1</b><br>No. <span id="ndaNo">0001</span><br>Classified: <b>mostly joking</b></div></div>
+    <div class="dt"><h1 id="ndaT">Mutual Non-Disclosure &amp; No-Promises Agreement</h1><p>A legally-flavoured parody &middot; please read (or scroll past) before entering</p></div>
+    <div class="db" id="ndaBody">
+      <p><em>This Agreement is made today between MIMU ON APE and THEMUTUAL.FUN (together, &ldquo;the Halls&rdquo;) and you, the person about to run down them (&ldquo;the Player&rdquo;).</em></p>
+      <p><b class="a">Art. I &middot; No promises</b>Nothing in this game promises you a win, a prize, a TMF Pass, a yacht or a good mood. Any badge, rank or recognition is cosmetic, may be considered by the teams at their sole discretion, and is never guaranteed. Climb anyway.</p>
+      <p><b class="a">Art. II &middot; Do your own research</b>The Player agrees to do their own research. The Mimu does not do research. The Mimu is a cartoon creature in a cape and has never read a prospectus.</p>
+      <p><b class="a">Art. III &middot; Not financial advice</b>Nothing here is financial, investment, legal, medical or relationship advice. The ballot gates, assets, dividends and drawdowns are a simulation using pretend $TMF. If something feels like advice, it is a game. If it still feels like advice, see Art. II.</p>
+      <p><b class="a">Art. IV &middot; Confidentiality</b>What happens in the halls stays in the halls. The Player will not disclose the location of the good chairs. High scores, however, are fully shareable and strongly encouraged.</p>
+      <p><b class="a">Art. V &middot; Assumption of chair risk</b>The Player acknowledges that chairs will be jumped, some will be hit, and that the Player may say something out loud when this occurs. The Halls accept no liability for language.</p>
+      <p><b class="a">Art. VI &middot; The phone bill</b>The Halls accept no responsibility for any phone bill, due the 16th or otherwise. Please just pay it.</p>
+      <p><b class="a">Art. VII &middot; Fine print</b>This Agreement is a parody and legally binds the Player to roughly nothing. The real Terms of Service (linked at the bottom of the site) are, regrettably, serious, and you should read those too.</p>
+      <p><em>By signing below the Player confirms they have read this (or at least scrolled past it), understand there are no promises, and wish to enter the halls. Void where prohibited. Cape not included. No Mimu was harmed in the making of this form.</em></p>
+    </div>
+    <div class="sig">
+      <div class="sgrid">
+        <div><div class="pad" id="ndaPad"><canvas></canvas><span class="x">&times;</span><span class="hint">sign here</span></div><div class="cap">Signature of the Player</div><input class="typed" id="ndaTyped" maxlength="28" placeholder="Type your name" autocomplete="off"></div>
+        <div><div class="dtl" id="ndaDate"></div><div class="cap">Date (Pacific)</div></div>
+      </div>
+      <div class="row2"><label class="chk"><input type="checkbox" id="ndaChk"> I have read this. (I scrolled.)</label><span class="lnk" id="ndaSwap">type instead</span><span class="lnk" id="ndaClr">clear</span><button class="go-btn" id="ndaGo" disabled>Sign &amp; enter</button></div>
+    </div>
+    <div class="stamp">SIGNED<small>APPROVED BY THE MIMU</small></div>
+    <div class="flash" id="ndaFlash"></div>
+  </div>
+</div>
+
 <div id="desk">
   <!-- props: real photos, cut out, graded and shadowed to match the desk lamp -->
   <div class="prop p-paper"><img src="assets/notebook.webp?v=3" alt=""></div>
@@ -1869,6 +1965,44 @@ function setVolStep(n,quiet){
   mk('vu','Volume up',()=>{setVolStep(volStep+1);blip()});
   mk('vd','Volume down',()=>{setVolStep(volStep-1);blip()});
 })();
+/* ---- cinematic NDA gate: sign it, then the iris opens on the desk ---- */
+(function(){
+  const el=document.getElementById('nda');if(!el)return;
+  const KEY='mimu_nda_ok_v1';let seen=false;try{seen=!!localStorage.getItem(KEY)}catch(e){}
+  if(seen&&!/[?&]nda\b/.test(location.search)){el.remove();return}
+  const $1=s=>el.querySelector(s),doc=$1('#ndaDoc'),pad=$1('#ndaPad'),cv=pad.querySelector('canvas'),ctx=cv.getContext('2d'),go=$1('#ndaGo'),chk=$1('#ndaChk'),typed=$1('#ndaTyped');
+  $1('#ndaNo').textContent=String(Math.floor(1000+Math.random()*8999));
+  $1('#ndaDate').textContent=new Date().toLocaleDateString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',year:'numeric'}).toUpperCase();
+  const prev=document.activeElement;document.body.style.overflow='hidden';
+  /* the sequence starts a beat after load so the black screen lands first */
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('go')));
+  let slapped=false;setTimeout(()=>{try{ac();tone(110,0,.22,.14,'sine',45);tone(1800,0,.03,.04,'square')}catch(e){}slapped=true},2700+560);
+  /* signature pad */
+  let drawing=false,strokes=0,pts=0,last=null,useTyped=false;
+  const fit=()=>{const r=pad.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d);ctx.setTransform(d,0,0,d,0,0);ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#1b2f8c';ctx.lineWidth=2.4};
+  const refresh=()=>{pad.classList.toggle('has',pts>6||(useTyped&&typed.value.trim().length>1));go.disabled=!(chk.checked&&(pts>6||(useTyped&&typed.value.trim().length>1)))};
+  const pos=e=>{const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
+  cv.addEventListener('pointerdown',e=>{if(useTyped)return;e.preventDefault();cv.setPointerCapture(e.pointerId);drawing=true;last=pos(e);strokes++;ctx.beginPath();ctx.arc(last[0],last[1],1.2,0,6.3);ctx.fillStyle='#1b2f8c';ctx.fill()});
+  cv.addEventListener('pointermove',e=>{if(!drawing)return;const p=pos(e),mid=[(last[0]+p[0])/2,(last[1]+p[1])/2];ctx.lineWidth=2.1+Math.min(1.6,Math.hypot(p[0]-last[0],p[1]-last[1])*-.05+1.4);ctx.beginPath();ctx.moveTo(last[0],last[1]);ctx.quadraticCurveTo(last[0],last[1],mid[0],mid[1]);ctx.lineTo(p[0],p[1]);ctx.stroke();last=p;pts++;refresh()});
+  const up=()=>{drawing=false;refresh()};cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+  const clear=()=>{fit();pts=0;strokes=0;typed.value='';refresh()};
+  $1('#ndaClr').onclick=clear;
+  $1('#ndaSwap').onclick=()=>{useTyped=!useTyped;typed.style.display=useTyped?'block':'none';pad.style.display=useTyped?'none':'';$1('#ndaSwap').textContent=useTyped?'draw instead':'type instead';if(useTyped)typed.focus();else{fit();pts=0;refresh()}refresh()};
+  typed.addEventListener('input',refresh);chk.addEventListener('change',refresh);
+  addEventListener('resize',()=>{if(!pts)fit()});setTimeout(fit,50);setTimeout(fit,3900);
+  /* sign: stamp, shake, flash, then the document leaves and the iris closes on the desk */
+  go.onclick=async()=>{
+    if(go.disabled)return;go.disabled=true;
+    if(useTyped){fit();pad.style.display='';const n=typed.value.trim();ctx.font='700 44px Caveat, cursive';ctx.fillStyle='#1b2f8c';ctx.fillText(n,6,56)}
+    try{await document.fonts.ready}catch(e){}
+    doc.classList.add('signed');
+    setTimeout(()=>{try{ac();tone(70,0,.3,.22,'sine',32);tone(900,0,.05,.08,'square');tone(1600,.06,.04,.05,'square')}catch(e){}doc.classList.add('shake');$1('#ndaFlash').classList.add('on')},330);
+    setTimeout(()=>{doc.classList.remove('shake');doc.classList.add('leave');try{tone(300,0,.9,.05,'sawtooth',1100);setTimeout(()=>{tone(784,0,.3,.05,'triangle');tone(1047,.1,.5,.05,'triangle');tone(1568,.22,.7,.04,'sine')},900)}catch(e){}},1750);
+    setTimeout(()=>{el.classList.add('out');document.body.classList.add('enter')},2250);
+    setTimeout(()=>{try{localStorage.setItem(KEY,String(Date.now()))}catch(e){}el.remove();document.body.style.overflow='';document.body.classList.remove('enter');if(prev&&prev.focus)try{prev.focus()}catch(e){}},4000);
+  };
+})();
+
 /* keyboard + screen-reader access for the desk easter eggs */
 (function(){
   [['.sticky-hit','Turn the whole site 8-bit'],['.pen-hit','Click the pen'],['.bell-hit','Ring the bell and open the leaderboard'],['.liq-hit','Touch the coffee']].forEach(([s,l])=>{

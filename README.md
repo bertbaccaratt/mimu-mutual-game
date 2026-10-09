@@ -1,52 +1,56 @@
 # Chair Run × Mutual Mimu
 
-A collab game and landing page by **MIMU ON APE** × **THEMUTUAL.FUN**, built by Bert Baccaratt.
+A game and landing page by **MIMU ON APE**, built by Bert Baccaratt, for the TMF Pass Mimu giveaway. It is independent and not affiliated with THE MUTUAL FUN project (see the NDA screen and the Terms of Service on the site).
 
-A phone lies on a wood desk, and the phone is the game: Chair Run (a pseudo-3D runner), Mutual Mimu (stake, vote and a closing bell every 4h 20m), Leaderboards, Badges, Top 5, plus Phone, Messages, Camera and Settings.
+A phone lies on a wood desk, and the phone is the game: Chair Run (a pseudo-3D runner), Mutual Mimu (stake, vote and a closing bell every 4h 20m), Leaderboards, Badges, Top 5, Alarm, Messages, Phone, Camera and Settings.
 
-## Run it locally
+## Run the site locally
 
-It is a static site: one `index.html` plus `assets/`. Serve the folder with any static server, for example:
+It is a static site: `index.html`, `admin.html` and `assets/`. Serve the folder with any static server, then open http://localhost:8765/ :
 
 ```
-python -m http.server 8765
+npx serve -l 8765 .
 ```
 
-then open http://localhost:8765/.
+Local-only helpers: `?gate=ok` fakes a Glyph sign-in (only on `localhost`), and `?api=http://localhost:8787` points the game at a local Worker (only on `localhost`).
 
-## Layout
+## What is where
 
-- `index.html` — the whole site and game (HTML, CSS, JS)
-- `assets/` — desk, props and character images
-- `assets/source/` — original source images (kept locally, not in the repo)
-- `tools/render-lab/` — the offline tools used to build the photoreal desk props
+- `index.html`: the whole game and landing page (HTML, CSS, JS)
+- `admin.html`: the admin page (password checked by the server; visitor flip clock, top lists, review queue, texts, players, live runs)
+- `assets/`: images, `sim.js` (the shared game core), `glyph-connect.js` (the Glyph bundle, loaded only when Chair Run opens)
+- `glyph/`: builds `assets/glyph-connect.js` (`cd glyph && npm install && npm run build`). It wraps Glyph's React wallet kit and is licensed by Yuga Labs, Inc. under the Glyph Software License v1.0 (https://useglyph.io/license, copy in `glyph/GLYPH-LICENSE.txt`).
+- `backend/`: Cloudflare Worker + D1 database (API at https://mimu-mutual-api.mutualmimu.workers.dev), `schema.sql`, and the test scripts
+- `tools/`: one-off build and patch scripts (not needed to run the site)
 
-Game progress is saved in the visitor's browser (`localStorage`). The back end comes later.
+## How the game works with the server
 
-## Back end (leaderboards + Glyph sign-in)
+- **Sign in:** the wallet signs a free plain-English message that names this site. The server checks the signature, the origin and the holdings (a wallet must hold a Mimu On Ape; a wallet holding a TMF Pass or a Dengs can't play). The bridge refuses to sign anything else.
+- **Username:** every player types a username that must be their X handle (unverified; one wallet per handle). Real "Sign in with X" is built (`/api/x/start`, `/api/x/callback`, `/api/x/link`) and switches on when `X_CLIENT_ID` and `X_CLIENT_SECRET` are set as secrets.
+- **Honest scores:** the browser never sends a score. It records only its inputs, and the server replays them with the same `assets/sim.js` (`/api/run/start`, `/api/run/chunk`). A Cloudflare Turnstile check starts each run, and runs with bot-like timing are held for review in the admin page.
+- **Top 5 app:** everyone is ranked by total score (Chair Run points + $TMF found). The top 5 can't give $TMF; everyone else can give all of it to one top 5 player (+2 points per $TMF) or send any amount to a player who has at least 1 $TMF. The server decides, using the live ranking, on every request.
+- **Messages:** signed-in players can text each other (plain text, 280 characters, rate limited, blocking, admin can read and delete).
+- **Privacy:** the server stores wallet address, Glyph name, username, picture, scores, $TMF gifts, texts, and an anonymous browser ID with visit times. It does **not** store IP addresses or locations (the admin lockout uses a one-way keyed hash).
 
-- `glyph/` builds `assets/glyph-connect.js`, a small bridge around Glyph's React wallet kit. It is only loaded when someone opens Chair Run. Rebuild with `cd glyph && npm install && npm run build`.
-  This Glyph Code is licensed by Yuga Labs, Inc. and may only be used in accordance with the Glyph Software License v1.0 published at https://useglyph.io/license (copy in `glyph/GLYPH-LICENSE.txt`).
-- `backend/` is a Cloudflare Worker + D1 database (API at https://mimu-mutual-api.mutualmimu.workers.dev):
-  `GET /api/nonce`, `POST /api/auth` (wallet signature + holdings check), `POST /api/score`, `GET /api/leaderboard`.
-  Holdings rules live in `backend/wrangler.toml` (`GATE_MIMU`, `GATE_PASS`, `GATE_DENGS`) and in `GAME_CONFIG.gates` in `index.html`.
-  Deploy with `cd backend && npx wrangler deploy`. Check it with `node test-local.mjs <url>`.
-- Rules: a wallet must hold a Mimu On Ape; a wallet holding a TMF Pass or a Dengs can't play. The TMF Pass rule is off until its chain is confirmed.
-### How scores are kept honest
+## Deploying
 
-The browser never sends a score. The game logic lives in `assets/sim.js` (pure, deterministic: seeded random numbers and fixed 1/60 s ticks). A run goes like this:
+```
+cd backend
+npx wrangler deploy                      # production API
+npx wrangler deploy --config wrangler.staging.toml   # staging API (used by the tests)
+```
 
-1. `POST /api/run/start`: the server picks the random seed and opens the run.
-2. You play. The game records only your inputs (tick number + move).
-3. `POST /api/run/chunk` (in chunks of 2,000 ticks): the server replays the same `sim.js` from the seed and your inputs, keeps the replay state in D1 between chunks, and refuses runs that are faster than real time. The score it computes is the score that counts.
+Secrets (set with `npx wrangler secret put NAME`, never committed): `SESSION_SECRET`, `ADMIN_TOKEN` (the admin password), `TURNSTILE_SECRET`, optional `RPC_PRIMARY_4663` (a keyed Robinhood Chain RPC), optional `X_CLIENT_ID` / `X_CLIENT_SECRET`.
+Database changes are in `backend/schema.sql` (run new `ALTER` statements by hand on existing databases).
+The site itself is published by pushing `main` to GitHub Pages.
 
-`node backend/test-sim.mjs` checks the determinism and `node backend/test-run.mjs <url>` runs the whole flow against a deployed API (use the staging worker, which has the holdings rules switched off).
-Remaining risk: a bot that really plays the game in real time is still possible; the server can't tell a robot from a person.
+## Tests (against the staging API)
 
-### Wallet safety
+`node backend/test-sim.mjs` (game determinism), `test-run.mjs`, `test-admin.mjs`, `test-transfer.mjs`, `test-messages.mjs`, `test-live.mjs`, `test-x.mjs` (needs a local `wrangler dev` with a mock X; see the file header).
+Most of them need `ADMIN_TOKEN` set to the staging admin password.
 
-- The only thing a wallet is ever asked to sign is a plain-English sign-in message that names this site (`Domain:` line), costs nothing and sends no transaction. The bridge in `glyph/src/entry.jsx` refuses to sign any other text and exposes no transaction, approval or typed-data calls.
-- The server only accepts that message for its allowed origins, so a copy-cat site can't use a signature it collects.
-- Sessions are 12-hour tokens kept in memory only (never in localStorage).
-- The page sets a Content-Security-Policy that blocks scripts from other sites, and refuses to be framed.
-- Rate limits: sign-in 10/min per IP, runs 120/min per player, leaderboard reads 120/min per IP (Cloudflare Workers Rate Limiting bindings in `backend/wrangler.toml`).
+## Known limits
+
+- A bot that really plays in real time with human-looking timing is still possible; the checks make it harder, not impossible.
+- GitHub Pages can't send custom security headers, so the site uses a Content-Security-Policy `<meta>` tag and a frame-busting script instead.
+- The campaign schedule (shown in the Alarm app and the Terms) is informational; the server does not yet stop runs or gifts outside it.

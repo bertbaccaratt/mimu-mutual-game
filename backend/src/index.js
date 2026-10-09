@@ -64,7 +64,7 @@ function cors(env, req) {
   return h;
 }
 const json = (env, req, body, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...cors(env, req) } });
+  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains', ...cors(env, req) } });
 
 /* ---------- rate limits (Cloudflare Workers Rate Limiting bindings; open if a binding isn't configured) ---------- */
 const clientIp = (req) => req.headers.get('CF-Connecting-IP') || 'unknown';

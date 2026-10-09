@@ -13,7 +13,7 @@ simple = { limit = 60, period = 60 }
 [[ratelimits]]
 name = "RL_RUN"           # starting runs and uploading run chunks, per player
 namespace_id = "1002"
-simple = { limit = 120, period = 60 }
+simple = { limit = 300, period = 60 }
 
 [[ratelimits]]
 name = "RL_READ"          # leaderboard reads, per IP

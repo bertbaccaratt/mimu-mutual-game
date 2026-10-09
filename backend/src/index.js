@@ -371,7 +371,7 @@ const MAIL_IMG_MAX = 1000000;                                           // chara
 const mailImgUrl = (req, key) => `${apiOrigin(req)}/api/mail/img/${key}`;
 async function handleMailList(env, req) {
   const a = await msgAuth(env, req); if (a.err) return a.err;
-  const rows = (await env.DB.prepare('SELECT b.id, b.ts, b.subject, substr(b.body,1,160) pv, (b.ikey IS NOT NULL) img, EXISTS(SELECT 1 FROM mail_reads r WHERE r.address=?1 AND r.id=b.id) rd FROM broadcasts b ORDER BY b.id DESC LIMIT 50').bind(a.me).all()).results || [];
+  const rows = (await env.DB.prepare('SELECT b.id, b.ts, b.subject, substr(b.body,1,160) pv, (b.ikey IS NOT NULL) img, EXISTS(SELECT 1 FROM mail_reads r WHERE r.address=?1 AND r.id=b.id) rd FROM broadcasts b ORDER BY b.id DESC LIMIT 200').bind(a.me).all()).results || [];
   const un = await env.DB.prepare('SELECT COUNT(*) c FROM broadcasts b WHERE NOT EXISTS (SELECT 1 FROM mail_reads r WHERE r.address=?1 AND r.id=b.id)').bind(a.me).first();
   return json(env, req, { unread: un.c, mails: rows.map((r) => ({ id: r.id, ts: r.ts, subject: r.subject, preview: r.pv, image: !!r.img, read: !!r.rd })) });
 }
@@ -410,7 +410,7 @@ async function handleMsgThreads(env, req) {
   const rows = (await env.DB.prepare(`SELECT other, MAX(id) lastid, SUM(CASE WHEN recipient=?1 AND read=0 THEN 1 ELSE 0 END) unread FROM (
       SELECT id, recipient, read, CASE WHEN sender=?1 THEN recipient ELSE sender END AS other FROM messages
       WHERE (sender=?1 OR recipient=?1) AND NOT (recipient=?1 AND sender IN (SELECT blocked FROM blocks WHERE blocker=?1))
-    ) GROUP BY other ORDER BY lastid DESC LIMIT 50`).bind(me).all()).results || [];
+    ) GROUP BY other ORDER BY lastid DESC LIMIT 200`).bind(me).all()).results || [];
   let threads = [];
   if (rows.length) {
     const ids = rows.map((r) => r.lastid);
@@ -431,7 +431,7 @@ async function handleMsgThread(env, req, url) {
   const base = `SELECT id, ts, sender, body FROM messages WHERE ((sender=?1 AND recipient=?2) OR (sender=?2 AND recipient=?1)) AND NOT (sender=?2 AND ?4=1)`;
   let msgs;
   if (after > 0) msgs = (await env.DB.prepare(base + ' AND id>?3 ORDER BY id ASC LIMIT 200').bind(me, other, after, iBlocked ? 1 : 0).all()).results || [];
-  else msgs = ((await env.DB.prepare(base + ' AND id>?3 ORDER BY id DESC LIMIT 100').bind(me, other, 0, iBlocked ? 1 : 0).all()).results || []).reverse();
+  else msgs = ((await env.DB.prepare(base + ' AND id>?3 ORDER BY id DESC LIMIT 300').bind(me, other, 0, iBlocked ? 1 : 0).all()).results || []).reverse();
   if (msgs.some((m) => m.sender === other)) await env.DB.prepare('UPDATE messages SET read=1 WHERE recipient=?1 AND sender=?2 AND read=0').bind(me, other).run();
   return json(env, req, { with: other, name: who.n, picture: who.pic || '', blocked: iBlocked, messages: msgs.map((m) => ({ id: m.id, ts: m.ts, mine: m.sender === me, body: m.body })) });
 }

@@ -1252,7 +1252,7 @@ function buildHome(anim){
     <button class="w" data-open="lb"><div class="l">Weekly rank</div><div class="v">${rank?'#'+rank:'—'}</div><div class="l" style="margin-top:6px">${rank&&rank<=5?'<span style="color:var(--up)">in the top 5</span>':rank?'chasing top 5':'not ranked yet'}</div>
       <div class="row" style="margin-top:8px;gap:6px"><div style="width:24px;height:24px;border-radius:8px;overflow:hidden;border:1px solid var(--line2)">${meAv()}</div><div class="l" style="color:var(--cream)">${escH(P.handle)}</div></div></button>
    </div>
-   <div class="grid">${APPS.map(a=>`<button class="app-i${(a.id==='ff'&&!GATE.ok)||(a.id==='run'&&!CHAIR_RUN_OPEN)?' lk':''}" data-open="${a.id}"${a.id==='ff'&&!GATE.ok?' disabled aria-disabled="true" title="Connect Glyph in Chair Run first"':''}><div class="ic" style="background:${a.bg}">${a.ic}${a.id==='top5'&&P.coins>0?'<i class="bd">♥</i>':''}</div>${a.n}</button>`).join('')}
+   <div class="grid">${APPS.map(a=>`<button class="app-i${(a.id==='ff'&&!GATE.ok)||(a.id==='run'&&!chairOpen())?' lk':''}" data-open="${a.id}"${a.id==='ff'&&!GATE.ok?' disabled aria-disabled="true" title="Connect Glyph in Chair Run first"':''}><div class="ic" style="background:${a.bg}">${a.ic}${a.id==='top5'&&P.coins>0?'<i class="bd">♥</i>':''}</div>${a.n}</button>`).join('')}
     <button class="app-i alarm" data-open="alarm"><div class="ic" style="background:linear-gradient(135deg,#ff8a4c,#d4362f)">${IC.alarm}</div>Alarm</button>
     <button class="app-i mail" data-open="mail"><div class="ic" style="background:linear-gradient(135deg,#5aa8ff,#1d5fd6)">${IC.mail}${PM.mail?`<i class="bd">${PM.mail}</i>`:''}</div>Mimu Mail</button>
    </div>
@@ -1266,7 +1266,7 @@ function buildHome(anim){
 /* Campaign countdown widget: opens Sat Oct 10 2026 9:00 PM Eastern (EDT, UTC-4), closes Wed Oct 14 2026 9:00 AM Eastern */
 const CAMPAIGN={open:Date.UTC(2026,9,11,1,0,0),close:Date.UTC(2026,9,14,13,0,0)};
 const ALARM_AT=Date.UTC(2026,9,13,13,0,0);   /* Tue Oct 13 2026, 6:00 AM Pacific (PDT) */
-function syncAlarm(){const n=Date.now(),on=n>=ALARM_AT&&n<CAMPAIGN.close;document.querySelectorAll('.app-i.alarm').forEach(b=>b.classList.toggle('ring',on))}
+function syncAlarm(){const n=Date.now(),on=n>=ALARM_AT&&n<CAMPAIGN.close;document.querySelectorAll('.app-i[data-open=run]').forEach(b=>b.classList.toggle('lk',!chairOpen()));document.querySelectorAll('.app-i.alarm').forEach(b=>b.classList.toggle('ring',on))}
 setInterval(syncAlarm,5000);
 let _cdTimer=null;
 function startCampaignClock(){syncAlarm();
@@ -1757,7 +1757,8 @@ const myRank=kind=>board(kind).findIndex(x=>x.me)+1;
   fetch(GAME_CONFIG.api.replace(/\/$/,'')+'/api/hit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid:v}),keepalive:true}).catch(()=>{});
 }catch(e){}})();
 const GATE={ok:false};
-const CHAIR_RUN_OPEN=false;   /* Chair Run is closed: the tile is greyed out and no new runs start. Login, scores and the other apps stay as they are. */
+/* Chair Run is greyed out and closed until the campaign countdown ends; then it opens by itself. Login, scores and the other apps are not affected. */
+const chairOpen=()=>Date.now()>=CAMPAIGN.open;
 /* keep players signed in across reloads: the server's own 12-hour session token is remembered in this browser */
 const SESS_KEY='mimu_sess';
 function saveSess(tok,exp,addr){try{localStorage.setItem(SESS_KEY,JSON.stringify({t:tok,e:exp,a:String(addr||'').toLowerCase()}))}catch(e){}}
@@ -1792,12 +1793,12 @@ function disconnectGlyph(){
 function buildRun(root){
   const ctl={inner:null,dead:false,destroy(){ctl.dead=true;if(ctl.inner&&ctl.inner.destroy)ctl.inner.destroy()}};
   const closed=()=>{
-    root.innerHTML=`<div class="sc"><div class="closed-card"><div class="lock">\u{1FA91}</div><h2>Chair Run is closed</h2>
-      <p>Thanks for running the halls. Your scores, your login and your $TMF are saved. Mutual Mimu, the Top 5, the leaderboards and your texts are still open.</p>
+    root.innerHTML=`<div class="sc"><div class="closed-card"><div class="lock">\u{1FA91}</div><h2>Chair Run opens soon</h2>
+      <p>The halls open when the campaign countdown ends: <b>Sat Oct 10 at 6:00 PM PST</b>. Your login and $TMF are saved, and Mutual Mimu, the Top 5, the leaderboards and your texts are open now.</p>
       <button class="btn gold" id="crh" style="max-width:260px">Back to the phone</button></div></div>`;
     const b=root.querySelector('#crh');if(b)b.onclick=()=>goHome();
   };
-  if(!CHAIR_RUN_OPEN){
+  if(!chairOpen()){
     if(GATE.ok){closed();return ctl}
     runGate(root,ctl,closed);                                   /* signing in still works, so the other apps can unlock */
     return ctl;
@@ -1938,7 +1939,7 @@ function runGate(root,ctl,enter){
     show(`<div class="gl-hero"><div class="badge">✓</div><div class="card3"><img src="mimu-hero.jpg" alt="Mimu On Ape"><div class="holo"></div><div class="tag"><span>Mimu On Ape</span><span>verified</span></div></div>
       <i class="spark" style="left:6%;top:18%"></i><i class="spark" style="right:4%;top:36%;animation-delay:.8s"></i><i class="spark" style="left:14%;bottom:10%;animation-delay:1.5s"></i></div>
       <h2>Mimu <em>found</em></h2><p>Welcome, <b>${escH(g.name)}</b>. The halls are yours.</p>
-      <div class="acts"><button class="btn gold" id="ge" style="padding:16px">${CHAIR_RUN_OPEN?'Enter the halls':'Continue'}</button><button class="btn ghost" id="gs" style="max-width:300px">Switch account</button></div>`);
+      <div class="acts"><button class="btn gold" id="ge" style="padding:16px">${chairOpen()?'Enter the halls':'Continue'}</button><button class="btn ghost" id="gs" style="max-width:300px">Switch account</button></div>`);
     $('#ge',root).onclick=()=>{sfx.select();enter()};
     $('#gs',root).onclick=()=>{disconnectGlyph();intro()};
   };

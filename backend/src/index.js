@@ -258,7 +258,9 @@ async function handleRunStart(env, req) {
     const me = await env.DB.prepare('SELECT x_handle FROM players WHERE address=?1').bind(sess.sub).first();
     if (!me || !me.x_handle) return json(env, req, { error: 'add your X handle first', needX: true }, 403);
   }
-  if (env.CHAIR_RUN_OPEN === '0') return json(env, req, { error: 'Chair Run is closed. Thanks for playing! Your scores and login are saved.', closed: true }, 403);   // runs already in progress can still finish and count
+  /* Chair Run opens when the campaign countdown ends (Sat Oct 10 2026, 6:00 PM Pacific). CHAIR_RUN_OPEN = "1" forces it open (staging), "0" forces it closed. Runs already in progress can still finish and count. */
+  const opensAt = Number(env.CHAIR_RUN_OPENS_AT) || Date.UTC(2026, 9, 11, 1, 0, 0);
+  if (env.CHAIR_RUN_OPEN === '0' || (env.CHAIR_RUN_OPEN !== '1' && Date.now() < opensAt)) return json(env, req, { error: 'Chair Run opens when the campaign countdown ends, Sat Oct 10 at 6:00 PM PST. Your scores and login are saved.', closed: true, opensAt }, 403);
   let b = {}; try { b = await req.json(); } catch { /* optional body */ }
   if (!(await humanOk(env, b.cf, clientIp(req)))) return json(env, req, { error: 'human check failed' }, 403);
   const wallet = Math.max(0, Math.min(10000000, Math.floor(Number(b.wallet) || 0)));

@@ -406,7 +406,7 @@ function paintLive(){
       <div class="row2"><span>week best <b>${nf(r.best)}</b></span><span>runs <b>${nf(r.runs)}</b></span><span>total <b>${nf(r.total)}</b></span></div>
       <small>${esc(r.a)}${r.x?' &middot; @'+esc(r.x):''} &middot; ping ${age}s ago</small></div>`}).join('');
   Object.keys(LIVE_SLOT).forEach(k=>delete LIVE_SLOT[k]);LIVE_RUNS.slice(0,9).forEach((r,i)=>{LIVE_SLOT[r.id]=i});
-  LIVE_RUNS.slice(0,3).forEach(r=>{if(r.gfx)LIVE_GFX[r.id]={st:r.gfx,age:Math.max(0,LIVE_NOW-r.sat)}});
+  LIVE_RUNS.slice(0,3).forEach(r=>{if(r.gfx)LIVE_GFX[r.id]={st:r.gfx,age:Math.max(0,LIVE_NOW-r.sat),est:!!r.est}});
 }
 async function pollLive(force){
   if($('#app').hidden||(!force&&document.hidden))return;
@@ -438,7 +438,7 @@ setInterval(pollLive,2000);
     for(const sx of [-1,1]){const n=proj(sx*3,0,3),f=proj(sx*3,0,70),nt=proj(sx*3,3.6,3),ft=proj(sx*3,3.6,70);c.fillStyle='#24141a';c.beginPath();c.moveTo(n[0],n[1]);c.lineTo(f[0],f[1]);c.lineTo(ft[0],ft[1]);c.lineTo(nt[0],nt[1]);c.closePath();c.fill()}
     if(!st){c.fillStyle='#a7c9b4';c.font='600 13px monospace';c.textAlign='center';c.fillText('waiting for the run\u2026',CX,HZ+60);return}
     /* things on the road, far to near */
-    const obs=st.ob.map(o=>[o[0],o[1],o[2]-sp*el,o[3]]).filter(o=>o[2]>.7).sort((a,b)=>b[2]-a[2]);
+    const obs=st.ob.map(o=>[o[0],o[1],g.est?((o[2]-sp*el)%62+62)%62+1.5:o[2]-sp*el,o[3]]).filter(o=>o[2]>.7).sort((a,b)=>b[2]-a[2]);
     for(const [t,x,dz,ty] of obs){
       if(dz>70)continue;const s=F/dz,al=Math.min(1,(70-dz)/18+.25);c.globalAlpha=al;
       if(t==='c'){const w=.8*s,h=(.7+ (ty%4)*.12)*s,p=proj(x,0,dz);c.fillStyle=CHAIR[ty%CHAIR.length];c.fillRect(p[0]-w/2,p[1]-h,w,h);c.fillStyle='rgba(0,0,0,.28)';c.fillRect(p[0]-w/2,p[1]-h,w,h*.25);c.fillStyle='#1a0f12';c.fillRect(p[0]-w/2,p[1]-h*.12,w*.12,h*.12);c.fillRect(p[0]+w/2-w*.12,p[1]-h*.12,w*.12,h*.12)}
@@ -456,7 +456,7 @@ setInterval(pollLive,2000);
     /* readout */
     c.textBaseline='alphabetic';c.textAlign='left';c.fillStyle='rgba(0,0,0,.45)';c.fillRect(0,0,W,22);
     c.fillStyle='#ffe9c4';c.font='700 12px monospace';c.fillText('\u2764'.repeat(Math.max(0,st.lv))+(st.sh?'  \ud83d\udcbc':'')+(st.mg?'  \ud83d\udd14'+st.mg:'')+(st.x2?'  \u2728x2 '+st.x2:''),8,15);
-    c.textAlign='right';c.fillStyle='#7dffa8';c.fillText('chain '+st.ch+'  x'+st.cm,W-8,15);
+    c.textAlign='right';c.fillStyle='#7dffa8';c.fillText((g.est?'approx · ':'')+'chain '+st.ch+'  x'+st.cm,W-8,15);
   }
   let last=0;
   function loop(ts){

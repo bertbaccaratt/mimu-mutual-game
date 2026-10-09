@@ -278,6 +278,35 @@ body.native #screen,body.native #screen:after{border-radius:0}
 .pmerr{flex:none;min-height:14px;text-align:center;font:400 11.5px var(--sans);color:#e0675f;padding:2px 14px 0}
 .pmx{font:500 13px var(--sans);color:#ff8a80;padding:6px 4px}
 .pmblocked{flex:none;text-align:center;padding:14px;color:var(--muted);font:400 13px var(--sans)}
+.app-i.mail .ic{box-shadow:0 0 0 1px rgba(150,200,255,.5),0 0 20px 3px rgba(74,150,255,.6);animation:mailglow 2.8s ease-in-out infinite}
+@keyframes mailglow{0%,100%{box-shadow:0 0 0 1px rgba(150,200,255,.45),0 0 14px 2px rgba(74,150,255,.5)}50%{box-shadow:0 0 0 1px rgba(170,215,255,.7),0 0 26px 6px rgba(74,150,255,.85)}}
+.mailx{position:absolute;inset:0;background:#1f2023;color:#e8eaed;display:flex;flex-direction:column;padding-top:54px;font-family:var(--sans)}
+.mailx .mx-search{flex:none;margin:6px 14px 8px;height:46px;border-radius:24px;background:#2d2e32;display:flex;align-items:center;gap:12px;padding:0 8px 0 16px;color:#9aa0a6;font-size:15px}
+.mailx .mx-search .mx-av{margin-left:auto;width:32px;height:32px;border-radius:50%;background:#1a73e8;color:#fff;display:grid;place-items:center;font:600 14px var(--sans)}
+.mailx .mx-lbl{flex:none;padding:6px 18px 8px;font:600 11.5px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#9aa0a6}
+.mailx .mx-list{flex:1;min-height:0;overflow-y:auto;scrollbar-width:none}
+.mailx .mx-row{display:flex;gap:13px;width:100%;text-align:left;padding:11px 16px;border-bottom:1px solid #ffffff12}
+.mailx .mx-row:active{background:#ffffff0d}
+.mailx .mx-ava{flex:none;width:40px;height:40px;border-radius:50%;background:#1a73e8;color:#fff;display:grid;place-items:center;font:600 17px var(--sans)}
+.mailx .mx-mid{flex:1;min-width:0}
+.mailx .mx-l1{display:flex;align-items:baseline;gap:8px}.mailx .mx-l1 b{flex:1;font:500 14.5px var(--sans);color:#bdc1c6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mailx .mx-l1 em{font:500 11.5px var(--sans);color:#9aa0a6;font-style:normal}
+.mailx .mx-sub{font:500 14px/1.3 var(--sans);color:#bdc1c6;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mailx .mx-pv{font:400 13px/1.35 var(--sans);color:#9aa0a6;margin-top:1px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.mailx .mx-row.un .mx-l1 b,.mailx .mx-row.un .mx-sub{color:#fff;font-weight:700}.mailx .mx-row.un .mx-l1 em{color:#8ab4f8;font-weight:700}
+.mailx .mx-row .mx-clip{color:#9aa0a6;font-size:12px;margin-left:6px}
+.mailx .mx-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:0 40px 70px;color:#9aa0a6}
+.mailx .mx-empty .mx-ico{width:88px;height:88px;border-radius:50%;background:#2d2e32;display:grid;place-items:center;margin-bottom:6px}
+.mailx .mx-empty .mx-ico svg{width:44px;height:44px}
+.mailx .mx-empty b{font:500 18px var(--sans);color:#e8eaed}.mailx .mx-empty span{font:400 14px/1.45 var(--sans)}
+.mailx .mx-bar{flex:none;display:flex;align-items:center;gap:6px;padding:4px 10px}
+.mailx .mx-back{color:#8ab4f8;font:500 15px var(--sans);padding:8px 6px;display:flex;align-items:center;gap:2px}
+.mailx .mx-det{flex:1;min-height:0;overflow-y:auto;padding:4px 18px 24px;scrollbar-width:none}
+.mailx .mx-subj{font:500 22px/1.3 var(--sans);color:#fff;margin:6px 0 14px;word-break:break-word}
+.mailx .mx-from{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+.mailx .mx-from b{display:block;font:500 14.5px var(--sans);color:#e8eaed}.mailx .mx-from span{font:400 12.5px var(--sans);color:#9aa0a6}
+.mailx .mx-body{font:400 15px/1.55 var(--sans);color:#e8eaed;white-space:pre-wrap;word-break:break-word}
+.mailx .mx-img{display:block;width:100%;border-radius:12px;margin-top:16px;background:#2d2e32}
+.mailx .mx-foot{margin-top:22px;padding-top:14px;border-top:1px solid #ffffff12;font:400 12px var(--sans);color:#9aa0a6}
 .alst{position:relative;margin:0 0 12px;padding:14px 14px 14px 48px;border-radius:18px;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line)}
 .alst:before{content:attr(data-n);position:absolute;left:13px;top:15px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:600 12px var(--mono);background:#2b2022;color:var(--muted);border:1px solid var(--line2)}
 .alst.done:before{content:"\2713";background:#1f4029;color:var(--up);border-color:#2c6a43}
@@ -774,7 +803,8 @@ body.enter .footbar{animation-name:chromeInB}
         <div><b>Top 5</b><span>Every player ranked by total score (Chair Run points + $TMF found), with the top 5 in gold frames. The top 5 cannot send $TMF. Anyone outside the top 5 can give all their $TMF to one top 5 player to help them (+2 points for every $TMF), or send $TMF to any player who has registered at least 1 $TMF point. Ranks change live, so whether you can give changes with them.</span></div>
         <div><b>Alarm</b><span>The campaign countdown and schedule, in Los Angeles time. The icon lights up and wiggles when gaming stops.</span></div>
         <div><b>Messages</b><span>A few welcome texts, plus (after you connect your Glyph) texting with other players on the leaderboard. You can block anyone.</span></div>
-        <div><b>Phone, Camera, Settings</b><span>Dial a number (you will get the classic wrong-number message), snap a photo and browse the gallery, or flip sound on and off and disconnect Glyph. Mimu Mail is locked and comes later.</span></div>
+        <div><b>Phone, Camera, Settings</b><span>Dial a number (you will get the classic wrong-number message), snap a photo and browse the gallery, or flip sound on and off and disconnect Glyph. </span></div>
+        <div><b>Mimu Mail</b><span>Your inbox. Emails from the Mimu On Ape team (with a subject, a message and sometimes a photo) arrive here for every phone signed in with Glyph. It starts empty. Only the team can send mail, and you can&rsquo;t reply.</span></div>
       </div>
 
       <h3>Getting around</h3>
@@ -810,7 +840,7 @@ body.enter .footbar{animation-name:chromeInB}
       <h3>6 · In-game currency, points and giving</h3><p>“$TMF” coins and “Season Points” shown inside the Game are virtual items for gameplay only. They have no cash value, cannot be sold or redeemed, and are not the $TMF token or any other digital asset. Your total score is your Chair Run points plus your $TMF found, and the Top 5 app ranks every player by it. The top 5 players of the week cannot give $TMF to anyone. Anyone outside the top 5 can give all their $TMF to one top 5 player, which also adds 2 points to that player&rsquo;s score for every $TMF, or send $TMF to any player who has registered at least 1 $TMF point. Ranks change as players play and give, so whether you can give can change at any time. Gifts are virtual and final, and the Top 5 app is the only way to give coins away.</p>
       <h3>7 · Fair play</h3><p>Every leaderboard score is checked by our server, which replays your run from the moves you made. Runs that can&rsquo;t be verified, or that come from bots, scripts, automated input, edited code or exploits, don&rsquo;t count and may be removed along with the account&rsquo;s results. Do not use multiple identities to gain an advantage, and do not interfere with the Game or other players. Chair Run runs on your device, so keep your connection open until the &ldquo;run complete&rdquo; screen finishes ranking you. Some runs are held for review before they count. We may remove scores, texts, pictures or players, or restrict access, where we reasonably suspect misuse.</p>
       <h3>8 · Glyph, usernames and pictures</h3><p>Chair Run asks you to connect a Glyph wallet. We read your Glyph name, profile picture and wallet address, and we check which NFTs that wallet holds: you need a Mimu On Ape to play, and wallets holding a TMF Pass or a Dengs can&rsquo;t play. You then choose a username, which must be your X handle. You type it yourself and we do not verify it, only one wallet can use a given username, and we may change or remove usernames that impersonate someone else. Your username is shown publicly as your name on the leaderboards, in the Top 5 app and in texts, together with your scores and your profile picture. You may upload a profile picture, which is shown publicly too; do not upload anything unlawful, offensive or that is not yours, and we may remove it. Connecting only asks for a signature that proves you own the wallet. It costs nothing, sends no transaction and can&rsquo;t move your assets. Disconnect any time in Settings.</p>
-      <h3>9 · Texts and conduct</h3><p>After you connect your Glyph you can text other players on the leaderboard. Texts are stored on our servers, can be read by the team, and may be deleted. Keep it friendly: no harassment, threats, hate or spam. You can block any player, and we may remove players who harass others.</p>
+      <h3>9 · Mail, texts and conduct</h3><p>Emails from the team arrive in Mimu Mail on every phone signed in with Glyph; players cannot send mail. After you connect your Glyph you can text other players on the leaderboard. Texts are stored on our servers, can be read by the team, and may be deleted. Keep it friendly: no harassment, threats, hate or spam. You can block any player, and we may remove players who harass others.</p>
       <h3>10 · Your data and third-party services</h3><p>On our servers we store your wallet address, Glyph name, username, profile picture, scores, $TMF gifts and texts, plus an anonymous browser ID and the time of your visits so we can count visitors. Our servers do not store your IP address or your location. Your handle, chosen Mimu, settings and progress also save in your own browser. We do not collect wallet keys, seed phrases or payment details through the Game and will never ask for them. The site is hosted on GitHub Pages and the leaderboard service runs on Cloudflare, which also provides the human check used before a run starts. Fonts load from Google Fonts, wallet connection uses Glyph, and if you dial a wrong number in the phone app a short recording plays through YouTube&rsquo;s embedded player. Each of these providers has its own privacy policy and may process your IP address to deliver its service.</p>
       <h3>11 · Not financial advice</h3><p>Mutual Mimu is a simulation. It does not involve real money, real investments or real markets, and nothing in it is investment, legal or tax advice. Past in-game results say nothing about real-world performance.</p>
       <h3>12 · Intellectual property</h3><p>The MIMU ON APE name, characters and artwork belong to MIMU ON APE and its respective creators and rights holders. THEMUTUAL.FUN names, marks and chair artwork belong to their respective owners. The Game’s design and code belong to their authors. You may play the Game for personal, non-commercial use but may not copy or redistribute it without permission.</p>
@@ -1085,6 +1115,7 @@ const IC={
   ff:'<svg viewBox="0 0 32 32" fill="none" stroke="#fff3d0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 26h20M16 4v3"/><path d="M9 22c0-8 2-12 7-12s7 4 7 12z" fill="#d9b25f" stroke="#fff3d0"/><circle cx="16" cy="25" r="2" fill="#fff3d0"/></svg>',
   lb:'<svg viewBox="0 0 32 32" fill="none" stroke="#fff3d0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5h12v8a6 6 0 01-12 0z" fill="#d9b25f"/><path d="M10 8H5c0 5 2 7 5 7M22 8h5c0 5-2 7-5 7M16 19v5M11 27h10"/></svg>',
   vault:'<svg viewBox="0 0 32 32" fill="none" stroke="#fff3d0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h24v4a3 3 0 000 6v4H4v-4a3 3 0 000-6z" fill="#d9b25f"/><path d="M20 11v14" stroke-dasharray="2 3"/></svg>',
+  mail:'<svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="7.5" width="23" height="17" rx="3.2" fill="#fff" fill-opacity=".16"/><path d="M5.5 10l10.5 8 10.5-8"/></svg>',
   alarm:'<svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="17.500" r="8.200"/><path d="M16 12.800v5l3.200 2"/><path d="M5.800 9.200A5.200 5.200 0 0111 5M26.200 9.200A5.200 5.200 0 0021 5"/><path d="M9.500 26l-1.800 2M22.500 26l1.800 2"/></svg>',
   lock:'<svg viewBox="0 0 32 32" fill="none" stroke="#fff8" stroke-width="2.4" stroke-linecap="round"><rect x="8" y="14" width="16" height="12" rx="3"/><path d="M11 14v-3a5 5 0 0110 0v3"/></svg>'
 };
@@ -1161,7 +1192,7 @@ function buildHome(anim){
    </div>
    <div class="grid">${APPS.map(a=>`<button class="app-i${a.id==='ff'&&!GATE.ok?' lk':''}" data-open="${a.id}"${a.id==='ff'&&!GATE.ok?' disabled aria-disabled="true" title="Connect Glyph in Chair Run first"':''}><div class="ic" style="background:${a.bg}">${a.ic}${a.id==='top5'&&P.coins>0?'<i class="bd">♥</i>':''}</div>${a.n}</button>`).join('')}
     <button class="app-i alarm" data-open="alarm"><div class="ic" style="background:linear-gradient(135deg,#ff8a4c,#d4362f)">${IC.alarm}</div>Alarm</button>
-    <button class="app-i lk" data-act="soon"><div class="ic" style="background:linear-gradient(135deg,#4a4a52,#2a2a30)">${IC.lock}</div>Mimu Mail</button>
+    <button class="app-i mail" data-open="mail"><div class="ic" style="background:linear-gradient(135deg,#5aa8ff,#1d5fd6)">${IC.mail}${PM.mail?`<i class="bd">${PM.mail}</i>`:''}</div>Mimu Mail</button>
    </div>
    ${Date.now()<CAMPAIGN.close?`<div class="cdw" id="cdw" aria-live="off"><div class="cdh"><span class="cdl" id="cdl"></span><span class="cdd" id="cdd"></span></div>
     <div class="cdt"><div><b id="cd-d">00</b><i>days</i></div><em>:</em><div><b id="cd-h">00</b><i>hrs</i></div><em>:</em><div><b id="cd-m">00</b><i>min</i></div><em>:</em><div><b id="cd-s">00</b><i>sec</i></div></div></div>`:''}</div>
@@ -1267,11 +1298,16 @@ const MSGS=[
   {id:'tmf',n:'TMF',av:'TMF',bg:'linear-gradient(135deg,#a9404a,#6e1f26)',t:'Yesterday',m:['Season One is live','Mimu On Ape × The Mutual Fun. Run the halls, vote at the bell and chase the top of the leaderboard.']},
   {id:'mimu',n:'Your Mimu',img:'assets/mimu-icon.jpg',t:'Yesterday',m:['Your Mimu is waiting','The chairs aren’t going to jump themselves.']}];
 /* player-to-player texts (live): only after Glyph sign-in */
-const PM={unread:0,threads:[],top:null,topAt:0,timer:null,seen:0};
+const PM={unread:0,threads:[],top:null,topAt:0,timer:null,seen:0,mail:0};
 const unreadN=()=>MSGS.filter(x=>!(P.mr&&P.mr[x.id])).length+(PM.unread||0);
 const pmOn=()=>!!(GATE.ok&&API.token&&API.on());
 const pAv=pic=>`<div class="av">${imgTag(safeUrl(pic)?pic:'assets/mimu-icon.jpg')}</div>`;
 const tmAgo=ts=>{const s=Math.max(0,Math.floor((Date.now()-ts)/1000));return s<60?'now':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d'};
+function refreshMailBadge(){
+  const b=document.querySelector('.grid [data-open=mail] .ic');if(!b)return;
+  let d=b.querySelector('.bd');const n=PM.mail||0;
+  if(n){if(!d){d=document.createElement('i');d.className='bd';b.appendChild(d)}d.textContent=n}else if(d)d.remove();
+}
 function refreshDockBadge(){
   const b=document.querySelector('.dock .app-i[data-open=msg]');if(!b)return;
   const n=unreadN();let d=b.querySelector('.bd');
@@ -1281,13 +1317,13 @@ async function pmPoll(){
   if(!pmOn())return;
   try{
     const r=await API.j('/api/messages/threads'),before=PM.unread;
-    PM.threads=r.threads||[];PM.unread=r.unread||0;
+    PM.threads=r.threads||[];PM.unread=r.unread||0;const mailBefore=PM.mail;PM.mail=r.mail||0;if(PM.mail>mailBefore&&PM.seen)toast('&#128236; <span>New mail from <b>Mimu On Ape</b></span>',3400);refreshMailBadge();if(window._mailList)window._mailList();
     if(PM.unread>before&&PM.seen){const t=PM.threads.find(x=>x.unread);toast(`&#128172; <span>New text from <b>${escH(t?t.name:'a player')}</b></span>`,3200)}
     PM.seen=1;refreshDockBadge();if(window._pmList)window._pmList();
   }catch(e){}
 }
 function startPMPoll(){stopPMPoll();if(!pmOn())return;pmPoll();PM.timer=setInterval(pmPoll,20000)}
-function stopPMPoll(){clearInterval(PM.timer);PM.timer=null;PM.unread=0;PM.threads=[];PM.seen=0;refreshDockBadge()}
+function stopPMPoll(){clearInterval(PM.timer);PM.timer=null;PM.unread=0;PM.mail=0;PM.threads=[];PM.seen=0;refreshDockBadge();refreshMailBadge()}
 function buildMsgs(root){
   const av=x=>`<div class="av" style="background:${x.img?'#000 url('+x.img+') center/cover':x.bg};${x.av&&x.av.length>2?'font-size:12px':''}">${x.img?'':x.av}</div>`;
   const list=()=>{
@@ -1474,7 +1510,7 @@ function openApp(id,from){
   const a=document.createElement('div');a.className='app';a.id='app-'+id;
   const [x,y]=from?relPos(from):[185,420];a.style.transformOrigin=`${x}px ${y}px`;
   $('#apps').appendChild(a);$('#home').classList.add('back');
-  appObj=({run:buildRun,ff:buildFF,lb:buildLB,vault:buildVault,top5:buildTop5,phone:buildPhone,msg:buildMsgs,cam:buildCam,set:buildSet,alarm:buildAlarm})[id](a);
+  appObj=({run:buildRun,ff:buildFF,lb:buildLB,vault:buildVault,top5:buildTop5,phone:buildPhone,msg:buildMsgs,cam:buildCam,set:buildSet,alarm:buildAlarm,mail:buildMail})[id](a);
   requestAnimationFrame(()=>requestAnimationFrame(()=>a.classList.add('on')));
 }
 function goHome(){
@@ -2429,6 +2465,42 @@ function buildAlarm(root){
   };
   tick();const iv=setInterval(tick,1000);
   return{destroy(){clearInterval(iv)}};
+}
+/* Mimu Mail: an inbox (dark Gmail / iPhone Mail look) for emails only the admin can send */
+function buildMail(root){
+  let timer=null,items=null,view='list';
+  const env='<svg viewBox="0 0 32 32" fill="none" stroke="#9aa0a6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="7.5" width="23" height="17" rx="3.2"/><path d="M5.5 10l10.5 8 10.5-8"/></svg>';
+  const when=ts=>{const d=new Date(ts),n=new Date();return d.toDateString()===n.toDateString()?d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):d.toLocaleDateString([],{month:'short',day:'numeric'})};
+  const initial=()=>((P.handle||'M').replace(/^@/,'')[0]||'M').toUpperCase();
+  const top=()=>`<div class="mx-search"><span>&#9776;</span><span>Search in mail</span><div class="mx-av">${escH(initial())}</div></div>`;
+  const locked=()=>{root.innerHTML=`<div class="mailx">${top()}<div class="mx-empty"><div class="mx-ico">${env}</div><b>Sign in to get mail</b><span>Connect your Glyph in Chair Run. Emails from the Mimu On Ape team land here.</span></div></div>`};
+  const list=()=>{
+    view='list';
+    if(!pmOn())return locked();
+    const rows=items||[];
+    root.innerHTML=`<div class="mailx">${top()}<div class="mx-lbl">Inbox</div>${items===null?'<div class="mx-empty"><span>Loading&hellip;</span></div>':rows.length?`<div class="mx-list">${rows.map(m=>`<button class="mx-row${m.read?'':' un'}" data-mid="${m.id}"><div class="mx-ava">M</div><div class="mx-mid"><div class="mx-l1"><b>Mimu On Ape</b><em>${escH(when(m.ts))}</em></div><div class="mx-sub">${escH(m.subject)}${m.image?'<span class="mx-clip">&#128247;</span>':''}</div><div class="mx-pv">${escH(m.preview||'')}</div></div></button>`).join('')}</div>`:`<div class="mx-empty"><div class="mx-ico">${env}</div><b>No messages yet</b><span>Your inbox is empty and waiting for its first message.</span></div>`}</div>`;
+    $$('[data-mid]',root).forEach(b=>b.onclick=()=>{ac();sfx.tap();open(+b.dataset.mid)});
+  };
+  const load=async()=>{
+    if(!pmOn())return list();
+    try{const d=await API.j('/api/mail');items=d.mails||[];PM.mail=d.unread||0;refreshMailBadge()}catch(e){if(items===null)items=[]}
+    if(view==='list')list();
+  };
+  const open=async id=>{
+    view='item';
+    root.innerHTML=`<div class="mailx"><div class="mx-bar"><button class="mx-back" id="mxb">&lsaquo; Inbox</button></div><div class="mx-det" id="mxd"><div class="mx-empty" style="padding:40px"><span>Opening&hellip;</span></div></div></div>`;
+    $('#mxb',root).onclick=()=>{ac();sfx.tap();view='list';load()};
+    try{
+      const m=await API.j('/api/mail/item?id='+id);
+      const it=(items||[]).find(x=>x.id===id);if(it&&!it.read){it.read=true;PM.mail=Math.max(0,PM.mail-1);refreshMailBadge()}
+      const d=$('#mxd',root);if(!d||view!=='item')return;
+      d.innerHTML=`<div class="mx-subj"></div><div class="mx-from"><div class="mx-ava">M</div><div><b>Mimu On Ape</b><span>to me &middot; ${escH(new Date(m.ts).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}))}</span></div></div><div class="mx-body"></div>${m.image&&safeUrl(m.image)?`<img class="mx-img" alt="" referrerpolicy="no-referrer" src="${escH(m.image)}">`:''}<div class="mx-foot">This email was sent by the Mimu On Ape team to every signed-in phone. You can&rsquo;t reply.</div>`;
+      d.querySelector('.mx-subj').textContent=m.subject;d.querySelector('.mx-body').textContent=m.body;
+    }catch(e){const d=$('#mxd',root);if(d)d.innerHTML='<div class="mx-empty" style="padding:40px"><span>Could not open this email. Try again in a moment.</span></div>'}
+  };
+  window._mailList=()=>{if(view==='list'&&pmOn())load()};
+  list();load();timer=setInterval(()=>{if(document.body.contains(root)&&view==='list')load()},20000);
+  return{destroy(){clearInterval(timer);window._mailList=null}};
 }
 function buildTop5(root){
   if(!(API.on()&&!LIVE.failed))return buildTop5Sim(root);

@@ -85,6 +85,20 @@ td.n{width:44px;white-space:nowrap;color:var(--gold);font-weight:600}td.r{text-a
 .flags{display:flex;gap:5px;flex-wrap:wrap}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:10px 18px;border-radius:12px;background:#000e;border:1px solid var(--gold);color:var(--cream);z-index:50;display:none}
 .xl{color:#9ad1ff}
+.mailbox{max-width:620px;margin:18px auto 0;padding:16px 18px 16px;border:2px solid #2f7bff;border-radius:18px;background:linear-gradient(180deg,#0b1424,#08101c);box-shadow:0 0 22px rgba(47,123,255,.32)}
+.mailbox h2{font:700 14px var(--cond);letter-spacing:.2em;text-transform:uppercase;color:#8ab4ff;margin:0 0 12px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.mailbox h2 small{font:500 10px var(--mono);letter-spacing:.12em;color:var(--muted)}
+.mailbox input[type=text],.mailbox textarea{width:100%;padding:11px 13px;border-radius:10px;background:#0e1a2e;border:1px solid #234a86;color:var(--cream);font:500 13px var(--mono);outline:0;resize:vertical;margin-bottom:9px}
+.mailbox input[type=text]:focus,.mailbox textarea:focus{border-color:#4d8dff}
+.mailbox .mrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mailbox .mattach{padding:8px 13px;border:1px dashed #3a6bbd;border-radius:10px;color:#8ab4ff;font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.mailbox .mattach:hover{background:#0e1a2e}
+.mailbox .msend{margin-left:auto;padding:10px 18px;border-radius:10px;background:linear-gradient(180deg,#4d8dff,#2160d8);color:#fff;font:700 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;box-shadow:0 6px 16px rgba(47,123,255,.4)}
+.mailbox .msend:disabled{opacity:.5;cursor:wait}
+.mailbox #m-prev{display:block;max-width:100%;max-height:150px;border-radius:10px;margin-top:10px;border:1px solid #234a86}
+.mailbox #m-st{min-height:16px;margin-top:8px;font-size:12px;color:var(--muted)}
+.mailbox .msent{margin-top:12px;border-top:1px solid #1c3560;padding-top:10px;font-size:11.5px;color:var(--muted)}
+.mailbox .msent div{display:flex;gap:10px;align-items:center;padding:4px 0}.mailbox .msent b{color:var(--cream);font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .live3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:16px}
 .lsq{aspect-ratio:1;border-radius:18px;border:3px solid #e0332f;background:#140808;box-shadow:0 0 18px rgba(224,51,47,.28);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px;text-align:center;overflow:hidden;transition:border-color .3s,background .3s,box-shadow .3s}
 .lsq.on{border-color:#2fd36b;background:#07140b;box-shadow:0 0 24px rgba(47,211,107,.42)}
@@ -120,6 +134,16 @@ td.n{width:44px;white-space:nowrap;color:var(--gold);font-weight:600}td.r{text-a
     <div class="camp" id="camp" hidden><span class="cl" id="camp-l"></span><b id="camp-t"></b></div>
     <div class="camp" id="alm" hidden><span class="cl" id="alm-l"></span><b id="alm-t"></b></div>
   </div>
+
+  <section class="mailbox" aria-label="Send email to all phones">
+    <h2>&#9993; Send email to all phones <small id="m-count">only the admin can send</small></h2>
+    <input type="text" id="m-sub" maxlength="120" placeholder="Subject" autocomplete="off">
+    <textarea id="m-body" rows="6" maxlength="5000" placeholder="Write your message&hellip;"></textarea>
+    <div class="mrow"><label class="mattach"><input type="file" id="m-file" accept="image/*" hidden>&#128247; Attach photo</label><span id="m-fn" style="font-size:11px;color:var(--muted)"></span><button class="btn ghost" id="m-clear" type="button" hidden>Remove photo</button><button class="msend" id="m-send" type="button">Send to all phones</button></div>
+    <img id="m-prev" alt="" hidden>
+    <div id="m-st"></div>
+    <div class="msent" id="m-sent"></div>
+  </section>
 
   <div class="two">
     <section class="sec"><h2>Top 10 · Chair Run <small id="wk1">this week</small></h2><div id="t-run"></div></section>
@@ -254,6 +278,8 @@ function render(d){
   $('#xfers').innerHTML=(d.transfers||[]).length?'<table><thead><tr><th>When</th><th>From</th><th>To</th><th style="text-align:right">$TMF</th></tr></thead><tbody>'+d.transfers.map(x=>`<tr><td>${ago(x.ts)}</td><td>${esc(x.sn||short(x.sa))}<br>${wal(x.sa)}</td><td>${esc(x.rn||short(x.ra))}<br>${wal(x.ra)}</td><td class="r">${nf(x.amount)}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">No transfers yet.</div>';
   // player texts
   $('#msgs').innerHTML=(d.messages||[]).length?'<table><thead><tr><th>When</th><th>From</th><th>To</th><th>Text</th><th></th></tr></thead><tbody>'+d.messages.map(m=>`<tr><td>${ago(m.ts)}</td><td>${esc(m.sn||short(m.sa))}</td><td>${esc(m.rn||short(m.ra))}</td><td style="max-width:260px">${esc(m.body)}</td><td><button class="btn no" data-dm="${m.id}">Delete</button></td></tr>`).join('')+'</tbody></table>':'<div class="empty">No texts yet.</div>';
+  // sent emails
+  $('#m-sent').innerHTML=(d.mails||[]).length?'<div style="margin-bottom:4px;letter-spacing:.12em;text-transform:uppercase;font-size:10px">Sent emails</div>'+d.mails.map(m=>`<div><b title="${esc(m.subject)}">${esc(m.subject)}${m.img?' &#128247;':''}</b><span>${ago(m.ts)} &middot; opened by ${nf(m.reads)}</span><button class="btn no" data-dmail="${m.id}">Delete</button></div>`).join(''):'';
   // players
   $('#ucount').textContent=nf(d.users.length)+' players · Glyph + username';
   $('#users').innerHTML=d.users.length?'<table><thead><tr><th>Glyph</th><th>Wallet</th><th>Username</th><th>Last seen</th><th></th></tr></thead><tbody>'+d.users.map(u=>`<tr>
@@ -278,6 +304,37 @@ async function pollLive(force){
 setInterval(()=>{document.querySelectorAll('#live3 em[data-st]').forEach(el=>{const s=Math.max(0,Math.floor((Date.now()-Number(el.dataset.st))/1000));el.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')})},1000);
 setInterval(pollLive,4000);
 
+/* ---------- Mimu Mail composer ---------- */
+let MAIL_IMG=null;
+function shrinkPhoto(file){
+  return new Promise((res,rej)=>{
+    if(!/^image\//.test(file.type)||file.size>15e6)return rej(new Error('Choose a picture under 15 MB.'));
+    const url=URL.createObjectURL(file),im=new Image();
+    im.onload=()=>{URL.revokeObjectURL(url);const M=1000,k=Math.min(1,M/Math.max(im.width,im.height)),w=Math.round(im.width*k),h=Math.round(im.height*k),c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,w,h);g.drawImage(im,0,0,w,h);res(c.toDataURL('image/jpeg',.82))};
+    im.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('That file is not a picture I can read.'))};
+    im.src=url;
+  });
+}
+$('#m-file').onchange=async e=>{
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  try{MAIL_IMG=await shrinkPhoto(f);$('#m-prev').src=MAIL_IMG;$('#m-prev').hidden=false;$('#m-fn').textContent=f.name.slice(0,30);$('#m-clear').hidden=false;$('#m-st').textContent=''}
+  catch(err){MAIL_IMG=null;$('#m-st').textContent=err.message}
+  e.target.value='';
+};
+$('#m-clear').onclick=()=>{MAIL_IMG=null;$('#m-prev').hidden=true;$('#m-fn').textContent='';$('#m-clear').hidden=true};
+$('#m-send').onclick=async()=>{
+  const subject=$('#m-sub').value.trim(),body=$('#m-body').value.trim(),st=$('#m-st');
+  if(!subject||!body){st.style.color='var(--bad)';st.textContent='Add a subject and a message first.';return}
+  if(!confirm('Send this email to EVERY phone signed in with Glyph?\n\n'+subject))return;
+  const b=$('#m-send');b.disabled=true;st.style.color='var(--muted)';st.textContent='Sending…';
+  try{
+    const r=await call('mail',{method:'POST',body:JSON.stringify({subject,body,image:MAIL_IMG})});
+    st.style.color='var(--up)';st.textContent='Sent. It will appear on every signed-in phone ('+nf(r.recipients)+' players on record).';
+    $('#m-sub').value='';$('#m-body').value='';$('#m-clear').onclick();refresh();
+  }catch(err){st.style.color='var(--bad)';st.textContent=err.message}
+  b.disabled=false;
+};
+
 /* ---------- actions ---------- */
 document.addEventListener('click',async e=>{
   const t=e.target.closest('button,[data-copy]');if(!t)return;
@@ -288,6 +345,7 @@ document.addEventListener('click',async e=>{
     if(t.dataset.bn){if(!confirm('Ban this wallet? It will be removed from the leaderboard and blocked from signing in.\n\n'+t.dataset.bn))return;
       await call('ban',{method:'POST',body:JSON.stringify({address:t.dataset.bn,reason:'banned from admin page'})});toast('Wallet banned');return refresh()}
     if(t.dataset.rm){if(!confirm('Remove this player\'s uploaded photo?'))return;await call('rmavatar',{method:'POST',body:JSON.stringify({address:t.dataset.rm})});toast('Photo removed');return refresh()}
+    if(t.dataset.dmail){if(!confirm('Delete this email from every phone?'))return;await call('delmail',{method:'POST',body:JSON.stringify({id:+t.dataset.dmail})});toast('Email deleted');return refresh()}
     if(t.dataset.dm){await call('delmsg',{method:'POST',body:JSON.stringify({id:+t.dataset.dm})});toast('Text deleted');return refresh()}
     if(t.dataset.ub){await call('unban',{method:'POST',body:JSON.stringify({address:t.dataset.ub})});toast('Wallet unbanned');return refresh()}
   }catch(err){toast(err.message);t.disabled=false}

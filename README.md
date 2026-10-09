@@ -29,6 +29,7 @@ Local-only helpers: `?gate=ok` fakes a Glyph sign-in (only on `localhost`), and 
 - **Username:** every player types a username that must be their X handle (unverified; one wallet per handle). Real "Sign in with X" is built (`/api/x/start`, `/api/x/callback`, `/api/x/link`) and switches on when `X_CLIENT_ID` and `X_CLIENT_SECRET` are set as secrets.
 - **Honest scores:** the browser never sends a score. It records only its inputs, and the server replays them with the same `assets/sim.js` (`/api/run/start`, `/api/run/chunk`). A Cloudflare Turnstile check starts each run, and runs with bot-like timing are held for review in the admin page.
 - **Top 5 app:** everyone is ranked by total score (Chair Run points + $TMF found). The top 5 can't give $TMF; everyone else can give all of it to one top 5 player (+2 points per $TMF) or send any amount to a player who has at least 1 $TMF. The server decides, using the live ranking, on every request.
+- **Mimu Mail:** the admin page has a blue box that sends an email (subject, body, optional photo) to every phone signed in with Glyph. Only the admin password can send; players can only read. Phones show an inbox that starts empty.
 - **Messages:** signed-in players can text each other (plain text, 280 characters, rate limited, blocking, admin can read and delete).
 - **Privacy:** the server stores wallet address, Glyph name, username, picture, scores, $TMF gifts, texts, and an anonymous browser ID with visit times. It does **not** store IP addresses or locations (the admin lockout uses a one-way keyed hash).
 

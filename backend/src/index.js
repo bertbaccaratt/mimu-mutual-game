@@ -366,6 +366,34 @@ async function handleRunBeat(env, req) {
   return json(env, req, { ok: true });
 }
 
+/* ---------- Mimu Mail: emails only the admin can send, delivered to every phone signed in with Glyph ---------- */
+const MAIL_IMG_MAX = 1000000;                                           // characters of base64 (about 750 KB)
+const mailImgUrl = (req, key) => `${apiOrigin(req)}/api/mail/img/${key}`;
+async function handleMailList(env, req) {
+  const a = await msgAuth(env, req); if (a.err) return a.err;
+  const rows = (await env.DB.prepare('SELECT b.id, b.ts, b.subject, substr(b.body,1,160) pv, (b.ikey IS NOT NULL) img, EXISTS(SELECT 1 FROM mail_reads r WHERE r.address=?1 AND r.id=b.id) rd FROM broadcasts b ORDER BY b.id DESC LIMIT 50').bind(a.me).all()).results || [];
+  const un = await env.DB.prepare('SELECT COUNT(*) c FROM broadcasts b WHERE NOT EXISTS (SELECT 1 FROM mail_reads r WHERE r.address=?1 AND r.id=b.id)').bind(a.me).first();
+  return json(env, req, { unread: un.c, mails: rows.map((r) => ({ id: r.id, ts: r.ts, subject: r.subject, preview: r.pv, image: !!r.img, read: !!r.rd })) });
+}
+async function handleMailItem(env, req, url) {
+  const a = await msgAuth(env, req); if (a.err) return a.err;
+  const id = Number(url.searchParams.get('id')) || 0;
+  const m = await env.DB.prepare('SELECT id, ts, subject, body, ikey FROM broadcasts WHERE id=?1').bind(id).first();
+  if (!m) return json(env, req, { error: 'not found' }, 404);
+  await env.DB.prepare('INSERT OR IGNORE INTO mail_reads(address,id) VALUES(?1,?2)').bind(a.me, id).run();
+  return json(env, req, { id: m.id, ts: m.ts, subject: m.subject, body: m.body, image: m.ikey ? mailImgUrl(req, m.ikey) : null });
+}
+async function handleMailImg(env, req, url) {
+  if (await limited(env, 'RL_READ', clientIp(req))) return tooMany(env, req);
+  const key = url.pathname.split('/').pop();
+  if (!/^[0-9a-f]{24}$/.test(key)) return new Response('not found', { status: 404 });
+  const row = await env.DB.prepare('SELECT img FROM broadcasts WHERE ikey=?1').bind(key).first();
+  if (!row || !row.img) return new Response('not found', { status: 404 });
+  const [type, b64] = String(row.img).split('|');
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(type)) return new Response('not found', { status: 404 });
+  return new Response(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)), { headers: { 'Content-Type': type, 'Cache-Control': 'public, max-age=3600', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; sandbox", 'Cross-Origin-Resource-Policy': 'cross-origin' } });
+}
+
 /* ---------- player-to-player texts (the Messages app) ----------
  * Signed-in players can text anyone on the leaderboard. Messages live here, keyed by wallet, so both sides see the same
  * thread on any device. Plain text only, 280 characters, rate limited, and a player can block someone. Admin can read and delete. */
@@ -390,7 +418,8 @@ async function handleMsgThreads(env, req) {
     const byId = Object.fromEntries(info.map((r) => [r.id, r]));
     threads = rows.map((r) => { const i = byId[r.lastid]; return i ? { with: r.other, name: i.n, picture: i.pic || '', last: i.body, ts: i.ts, mine: i.sender === me, unread: r.unread || 0 } : null; }).filter(Boolean);
   }
-  return json(env, req, { unread: threads.reduce((s, t) => s + t.unread, 0), threads });
+  const mu = await env.DB.prepare('SELECT COUNT(*) c FROM broadcasts b WHERE NOT EXISTS (SELECT 1 FROM mail_reads r WHERE r.address=?1 AND r.id=b.id)').bind(me).first();
+  return json(env, req, { unread: threads.reduce((s, t) => s + t.unread, 0), threads, mail: mu ? mu.c : 0 });
 }
 async function handleMsgThread(env, req, url) {
   const a = await msgAuth(env, req); if (a.err) return a.err;
@@ -592,6 +621,30 @@ async function handleAdmin(env, req, url) {
   if (!env.ADMIN_TOKEN || !safeEq(enc.encode(tok), enc.encode(env.ADMIN_TOKEN))) { await adminFail(env, ip); return out({ error: 'forbidden' }, 403); }
   const path = url.pathname.replace('/api/admin/', '');
   let b = {}; if (req.method === 'POST') { try { b = await req.json(); } catch { return out({ error: 'bad json' }, 400); } }
+  if (path === 'mail' && req.method === 'POST') {                      // the ONLY way an email is created: it goes to every phone signed in with Glyph
+    const subject = String(b.subject || '').replace(/[\u0000-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, ' ').replace(/\s+/g, ' ').trim();
+    const body = String(b.body || '').replace(/[\u0000-\u0008\u000b-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, '').replace(/\r\n?/g, '\n').replace(/\n{4,}/g, '\n\n\n').trim();
+    if (!subject || subject.length > 120) return out({ error: 'Subject is required (up to 120 characters).' }, 400);
+    if (!body || body.length > 5000) return out({ error: 'Write a message (up to 5000 characters).' }, 400);
+    let img = null, ikey = null;
+    if (b.image) {
+      const m = /^data:image\/(?:jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(String(b.image));
+      if (!m || m[1].length > MAIL_IMG_MAX) return out({ error: 'That photo is too big or not a JPG, PNG or WebP.' }, 400);
+      let bytes; try { bytes = Uint8Array.from(atob(m[1]), (c) => c.charCodeAt(0)); } catch { return out({ error: 'bad image' }, 400); }
+      const type = sniffImage(bytes);
+      if (!type) return out({ error: 'That file is not a real picture.' }, 400);
+      img = type + '|' + m[1]; ikey = hex(12);
+    }
+    const r = await env.DB.prepare('INSERT INTO broadcasts(ts,subject,body,img,ikey) VALUES(?1,?2,?3,?4,?5)').bind(Date.now(), subject, body, img, ikey).run();
+    const players = await env.DB.prepare('SELECT COUNT(*) c FROM players').first();
+    return out({ ok: true, id: r.meta && r.meta.last_row_id, recipients: players.c });
+  }
+  if (path === 'delmail' && req.method === 'POST') {
+    const id = Number(b.id) || 0;
+    await env.DB.prepare('DELETE FROM mail_reads WHERE id=?1').bind(id).run();
+    await env.DB.prepare('DELETE FROM broadcasts WHERE id=?1').bind(id).run();
+    return out({ ok: true });
+  }
   if (path === 'live' && req.method === 'GET') {                       // runs happening right now (a ping in the last 25 seconds), newest first
     const since = Date.now() - 25000;
     const rows = (await env.DB.prepare("SELECT r.id, p.name n, r.started_at st, COALESCE(r.last_beat, r.started_at) lb, COALESCE(r.live_score,0) sc, COALESCE(r.live_dist,0) d, COALESCE(r.live_coins,0) c FROM runs r LEFT JOIN players p ON p.address=r.address WHERE r.status='open' AND COALESCE(r.last_beat, r.started_at)>?1 ORDER BY lb DESC").bind(since).all()).results || [];
@@ -600,7 +653,7 @@ async function handleAdmin(env, req, url) {
   if (path === 'dashboard' && req.method === 'GET') {
     const week = weekNow(), q = (sql, ...a) => env.DB.prepare(sql).bind(...a);
     const top = (col) => q(`SELECT s.address a, ${col} v, p.name n, p.x_handle x FROM scores s JOIN players p ON p.address=s.address WHERE s.week=?1 AND ${col}>0 ORDER BY ${col} DESC, s.updated_at ASC LIMIT 10`, week).all();
-    const [vis, tot, today, run, nw, held, users, banned, transfers, messages] = await Promise.all([
+    const [vis, tot, today, run, nw, held, users, banned, transfers, messages, mails] = await Promise.all([
       q('SELECT COUNT(*) c FROM visitors').first(),
       q('SELECT COALESCE(SUM(visits),0) c FROM visitors').first(),
       q('SELECT COUNT(*) c FROM visitors WHERE last_seen>?1', Date.now() - 24 * 3600 * 1000).first(),
@@ -610,12 +663,13 @@ async function handleAdmin(env, req, url) {
       q('SELECT COUNT(*) c FROM bans').first(),
       q('SELECT t.ts, t.amount, t.boost, t.sender sa, t.recipient ra, ps.name sn, pr.name rn FROM transfers t LEFT JOIN players ps ON ps.address=t.sender LEFT JOIN players pr ON pr.address=t.recipient ORDER BY t.id DESC LIMIT 50').all(),
       q('SELECT m.id, m.ts, m.body, m.sender sa, m.recipient ra, ps.name sn, pr.name rn FROM messages m LEFT JOIN players ps ON ps.address=m.sender LEFT JOIN players pr ON pr.address=m.recipient ORDER BY m.id DESC LIMIT 100').all(),
+      q('SELECT b.id, b.ts, b.subject, (b.ikey IS NOT NULL) img, (SELECT COUNT(*) FROM mail_reads r WHERE r.id=b.id) reads FROM broadcasts b ORDER BY b.id DESC LIMIT 20').all(),
     ]);
     return out({
       week, visitors: vis.c, visits: tot.c, today: today.c, banned: banned.c,
       topRun: run.results || [], topNw: nw.results || [],
       held: (held.results || []).map((r) => ({ ...r, flags: JSON.parse(r.flags || '[]'), seconds: Math.round(r.ticks / 60) })),
-      users: users.results || [], transfers: transfers.results || [], messages: messages.results || [],
+      users: users.results || [], transfers: transfers.results || [], messages: messages.results || [], mails: mails.results || [], players: users.results ? users.results.length : 0,
     });
   }
   if (path === 'held' && req.method === 'GET') {
@@ -692,6 +746,9 @@ export default {
       if (url.pathname === '/api/run/chunk' && req.method === 'POST') return handleRunChunk(env, req);
       if (url.pathname === '/api/leaderboard' && req.method === 'GET') return handleBoard(env, req, url);
       if (url.pathname === '/api/hit' && req.method === 'POST') return handleHit(env, req);
+      if (url.pathname === '/api/mail' && req.method === 'GET') return handleMailList(env, req);
+      if (url.pathname === '/api/mail/item' && req.method === 'GET') return handleMailItem(env, req, url);
+      if (url.pathname.startsWith('/api/mail/img/') && req.method === 'GET') return handleMailImg(env, req, url);
       if (url.pathname === '/api/run/beat' && req.method === 'POST') return handleRunBeat(env, req);
       if (url.pathname === '/api/messages/threads' && req.method === 'GET') return handleMsgThreads(env, req);
       if (url.pathname === '/api/messages/thread' && req.method === 'GET') return handleMsgThread(env, req, url);

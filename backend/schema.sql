@@ -95,3 +95,8 @@ CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, ts IN
 CREATE INDEX IF NOT EXISTS idx_msg_rcpt ON messages (recipient, read);
 CREATE INDEX IF NOT EXISTS idx_msg_pair ON messages (sender, recipient, id);
 CREATE TABLE IF NOT EXISTS blocks (blocker TEXT NOT NULL, blocked TEXT NOT NULL, PRIMARY KEY (blocker, blocked));
+
+-- Mimu Mail: emails the admin sends to every Glyph-signed-in phone (img = 'mime|base64')
+CREATE TABLE IF NOT EXISTS broadcasts (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, subject TEXT NOT NULL, body TEXT NOT NULL, img TEXT, ikey TEXT);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_broadcasts_ikey ON broadcasts (ikey) WHERE ikey IS NOT NULL;
+CREATE TABLE IF NOT EXISTS mail_reads (address TEXT NOT NULL, id INTEGER NOT NULL, PRIMARY KEY (address, id));

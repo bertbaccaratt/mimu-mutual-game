@@ -196,8 +196,8 @@ async function handleAuth(env, req) {
   const now = Date.now();
   const mine = await env.DB.prepare('SELECT x_handle FROM players WHERE address=?1').bind(addr.toLowerCase()).first();
   const name = mine && mine.x_handle ? '@' + mine.x_handle : glyphName;      // once X is connected, the X @handle is the player's name everywhere
-  await env.DB.prepare('INSERT INTO players(address,name,picture,glyph_name,last_ip,updated_at) VALUES(?1,?2,?3,?4,?5,?6) ON CONFLICT(address) DO UPDATE SET name=?2,picture=?3,glyph_name=?4,last_ip=?5,updated_at=?6')
-    .bind(addr.toLowerCase(), name, picture, glyphName, clientIp(req), now).run();
+  await env.DB.prepare('INSERT INTO players(address,name,picture,glyph_name,updated_at) VALUES(?1,?2,?3,?4,?5) ON CONFLICT(address) DO UPDATE SET name=?2,picture=?3,glyph_name=?4,updated_at=?5')
+    .bind(addr.toLowerCase(), name, picture, glyphName, now).run();
   const exp = now + SESSION_MS;
   return json(env, req, { token: await signToken(env, { sub: addr.toLowerCase(), exp }), expiresAt: exp, gates, x: (mine && mine.x_handle) || '', needX: xNeeded(env) && !(mine && mine.x_handle) });
 }
@@ -311,16 +311,10 @@ async function handleHit(env, req) {
   let b = {}; try { b = await req.json(); } catch { /* no body */ }
   const vid = typeof b.vid === 'string' && /^[0-9a-f]{32}$/.test(b.vid) ? b.vid : null;
   if (!vid) return json(env, req, { error: 'bad request' }, 400);
-  const cf = req.cf || {}, ip = clientIp(req), now = Date.now();
-  const num = (v) => (v != null && Number.isFinite(Number(v)) ? Math.round(Number(v) * 100) / 100 : null);
-  const clean = (s, n) => String(s || '').replace(/[^\p{L}\p{N} .,'\-]/gu, '').slice(0, n);
-  const country = clean(cf.country, 2), city = clean(cf.city, 60), lat = num(cf.latitude), lon = num(cf.longitude);
+  const now = Date.now();
   const row = await env.DB.prepare('SELECT last_seen FROM visitors WHERE id=?1').bind(vid).first();
   if (row && now - row.last_seen < 30 * 60 * 1000) return json(env, req, { ok: true });          // same visit
-  await env.DB.prepare(`INSERT INTO visitors(id,first_seen,last_seen,visits,ip,country,city,lat,lon) VALUES(?1,?2,?2,1,?3,?4,?5,?6,?7)
-      ON CONFLICT(id) DO UPDATE SET last_seen=?2, visits=visits+1, ip=?3, country=?4, city=?5, lat=?6, lon=?7`).bind(vid, now, ip, country, city, lat, lon).run();
-  await env.DB.prepare('INSERT INTO hits(ts,vid,ip,country,city) VALUES(?1,?2,?3,?4,?5)').bind(now, vid, ip, country, city).run();
-  await env.DB.prepare('DELETE FROM hits WHERE id <= (SELECT MAX(id) - 2000 FROM hits)').run();
+  await env.DB.prepare('INSERT INTO visitors(id,first_seen,last_seen,visits) VALUES(?1,?2,?2,1) ON CONFLICT(id) DO UPDATE SET last_seen=?2, visits=visits+1').bind(vid, now).run();
   return json(env, req, { ok: true });
 }
 
@@ -429,15 +423,15 @@ async function handleMsgBlock(env, req) {
   return json(env, req, { ok: true, blocked: b.block !== false });
 }
 
-/* ---------- Top 9: sending $TMF between players ----------
+/* ---------- Top 5: sending $TMF between players ----------
  * Rules (enforced here, not in the browser):
- *   - the top 9 runners of the week (Chair Run board) cannot send;
- *   - anyone outside the top 9 can send to any player who has registered at least 1 $TMF this week;
+ *   - the top 5 runners of the week (Chair Run board) cannot send;
+ *   - anyone outside the top 5 can send to any player who has registered at least 1 $TMF this week;
  *   - the amount comes out of the sender's "$TMF found" total and goes into the recipient's, in one all-or-nothing step. */
-const TOP_N = 9;
+const TOP_N = 5;
 const SCORE = '(run_best+boost)';                 // a player's Chair Run score = their best verified run + the boost they were given
 const TOTAL = '(run_best+boost+coins_total)';      // a player's total main score = Chair Run score (incl. boost) + their $TMF found
-const BOOST_PER_TMF = 2;                          // each $TMF sent to a top-9 runner adds this many points to their score
+const BOOST_PER_TMF = 2;                          // each $TMF sent to a top-5 runner adds this many points to their score
 async function topNine(env, week) {
   const r = await env.DB.prepare(`SELECT address FROM scores WHERE week=?1 AND ${TOTAL}>0 ORDER BY ${TOTAL} DESC, updated_at ASC LIMIT ?2`).bind(week, TOP_N).all();
   return (r.results || []).map((x) => x.address);
@@ -465,17 +459,23 @@ async function handleTransfer(env, req) {
   if (await limited(env, 'RL_RUN', sess.sub)) return tooMany(env, req);
   if (await isBanned(env, sess.sub)) return json(env, req, { error: 'blocked' }, 403);
   let b = {}; try { b = await req.json(); } catch { return json(env, req, { error: 'bad json' }, 400); }
-  const to = String(b.to || '').toLowerCase(), amount = Number(b.amount);
-  if (!/^0x[0-9a-f]{40}$/.test(to) || !Number.isInteger(amount) || amount < 1 || amount > 1e9) return json(env, req, { error: 'bad request' }, 400);
+  const to = String(b.to || '').toLowerCase(), all = b.all === true;
+  let amount = Number(b.amount);
+  if (!/^0x[0-9a-f]{40}$/.test(to) || (!all && (!Number.isInteger(amount) || amount < 1 || amount > 1e9))) return json(env, req, { error: 'bad request' }, 400);
   if (to === sess.sub) return json(env, req, { error: 'You cannot send $TMF to yourself.' }, 400);
   const week = weekNow();
   const top = await topNine(env, week);
-  if (top.includes(sess.sub)) return json(env, req, { error: 'The top 9 runners cannot send $TMF.', top9: true }, 403);
+  if (top.includes(sess.sub)) return json(env, req, { error: 'The top 5 runners cannot send $TMF.', top9: true }, 403);
   const rc = await env.DB.prepare('SELECT coins_total c FROM scores WHERE address=?1 AND week=?2').bind(to, week).first();
   if (!rc || rc.c < 1) return json(env, req, { error: 'That player has not registered any $TMF yet, so they cannot receive.' }, 409);
   if (await isBanned(env, to)) return json(env, req, { error: 'That player cannot receive $TMF.' }, 409);
+  if (all) {                                                          // give everything the sender holds right now
+    const mine = await env.DB.prepare('SELECT coins_total c FROM scores WHERE address=?1 AND week=?2').bind(sess.sub, week).first();
+    amount = mine ? mine.c : 0;
+    if (amount < 1) return json(env, req, { error: 'You have no $TMF to give yet.' }, 409);
+  }
   const now = Date.now();
-  const boost = top.includes(to) ? amount * BOOST_PER_TMF : 0;        // $TMF given to a top-9 runner also boosts their score
+  const boost = top.includes(to) ? amount * BOOST_PER_TMF : 0;        // $TMF given to a top-5 runner also boosts their score
   const res = await env.DB.batch([
     env.DB.prepare('UPDATE scores SET coins_total=coins_total-?1 WHERE address=?2 AND week=?3 AND coins_total>=?1').bind(amount, sess.sub, week),
     env.DB.prepare('UPDATE scores SET coins_total=coins_total+?1, boost=boost+?4 WHERE address=?2 AND week=?3 AND (SELECT changes())>0').bind(amount, to, week, boost),
@@ -560,6 +560,7 @@ async function handleXLink(env, req) {                              // attach a 
 }
 
 /* ---------- admin: dashboard, held runs, bans (needs the admin password, checked here on the server) ---------- */
+async function ipKey(env, ip) { return b64u(await hmac(env.SESSION_SECRET, 'adm|' + ip)).slice(0, 22); }   // one-way, so no address is ever stored
 async function adminLocked(env, ip) {
   const r = await env.DB.prepare('SELECT n, until FROM admin_fails WHERE ip=?1').bind(ip).first();
   return !!(r && r.until > Date.now());
@@ -571,7 +572,7 @@ async function adminFail(env, ip) {
   await env.DB.prepare('INSERT INTO admin_fails(ip,n,at,until) VALUES(?1,?2,?3,?4) ON CONFLICT(ip) DO UPDATE SET n=?2, at=?3, until=?4').bind(ip, n, now, n >= 6 ? now + 15 * 60 * 1000 : 0).run();
 }
 async function handleAdmin(env, req, url) {
-  const ip = clientIp(req);
+  const ip = await ipKey(env, clientIp(req));
   const out = (o, st = 200) => new Response(JSON.stringify(o), { status: st, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...cors(env, req) } });
   if (await adminLocked(env, ip)) return out({ error: 'too many wrong passwords, try again in 15 minutes' }, 429);
   const tok = req.headers.get('X-Admin-Token') || '';
@@ -581,15 +582,13 @@ async function handleAdmin(env, req, url) {
   if (path === 'dashboard' && req.method === 'GET') {
     const week = weekNow(), q = (sql, ...a) => env.DB.prepare(sql).bind(...a);
     const top = (col) => q(`SELECT s.address a, ${col} v, p.name n, p.x_handle x FROM scores s JOIN players p ON p.address=s.address WHERE s.week=?1 AND ${col}>0 ORDER BY ${col} DESC, s.updated_at ASC LIMIT 10`, week).all();
-    const [vis, tot, today, run, nw, held, users, map, ips, banned, transfers, messages] = await Promise.all([
+    const [vis, tot, today, run, nw, held, users, banned, transfers, messages] = await Promise.all([
       q('SELECT COUNT(*) c FROM visitors').first(),
       q('SELECT COALESCE(SUM(visits),0) c FROM visitors').first(),
       q('SELECT COUNT(*) c FROM visitors WHERE last_seen>?1', Date.now() - 24 * 3600 * 1000).first(),
       top(SCORE), top('coins_total'),
       q("SELECT r.id, r.address a, p.name n, p.x_handle x, r.score, r.coins, r.last_tick ticks, r.flags, r.ended_at t FROM runs r LEFT JOIN players p ON p.address=r.address WHERE r.status='held' ORDER BY r.ended_at DESC LIMIT 50").all(),
-      q(`SELECT p.address a, p.name n, p.glyph_name g, ${picSql(req)} pic, p.x_handle x, (p.x_id IS NOT NULL) xv, p.last_ip ip, p.updated_at t, (SELECT 1 FROM bans b WHERE b.address=p.address) banned FROM players p ORDER BY p.updated_at DESC LIMIT 1000`).all(),
-      q('SELECT lat, lon, country, city, COUNT(*) c FROM visitors WHERE lat IS NOT NULL AND lon IS NOT NULL GROUP BY ROUND(lat,1), ROUND(lon,1) ORDER BY MAX(last_seen) DESC LIMIT 1500').all(),
-      q('SELECT ts, ip, country, city, vid FROM hits ORDER BY id DESC LIMIT 200').all(),
+      q(`SELECT p.address a, p.name n, p.glyph_name g, ${picSql(req)} pic, p.x_handle x, (p.x_id IS NOT NULL) xv, p.updated_at t, (SELECT 1 FROM bans b WHERE b.address=p.address) banned FROM players p ORDER BY p.updated_at DESC LIMIT 1000`).all(),
       q('SELECT COUNT(*) c FROM bans').first(),
       q('SELECT t.ts, t.amount, t.boost, t.sender sa, t.recipient ra, ps.name sn, pr.name rn FROM transfers t LEFT JOIN players ps ON ps.address=t.sender LEFT JOIN players pr ON pr.address=t.recipient ORDER BY t.id DESC LIMIT 50').all(),
       q('SELECT m.id, m.ts, m.body, m.sender sa, m.recipient ra, ps.name sn, pr.name rn FROM messages m LEFT JOIN players ps ON ps.address=m.sender LEFT JOIN players pr ON pr.address=m.recipient ORDER BY m.id DESC LIMIT 100').all(),
@@ -598,7 +597,7 @@ async function handleAdmin(env, req, url) {
       week, visitors: vis.c, visits: tot.c, today: today.c, banned: banned.c,
       topRun: run.results || [], topNw: nw.results || [],
       held: (held.results || []).map((r) => ({ ...r, flags: JSON.parse(r.flags || '[]'), seconds: Math.round(r.ticks / 60) })),
-      users: users.results || [], map: map.results || [], ips: ips.results || [], transfers: transfers.results || [], messages: messages.results || [],
+      users: users.results || [], transfers: transfers.results || [], messages: messages.results || [],
     });
   }
   if (path === 'held' && req.method === 'GET') {

@@ -59,8 +59,8 @@ ok('a player without a picture gets 404', (await fetch(base + '/api/avatar/0x' +
 const d = await admin('dashboard');
 ok('dashboard works with the password', d.s === 200 && typeof d.b.visitors === 'number', `visitors ${d.b.visitors}`);
 ok('visitor counted once', d.b.visitors === before + 1, `${before} -> ${d.b.visitors}`);
-ok('player listed with Glyph name, wallet, X handle, IP and our picture URL', d.b.users.some((u) => u.g === 'Admin Test Ape' && u.a === a.address.toLowerCase() && u.x === hnd && u.ip && /\/api\/avatar\//.test(u.pic || '')));
-ok('recent visitors list has the visit', d.b.ips.length > 0 && d.b.ips.some((h) => h.vid === vid));
+ok('player listed with Glyph name, wallet, X handle and our picture URL', d.b.users.some((u) => u.g === 'Admin Test Ape' && u.a === a.address.toLowerCase() && u.x === hnd && /\/api\/avatar\//.test(u.pic || '')));
+ok('the dashboard carries no IP address, map or location data anywhere', !('ips' in d.b) && !('map' in d.b) && d.b.users.every((u) => !('ip' in u)) && !/"(ip|lat|lon|country|city)"/.test(JSON.stringify(d.b)));
 ok('CORS allows the admin header', (await fetch(base + '/api/admin/dashboard', { method: 'OPTIONS', headers: { Origin: origin, 'Access-Control-Request-Method': 'GET', 'Access-Control-Request-Headers': 'x-admin-token' } })).headers.get('access-control-allow-headers')?.includes('X-Admin-Token'));
 ok('admin CORS echoes the origin', d.h.get('access-control-allow-origin') === origin);
 

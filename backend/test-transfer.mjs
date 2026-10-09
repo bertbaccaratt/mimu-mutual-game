@@ -1,4 +1,4 @@
-// Top 9 sending rules, against the STAGING API (it seeds fake scores in the staging database and removes them afterwards):
+// Top 5 sending rules against the STAGING API (seeds fake scores in the staging database and removes them afterwards):
 //   ADMIN_TOKEN=... node test-transfer.mjs https://mimu-mutual-api-staging.mutualmimu.workers.dev
 import { execSync } from 'node:child_process';
 import { privateKeyToAccount, generatePrivateKey } from 'viem/accounts';
@@ -21,62 +21,72 @@ async function login(acct, name, n) {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const d1 = (sql) => execSync(`npx wrangler d1 execute mimu-mutual-staging --remote --config wrangler.staging.toml --command "${sql}"`, { stdio: 'pipe', shell: true }).toString();
 
-// 12 wallets: W0..W8 will be the top 9, W9 and W10 are outside it, W11 has registered nothing
-const W = Array.from({ length: 12 }, () => privateKeyToAccount(generatePrivateKey()));
+// W0..W4 are the top 5, W5 and W6 are outside it, W7 has registered nothing
+const W = Array.from({ length: 8 }, () => privateKeyToAccount(generatePrivateKey()));
 const tok = [];
-for (let i = 0; i < W.length; i++) { tok.push(await login(W[i], 'Transfer Test ' + i, i)); if (i % 4 === 3) await sleep(61000); }   // per-IP sign-in limit
+for (let i = 0; i < W.length; i++) { tok.push(await login(W[i], 'Transfer Test ' + i, i)); if (i % 3 === 2 && i < W.length - 1) await sleep(62000); }   // per-IP sign-in limit
 const week = (await call('/api/health')).b.week;
-const rows = [];
-for (let i = 0; i < 9; i++) rows.push(`('${W[i].address.toLowerCase()}',${week},${900000 - i * 1000},50,1,1)`);
-rows.push(`('${W[9].address.toLowerCase()}',${week},100,40,1,1)`, `('${W[10].address.toLowerCase()}',${week},50,5,1,1)`);
-d1(`INSERT OR REPLACE INTO scores(address,week,run_best,coins_total,runs,updated_at) VALUES ${rows.join(',')}`);
 const addr = (i) => W[i].address.toLowerCase();
+const seed = (i, run, coins) => `('${addr(i)}',${week},${run},${coins},1,1)`;
+d1(`INSERT OR REPLACE INTO scores(address,week,run_best,coins_total,runs,updated_at) VALUES ${[0, 1, 2, 3, 4].map((i) => seed(i, 900000 - i * 1000, 50)).join(',')},${seed(5, 100, 40)},${seed(6, 50, 30)}`);
 const send = (from, to, amount) => call('/api/transfer', { method: 'POST', body: JSON.stringify({ to: typeof to === 'number' ? addr(to) : to, amount }) }, tok[from]);
+const giveAll = (from, to) => call('/api/transfer', { method: 'POST', body: JSON.stringify({ to: addr(to), all: true }) }, tok[from]);
+const status = (i) => call('/api/send/status', {}, tok[i]).then((r) => r.b);
+const list = async () => (await call('/api/top9')).b.rows;
 try {
-  const s0 = await call('/api/send/status', {}, tok[0]);
-  ok('a top-9 runner is told they cannot send', s0.s === 200 && s0.b.top9 === true && s0.b.canSend === false, JSON.stringify(s0.b));
-  const s9 = await call('/api/send/status', {}, tok[9]);
-  ok('a runner outside the top 9 can send', s9.b.top9 === false && s9.b.canSend === true && s9.b.balance === 40, JSON.stringify(s9.b));
+  // ---- who is in the top 5 ----
+  const rows = await list();
+  ok('the list shows everyone, exactly 5 flagged as the top 5', rows.filter((r) => r.top9).length === 5 && rows.slice(0, 5).every((r) => r.top9) && rows.slice(5).every((r) => !r.top9));
+  ok('the top 5 are the five highest totals', [0, 1, 2, 3, 4].every((i, k) => rows[k].id === addr(i)), rows.slice(0, 5).map((r) => r.rank + ':' + r.id.slice(0, 6)).join(' '));
+  ok('totals are Chair Run score + $TMF found', rows.every((r) => r.total === r.run + r.tmf));
+  const s0 = await status(0), s4 = await status(4), s5 = await status(5);
+  ok('1st place is locked from sending', s0.top9 === true && s0.canSend === false, JSON.stringify(s0));
+  ok('5th place is still locked', s4.top9 === true && s4.canSend === false && s4.rank === 5, JSON.stringify(s4));
+  ok('6th place can send', s5.top9 === false && s5.canSend === true && s5.balance === 40 && s5.rank > 5, JSON.stringify(s5));
+  ok('top 5 cannot send (1st)', (await send(0, 6, 5)).s === 403);
+  ok('top 5 cannot send (5th)', (await send(4, 6, 5)).s === 403);
+  ok('top 5 cannot give all either', (await giveAll(4, 6)).s === 403);
 
-  const a = await send(0, 10, 5);
-  ok('top-9 runner cannot send', a.s === 403 && a.b.top9 === true, String(a.s));
-  const b = await send(8, 10, 5);
-  ok('the 9th runner still cannot send', b.s === 403);
-  const board = async () => Object.fromEntries(((await call('/api/leaderboard?kind=run&limit=100')).b.rows || []).map((r) => [r.id, r.v]));
-  const b0 = await board();
-  const boostRes = await send(9, 0, 10);
-  ok('sending to a top-9 runner works and reports a boost', boostRes.s === 200 && boostRes.b.boosted === 20 && boostRes.b.balance === 30, JSON.stringify(boostRes.b));
-  const b1 = await board();
-  ok('the top-9 runner score went up by 2 points per $TMF', b1[addr(0)] === b0[addr(0)] + 20, b0[addr(0)] + ' -> ' + b1[addr(0)]);
-  const t9 = (await call('/api/top9')).b;
-  const r0 = t9.rows.find((r) => r.id === addr(0)), r9 = t9.rows.find((r) => r.id === addr(9)), pos9 = t9.rows.findIndex((r) => r.id === addr(9));
-  ok('top 9 list: the leaders are flagged and the total is Chair Run score + $TMF found', !!r0 && r0.top9 === true && r0.total === r0.run + r0.tmf && r0.run === 900020 && r0.tmf === 60, JSON.stringify(r0));
-  ok('top 9 list: everyone else is listed, not flagged', !!r9 && r9.top9 === false && pos9 >= 9 && t9.rows.filter((r) => r.top9).length === 9, 'rank ' + (r9 && r9.rank));
-  ok('top 9 list is ordered by total', t9.rows.every((r, i) => i === 0 || t9.rows[i - 1].total >= r.total));
-  const c = await send(9, 10, 15);
-  ok('outside the top 9: sending works', c.s === 200 && c.b.balance === 15 && c.b.boosted === 0, JSON.stringify(c.b));
-  const s10 = await call('/api/send/status', {}, tok[10]);
-  ok('recipient received it', s10.b.balance === 20, String(s10.b.balance));
-  const b2 = await board();
-  ok('a player outside the top 9 gets the coins but no score boost', b2[addr(10)] === undefined || b2[addr(10)] === 50, String(b2[addr(10)]));
-  ok('cannot send more than you have', (await send(9, 10, 16)).s === 409);
-  ok('cannot send to a player with no $TMF registered', (await send(9, 11, 1)).s === 409);
-  ok('cannot send to an unknown address', (await send(9, '0x' + '1'.repeat(40), 1)).s === 409);
-  ok('cannot send to yourself', (await send(9, 9, 1)).s === 400);
-  ok('zero is refused', (await send(9, 10, 0)).s === 400);
-  ok('negative is refused', (await send(9, 10, -3)).s === 400);
-  ok('fractions are refused', (await send(9, 10, 1.5)).s === 400);
-  ok('sending needs a sign-in', (await call('/api/transfer', { method: 'POST', body: JSON.stringify({ to: addr(10), amount: 1 }) })).s === 401);
-  const s9b = await call('/api/send/status', {}, tok[9]);
-  ok('balance only dropped by the one successful send', s9b.b.balance === 15, String(s9b.b.balance));
-  const all = await send(9, 10, 15);
-  ok('can send the whole balance', all.s === 200 && all.b.balance === 0);
-  ok('with nothing left, sending is refused', (await send(9, 10, 1)).s === 409);
+  ok('cannot send more than you have', (await send(5, 6, 41)).s === 409);
+  ok('cannot send to a player with no $TMF registered', (await send(5, 7, 1)).s === 409);
+  ok('cannot send to an unknown address', (await send(5, '0x' + '1'.repeat(40), 1)).s === 409);
+  ok('cannot send to yourself', (await send(5, 5, 1)).s === 400);
+  ok('zero, negative and fractions are refused', (await send(5, 6, 0)).s === 400 && (await send(5, 6, -3)).s === 400 && (await send(5, 6, 1.5)).s === 400);
+
+  // ---- sending outside the top 5 ----
+  const c = await send(5, 6, 10);
+  ok('6th place can send to a player with $TMF (no boost, receiver is not top 5)', c.s === 200 && c.b.boosted === 0 && c.b.balance === 30, JSON.stringify(c.b));
+  ok('the receiver got the coins', (await status(6)).balance === 40);
+  const before = (await list()).find((r) => r.id === addr(0));
+  const g = await giveAll(5, 0);
+  ok('give all: the whole live balance goes to a top 5 runner, with +2 points per $TMF', g.s === 200 && g.b.sent === 30 && g.b.boosted === 60 && g.b.balance === 0, JSON.stringify(g.b));
+  const after = (await list()).find((r) => r.id === addr(0));
+  ok('the top 5 runner total went up by the coins + the boost', after.total === before.total + 30 + 60 && after.tmf === before.tmf + 30 && after.run === before.run + 60, `${before.total} -> ${after.total}`);
+  ok('with nothing left, give all and send are refused', (await giveAll(5, 0)).s === 409 && (await send(5, 0, 1)).s === 409);
+  ok('a player with no balance cannot send', (await status(5)).canSend === false);
+
+  // ---- rank changes move the lock ----
+  d1(`UPDATE scores SET run_best=899500 WHERE address='${addr(6)}' AND week=${week}`);       // 7th/6th place player overtakes 5th place
+  const s4b = await status(4);
+  ok('when someone passes 5th place, 5th place drops to 6th and is UNLOCKED', s4b.top9 === false && s4b.canSend === true && s4b.rank === 6, JSON.stringify(s4b));
+  ok('the list flags the new top 5 correctly', (await list()).slice(0, 5).some((r) => r.id === addr(6) && r.top9) && !(await list()).find((r) => r.id === addr(4)).top9);
+  const s6 = await status(6);
+  ok('the player who moved up is now LOCKED', s6.top9 === true && s6.canSend === false, JSON.stringify(s6));
+  const m = await send(4, 6, 10);
+  ok('the player who dropped can now send, and the new top 5 receiver is boosted', m.s === 200 && m.b.boosted === 20 && m.b.balance === 40, JSON.stringify(m.b));
+  d1(`UPDATE scores SET run_best=50 WHERE address='${addr(6)}' AND week=${week}`);          // the other player falls back
+  const s4c = await status(4);
+  ok('when they fall back, the lock comes back', s4c.top9 === true && s4c.canSend === false, JSON.stringify(s4c));
+  ok('and sending is refused again', (await send(4, 5, 1)).s === 403);
+
+  // ---- the rest of the rules ----
+  ok('sending needs a sign-in', (await call('/api/transfer', { method: 'POST', body: JSON.stringify({ to: addr(0), amount: 1 }) })).s === 401);
   if (process.env.ADMIN_TOKEN) {
     const dash = await call('/api/admin/dashboard', { headers: { 'X-Admin-Token': process.env.ADMIN_TOKEN } });
-    ok('transfers show in the admin dashboard', dash.s === 200 && dash.b.transfers.some((t) => t.sa === addr(9) && t.ra === addr(10) && t.amount === 15));
+    ok('transfers show in the admin dashboard', dash.s === 200 && dash.b.transfers.some((t) => t.sa === addr(5) && t.ra === addr(0) && t.amount === 30 && t.boost === 60));
   }
 } finally {
-  d1(`DELETE FROM scores WHERE address IN (${W.map((w) => `'${w.address.toLowerCase()}'`).join(',')})`);
-  d1(`DELETE FROM transfers WHERE sender IN (${W.map((w) => `'${w.address.toLowerCase()}'`).join(',')})`);
+  const ids = W.map((w) => `'${w.address.toLowerCase()}'`).join(',');
+  d1(`DELETE FROM scores WHERE address IN (${ids})`);
+  d1(`DELETE FROM transfers WHERE sender IN (${ids})`);
 }

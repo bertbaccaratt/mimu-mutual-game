@@ -83,10 +83,6 @@ td.n{width:44px;white-space:nowrap;color:var(--gold);font-weight:600}td.r{text-a
 .btn.ghost{color:var(--muted)}.btn.ghost:hover{color:var(--cream);border-color:var(--gold)}
 .btn:disabled{opacity:.4;cursor:default}
 .flags{display:flex;gap:5px;flex-wrap:wrap}
-#mapbox{position:relative;padding:14px 14px 10px}
-#map{width:100%;display:block;border-radius:12px;background:#0a0907}
-#mtip{position:absolute;pointer-events:none;display:none;padding:5px 9px;border-radius:8px;background:#000d;border:1px solid var(--gold);color:var(--cream);font-size:11px;white-space:nowrap;z-index:5}
-.mleg{display:flex;justify-content:space-between;padding:0 4px;margin-top:8px;color:var(--muted);font-size:10px;letter-spacing:.14em;text-transform:uppercase}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:10px 18px;border-radius:12px;background:#000e;border:1px solid var(--gold);color:var(--cream);z-index:50;display:none}
 .xl{color:#9ad1ff}
 .camp{margin:16px auto 0;max-width:520px;padding:10px 16px;border:2px solid #e0332f;border-radius:14px;box-shadow:0 0 16px rgba(224,51,47,.3);background:#120706;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;font-size:11px;letter-spacing:.16em;text-transform:uppercase}
@@ -122,17 +118,11 @@ td.n{width:44px;white-space:nowrap;color:var(--gold);font-weight:600}td.r{text-a
 
   <section class="sec"><h2>Review queue <small>held or flagged runs</small></h2><div id="q"></div></section>
 
-  <section class="sec"><h2>$TMF sent between players <small>Top 9 app · latest 50</small></h2><div class="scroll" id="xfers" style="max-height:300px"></div></section>
+  <section class="sec"><h2>$TMF sent between players <small>Top 5 app · latest 50</small></h2><div class="scroll" id="xfers" style="max-height:300px"></div></section>
 
   <section class="sec"><h2>Player texts <small>Messages app &middot; latest 100</small></h2><div class="scroll" id="msgs" style="max-height:340px"></div></section>
 
-  <section class="sec"><h2>Players <small id="ucount">Glyph + X + IP</small></h2><div class="scroll" id="users"></div></section>
-
-  <section class="sec"><h2>Where people log on from <small id="mcount"></small></h2>
-    <div id="mapbox"><canvas id="map"></canvas><div id="mtip"></div><div class="mleg"><span>● each dot = a place with visitors</span><span id="mcap"></span></div></div>
-  </section>
-
-  <section class="sec"><h2>Recent visitors <small>latest 200</small></h2><div class="scroll" id="ips"></div></section>
+  <section class="sec"><h2>Players <small id="ucount">Glyph + X</small></h2><div class="scroll" id="users"></div></section>
 </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -144,7 +134,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nf=n=>Number(n||0).toLocaleString('en-US');
 let PW='';try{PW=sessionStorage.getItem('mimu-admin')||''}catch(e){}
-let timer=null,DATA=null,LAND=null,busy=false;
+let timer=null,DATA=null,busy=false;
 
 /* ---------- flip clock ---------- */
 const FD=[];
@@ -253,57 +243,14 @@ function render(d){
   // player texts
   $('#msgs').innerHTML=(d.messages||[]).length?'<table><thead><tr><th>When</th><th>From</th><th>To</th><th>Text</th><th></th></tr></thead><tbody>'+d.messages.map(m=>`<tr><td>${ago(m.ts)}</td><td>${esc(m.sn||short(m.sa))}</td><td>${esc(m.rn||short(m.ra))}</td><td style="max-width:260px">${esc(m.body)}</td><td><button class="btn no" data-dm="${m.id}">Delete</button></td></tr>`).join('')+'</tbody></table>':'<div class="empty">No texts yet.</div>';
   // players
-  $('#ucount').textContent=nf(d.users.length)+' players · Glyph + X + IP';
-  $('#users').innerHTML=d.users.length?'<table><thead><tr><th>Glyph</th><th>Wallet</th><th>X account</th><th>IP address</th><th>Last seen</th><th></th></tr></thead><tbody>'+d.users.map(u=>`<tr>
+  $('#ucount').textContent=nf(d.users.length)+' players · Glyph + X';
+  $('#users').innerHTML=d.users.length?'<table><thead><tr><th>Glyph</th><th>Wallet</th><th>X account</th><th>Last seen</th><th></th></tr></thead><tbody>'+d.users.map(u=>`<tr>
     <td>${u.pic&&/^https:\/\//.test(u.pic)?`<img class="av" src="${esc(u.pic)}" alt="" referrerpolicy="no-referrer" loading="lazy">`:''}${esc(u.g||u.n)}${u.banned?' <span class="tag bad">banned</span>':''}</td>
     <td>${wal(u.a)}<br><span style="color:var(--muted);font-size:10px">${esc(u.a)}</span></td>
-    <td>${xlink(u.x)}${u.x&&!u.xv?' <span class="tag warn" title="Typed by the player, not verified by X">typed</span>':''}</td><td style="font-size:11px">${esc(u.ip||"unknown")}</td><td>${ago(u.t)}</td>
+    <td>${xlink(u.x)}${u.x&&!u.xv?' <span class="tag warn" title="Typed by the player, not verified by X">typed</span>':''}</td><td>${ago(u.t)}</td>
     <td><div class="btns">${u.banned?`<button class="btn ghost" data-ub="${esc(u.a)}">Unban</button>`:`<button class="btn ghost" data-bn="${esc(u.a)}">Ban</button>`}${/\/api\/avatar\//.test(u.pic||'')?`<button class="btn ghost" data-rm="${esc(u.a)}">Remove photo</button>`:''}</div></td></tr>`).join('')+'</tbody></table>':'<div class="empty">No players yet.</div>';
-  // ips
-  $('#ips').innerHTML=d.ips.length?'<table><thead><tr><th>When</th><th>IP address</th><th>Place</th><th>Visitor</th></tr></thead><tbody>'+d.ips.map(h=>`<tr><td title="${esc(new Date(h.ts).toLocaleString())}">${ago(h.ts)}</td><td>${esc(h.ip)}</td><td>${esc([h.city,h.country].filter(Boolean).join(', ')||'unknown')}</td><td style="color:var(--muted)">${esc((h.vid||'').slice(0,8))}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">No visits recorded yet.</div>';
   $('#upd').textContent='updated '+new Date().toLocaleTimeString();
-  drawMap();
 }
-
-/* ---------- world map (dot matrix) ---------- */
-async function loadLand(){
-  try{
-    const t=(await (await fetch('assets/landmask.txt?v=1')).text()).trim().split(/\r?\n/);
-    const [W,H,TOP,BOT]=t[0].split(' ').map(Number);LAND={W,H,TOP,BOT,rows:t.slice(1)};
-  }catch(e){LAND=null}
-}
-let dots=[];
-function drawMap(){
-  const cv=$('#map');if(!cv)return;
-  const pts=DATA?DATA.map:[];
-  $('#mcount').textContent=pts.reduce((a,p)=>a+p.c,0)+' visitors · '+new Set(pts.map(p=>p.country).filter(Boolean)).size+' countries';
-  if(!LAND){return}
-  const dpr=Math.min(2,window.devicePixelRatio||1),w=cv.parentElement.clientWidth-28,cell=w/LAND.W,h=cell*LAND.H;
-  cv.style.width=w+'px';cv.style.height=h+'px';cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
-  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
-  g.fillStyle='#4a3d24';
-  for(let r=0;r<LAND.H;r++){const row=LAND.rows[r];for(let c=0;c<LAND.W;c++)if(row[c]==='1'){g.beginPath();g.arc((c+.5)*cell,(r+.5)*cell,cell*.27,0,7);g.fill()}}
-  dots=[];
-  const x=lon=>(lon+180)/360*w, y=lat=>(LAND.TOP-lat)/(LAND.TOP-LAND.BOT)*h;
-  for(const p of pts){
-    const px=x(p.lon),py=y(p.lat);if(py<0||py>h)continue;
-    const rad=Math.min(9,3+Math.log2(1+p.c)*1.6);
-    const gr=g.createRadialGradient(px,py,0,px,py,rad*3);gr.addColorStop(0,'rgba(255,176,0,.55)');gr.addColorStop(1,'rgba(255,176,0,0)');
-    g.fillStyle=gr;g.beginPath();g.arc(px,py,rad*3,0,7);g.fill();
-    g.fillStyle='#ffc233';g.beginPath();g.arc(px,py,rad*.55,0,7);g.fill();
-    dots.push({x:px,y:py,r:Math.max(8,rad*1.4),p});
-  }
-  $('#mcap').textContent='equal-spaced world view';
-}
-$('#map').addEventListener('mousemove',e=>{
-  const b=e.currentTarget.getBoundingClientRect(),mx=e.clientX-b.left,my=e.clientY-b.top,tip=$('#mtip');
-  const hit=dots.find(d=>Math.hypot(d.x-mx,d.y-my)<=d.r);
-  if(!hit){tip.style.display='none';return}
-  tip.textContent=[hit.p.city,hit.p.country].filter(Boolean).join(', ')+' · '+hit.p.c+' visitor'+(hit.p.c===1?'':'s');
-  tip.style.display='block';tip.style.left=Math.min(b.width-160,mx+20)+'px';tip.style.top=(my+14)+'px';
-});
-$('#map').addEventListener('mouseleave',()=>$('#mtip').style.display='none');
-let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(drawMap,150)});
 
 /* ---------- actions ---------- */
 document.addEventListener('click',async e=>{
@@ -331,7 +278,7 @@ function start(){
   $('#login').hidden=true;$('#app').hidden=false;
   buildDigits(0);showCount(0);
   campTick();
-  loadLand().then(()=>refresh());refresh();
+  refresh();
   clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},15000);
 }
 function logout(bad){

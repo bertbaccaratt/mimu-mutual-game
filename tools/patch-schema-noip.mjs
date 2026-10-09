@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+const p = 'C:/Users/bertb/OneDrive/Desktop/tmfxmimu/backend/schema.sql';
+let t = fs.readFileSync(p, 'utf8');
+const rep = (a, b) => { if (!t.includes(a)) throw new Error('missing ' + a.slice(0, 50)); t = t.replace(a, b); };
+rep("  last_ip    TEXT,                     -- IP address at the last sign-in\n", '');
+rep("-- anonymous visitor counter (random browser id + the approximate place Cloudflare reports)", "-- anonymous visitor counter: a random browser id and times only (no IP address, no location)");
+rep("  visits     INTEGER NOT NULL DEFAULT 1,\n  ip         TEXT,\n  country    TEXT,\n  city       TEXT,\n  lat        REAL,\n  lon        REAL\n);", "  visits     INTEGER NOT NULL DEFAULT 1\n);");
+const a = t.indexOf('-- most recent visits (trimmed to the last 2000)');
+const b = t.indexOf('-- wrong admin passwords');
+if (a < 0 || b < a) throw new Error('hits block');
+t = t.slice(0, a) + t.slice(b);
+rep("-- wrong admin passwords, to lock out guessing", "-- wrong admin passwords, to lock out guessing (the key is a one-way keyed hash, never an address)");
+fs.writeFileSync(p, t);
+console.log('ok');

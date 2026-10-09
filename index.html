@@ -264,6 +264,8 @@ body.native #screen,body.native #screen:after{border-radius:0}
 .app-i .ic svg{width:34px;height:34px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4))}
 .app-i.lk{opacity:.5}
 .app-i.lk[data-open=run] .ic{filter:grayscale(1)}
+.app-i:disabled{cursor:not-allowed}
+nav button:disabled{opacity:.45;cursor:not-allowed}
 .closed-card{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:70px 26px 60px;text-align:center;background:radial-gradient(circle at 50% 0,#2a1519,#120a0c)}
 .closed-card h2{font:600 28px var(--serif);margin:0}.closed-card p{margin:0;color:var(--muted);font:400 14px/1.5 var(--sans);max-width:300px}
 .closed-card .lock{width:74px;height:74px;border-radius:22px;display:grid;place-items:center;font-size:34px;background:#2a2024;border:1px solid var(--line2);filter:grayscale(1)}
@@ -1262,7 +1264,7 @@ function buildHome(anim){
     <button class="w" data-open="lb"><div class="l">Weekly rank</div><div class="v">${rank?'#'+rank:'—'}</div><div class="l" style="margin-top:6px">${rank&&rank<=5?'<span style="color:var(--up)">in the top 5</span>':rank?'chasing top 5':'not ranked yet'}</div>
       <div class="row" style="margin-top:8px;gap:6px"><div style="width:24px;height:24px;border-radius:8px;overflow:hidden;border:1px solid var(--line2)">${meAv()}</div><div class="l" style="color:var(--cream)">${escH(P.handle)}</div></div></button>
    </div>
-   <div class="grid">${APPS.map(a=>`<button class="app-i${(a.id==='ff'&&!GATE.ok)||(a.id==='run'&&!chairOpen())?' lk':''}" data-open="${a.id}"${a.id==='ff'&&!GATE.ok?' disabled aria-disabled="true" title="Connect Glyph in Chair Run first"':''}><div class="ic" style="background:${a.bg}">${a.ic}${a.id==='top5'&&P.coins>0?'<i class="bd">♥</i>':''}</div>${a.n}</button>`).join('')}
+   <div class="grid">${APPS.map(a=>`<button class="app-i${(a.id==='ff'&&!GATE.ok)||(a.id==='run'&&!chairOpen())?' lk':''}" data-open="${a.id}"${a.id==='ff'&&!GATE.ok&&chairOpen()?' disabled aria-disabled="true" title="Connect Glyph in Chair Run first"':''}${a.id==='run'&&!chairOpen()?' disabled aria-disabled="true" title="'+chairClosedWhy()+'"':''}><div class="ic" style="background:${a.bg}">${a.ic}${a.id==='top5'&&P.coins>0?'<i class="bd">♥</i>':''}</div>${a.n}</button>`).join('')}
     <button class="app-i alarm" data-open="alarm"><div class="ic" style="background:linear-gradient(135deg,#ff8a4c,#d4362f)">${IC.alarm}</div>Alarm</button>
     <button class="app-i mail" data-open="mail"><div class="ic" style="background:linear-gradient(135deg,#5aa8ff,#1d5fd6)">${IC.mail}${PM.mail?`<i class="bd">${PM.mail}</i>`:''}</div>Mimu Mail</button>
    </div>
@@ -1276,7 +1278,7 @@ function buildHome(anim){
 /* Campaign countdown widget: opens Sat Oct 10 2026 9:00 PM Eastern (EDT, UTC-4), closes Wed Oct 14 2026 9:00 AM Eastern */
 const CAMPAIGN={open:Date.UTC(2026,9,11,1,0,0),close:Date.UTC(2026,9,14,13,0,0)};
 const ALARM_AT=Date.UTC(2026,9,13,13,0,0);   /* Tue Oct 13 2026, 6:00 AM Pacific (PDT) */
-function syncAlarm(){const n=Date.now(),on=n>=ALARM_AT&&n<CAMPAIGN.close;document.querySelectorAll('.app-i[data-open=run]').forEach(b=>b.classList.toggle('lk',!chairOpen()));document.querySelectorAll('.app-i.alarm').forEach(b=>b.classList.toggle('ring',on))}
+function syncAlarm(){const n=Date.now(),on=n>=ALARM_AT&&n<CAMPAIGN.close;if(typeof syncLocks==='function')syncLocks();document.querySelectorAll('.app-i.alarm').forEach(b=>b.classList.toggle('ring',on))}
 setInterval(syncAlarm,5000);
 let _cdTimer=null;
 function startCampaignClock(){syncAlarm();
@@ -1576,11 +1578,15 @@ function buildSet(root){
 
 /* Mutual Mimu stays greyed out and closed until the player has connected Glyph (and passed the wallet checks) */
 function syncLocks(){
-  const lock=!GATE.ok;
-  document.querySelectorAll('[data-open=ff]').forEach(b=>{b.disabled=lock;b.classList.toggle('lk',lock);b.setAttribute('aria-disabled',lock?'true':'false');b.title=lock?'Connect Glyph in Chair Run first':''});
-  document.querySelectorAll('[data-launch=ff]').forEach(b=>{b.disabled=lock;b.setAttribute('aria-disabled',lock?'true':'false');b.title=lock?'Connect Glyph in Chair Run first':''});
+  const lock=!GATE.ok,open=chairOpen(),shut=!open;
+  /* Mutual Mimu: closed until signed in. While Chair Run is closed it stays tappable so a player can still reach the sign-in. */
+  document.querySelectorAll('[data-open=ff]').forEach(b=>{b.disabled=lock&&open;b.classList.toggle('lk',lock);b.setAttribute('aria-disabled',lock&&open?'true':'false');b.title=lock?(open?'Connect Glyph in Chair Run first':'Sign in with Glyph'):''});
+  document.querySelectorAll('[data-launch=ff]').forEach(b=>{b.disabled=lock&&open;b.setAttribute('aria-disabled',lock&&open?'true':'false');b.title=lock?(open?'Connect Glyph in Chair Run first':'Sign in with Glyph'):''});
+  /* Chair Run: cannot be clicked at all until the countdown ends, and again after gaming stops */
+  document.querySelectorAll('[data-open=run],[data-launch=run],[data-launch=play]').forEach(b=>{b.disabled=shut;b.classList.toggle('lk',shut&&b.classList.contains('app-i'));b.setAttribute('aria-disabled',shut?'true':'false');b.title=shut?chairClosedWhy():''});
 }
 function openApp(id,from){
+  if(id==='ff'&&!GATE.ok&&!chairOpen())id='run';                /* Chair Run is closed: the sign-in is reached through the locked apps instead */
   if(id==='ff'&&!GATE.ok){try{toast('&#128274; <span>Connect your Glyph in <b>Chair Run</b> first.</span>',3000)}catch(e){}return}
   if(curApp)return;ac();sfx.tap();curApp=id;
   const a=document.createElement('div');a.className='app';a.id='app-'+id;
@@ -1771,6 +1777,7 @@ const myRank=kind=>board(kind).findIndex(x=>x.me)+1;
 const GATE={ok:false};
 /* Chair Run is greyed out and closed until the campaign countdown ends; then it opens by itself. Login, scores and the other apps are not affected. */
 const chairOpen=()=>{const n=Date.now();return n>=CAMPAIGN.open&&n<ALARM_AT};
+const chairClosedWhy=()=>Date.now()<CAMPAIGN.open?'Chair Run opens when the countdown ends: Sat Oct 10, 6:00 PM PST':'Gaming has stopped';
 /* keep players signed in across reloads: the server's own 12-hour session token is remembered in this browser */
 const SESS_KEY='mimu_sess';
 function saveSess(tok,exp,addr){try{localStorage.setItem(SESS_KEY,JSON.stringify({t:tok,e:exp,a:String(addr||'').toLowerCase()}))}catch(e){}}

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' data: blob:; connect-src 'self' https: wss:; frame-src https:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://challenges.cloudflare.com https://www.youtube.com https://s.ytimg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' data: blob:; connect-src 'self' https: wss:; frame-src https:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <script>if(window.top!==window.self){try{window.top.location=window.self.location}catch(e){document.documentElement.innerHTML=''}}</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
@@ -794,7 +794,7 @@ body.enter .footbar{animation-name:chromeInB}
       <h3>4 · In-game currency and points</h3><p>“$TMF” coins and “Season Points” shown inside the Game are virtual items for gameplay only. They have no cash value, cannot be sold or redeemed, and are not the $TMF token or any other digital asset. The only way to give coins away is the in-game “Top 5” app: the top 5 runners of the week cannot send, and anyone outside the top 5 can send to any player who has registered at least 1 $TMF point, and $TMF sent to a top 5 runner also adds points to their score. Those gifts are virtual and final.</p>
       <h3>5 · Leaderboards and recognition</h3><p>The Game has a leaderboard that resets each week, and you are welcome to keep playing to beat your own best score. Top players may be considered for recognition, which could include a TMF Pass or another item, but nothing is promised. No TMF Passes have been allocated to the Game at this time. Whether any recognition is given, who is considered, how many items exist and when are decided solely by MIMU ON APE and THEMUTUAL.FUN, and may change or end at any time. Leaderboard results may be reviewed and adjusted to remove cheating or errors. A score, rank or badge does not entitle anyone to a reward.</p>
       <h3>5b · Fair play</h3><p>Every leaderboard score is checked by our server, which replays your run from the moves you made. Runs that can&rsquo;t be verified, or that come from bots, scripts, edited code or exploits, don&rsquo;t count and may be removed along with the account&rsquo;s results. Chair Run runs on your device, so keep your connection open until the &ldquo;run complete&rdquo; screen finishes ranking you.</p>
-      <h3>5a · Connecting Glyph and your data</h3><p>Chair Run asks you to connect a Glyph wallet. We read your Glyph username, profile picture and wallet address, and we check which NFTs that wallet holds: you need a Mimu On Ape to play, and wallets holding a TMF Pass or a Dengs can&rsquo;t play. Your username, picture and scores are shown publicly on the leaderboards, and we store them (plus your wallet address) to run the leaderboards. You also give us an X username, which the team can see but which is not shown on the public leaderboards. Like most websites, we count visitors: when you open the site we record an anonymous browser ID and the time of your visit. Our servers do not store your IP address or your location. Texts you send to other players in the Messages app are stored on our servers, can be read by the team, and may be deleted; keep it friendly, and we may remove players who harass others. Connecting only asks for a signature that proves you own the wallet. It costs nothing, sends no transaction and can&rsquo;t move your assets. Disconnect any time in Settings.</p>
+      <h3>5a · Connecting Glyph and your data</h3><p>Chair Run asks you to connect a Glyph wallet. We read your Glyph username, profile picture and wallet address, and we check which NFTs that wallet holds: you need a Mimu On Ape to play, and wallets holding a TMF Pass or a Dengs can&rsquo;t play. Your username, picture and scores are shown publicly on the leaderboards, and we store them (plus your wallet address) to run the leaderboards. You also give us an X username, which the team can see but which is not shown on the public leaderboards. Like most websites, we count visitors: when you open the site we record an anonymous browser ID and the time of your visit. Our servers do not store your IP address or your location. If you dial a wrong number in the phone app, a short clip plays from YouTube's embedded player, and YouTube's own privacy policy applies to that clip. Texts you send to other players in the Messages app are stored on our servers, can be read by the team, and may be deleted; keep it friendly, and we may remove players who harass others. Connecting only asks for a signature that proves you own the wallet. It costs nothing, sends no transaction and can&rsquo;t move your assets. Disconnect any time in Settings.</p>
       <h3>6 · Not financial advice</h3><p>Mutual Mimu is a simulation. It does not involve real money, real investments or real markets, and nothing in it is investment, legal or tax advice. Past in-game results say nothing about real-world performance.</p>
       <h3>7 · Fair play</h3><p>Do not use bots, scripts, exploits, automated input or multiple identities to gain an advantage, and do not interfere with the Game or other players. We may remove scores or restrict access where we reasonably suspect misuse.</p>
       <h3>8 · Intellectual property</h3><p>The MIMU ON APE name, characters and artwork belong to MIMU ON APE and its respective creators and rights holders. THEMUTUAL.FUN names, marks and chair artwork belong to their respective owners. The Game’s design and code belong to their authors. You may play the Game for personal, non-commercial use but may not copy or redistribute it without permission.</p>
@@ -1210,6 +1210,13 @@ const DOCK=[
 .kp{display:grid;grid-template-columns:repeat(3,70px);gap:14px 18px;justify-content:center}
 .kp button{width:70px;height:70px;border-radius:50%;background:#2d2c33;display:flex;flex-direction:column;align-items:center;justify-content:center;font:400 28px/1 var(--sans);transition:background .15s}
 .kp button:active{background:#55545e}.kp button small{font:600 9px var(--sans);letter-spacing:.14em;color:var(--muted);margin-top:2px;min-height:10px}
+.callov{position:absolute;inset:0;z-index:20;background:radial-gradient(420px 360px at 50% 0%,#3a1a20,transparent 70%),#0c0909;display:flex;flex-direction:column;align-items:center;padding:92px 20px 26px;gap:12px;text-align:center}
+.callov .cn{font:300 34px var(--sans);letter-spacing:.02em}
+.callov .cs{font:500 13px var(--sans);color:#ff8a80}
+.callov .ytw{width:100%;max-width:352px;height:200px;border-radius:14px;overflow:hidden;background:#000;border:1px solid var(--line2)}
+.callov .ytw iframe{width:100%;height:100%;display:block;border:0}
+.callov .cm{font:500 13px/1.4 var(--sans);color:var(--cream);max-width:300px}
+.callov .cend{margin-top:auto;width:76px;height:76px;border-radius:50%;background:#e0332f;color:#fff;font:700 11px var(--sans);display:grid;place-items:center;box-shadow:0 8px 20px rgba(224,51,47,.4)}
 .callb{margin-top:18px;width:70px;height:70px;border-radius:50%;background:#2fbd55;display:grid;place-items:center}.callb svg{width:32px;height:32px}
 .callb.end{background:#e0443c}
 .camv{position:absolute;inset:0;background:#000;display:flex;flex-direction:column}
@@ -1353,13 +1360,43 @@ function buildPhone(root){
   const fmtN=s=>s.length>10?s.replace(/(\d{1})(\d{3})(\d{3})(\d+)/,'$1 ($2) $3-$4'):s.length>6?s.replace(/(\d{3})(\d{3})(\d*)/,'($1) $2-$3'):s.length>3?s.replace(/(\d{3})(\d*)/,'$1-$2'):s;
   $$('[data-k]',root).forEach(b=>b.onclick=()=>{if(calling)return;const k=b.dataset.k;if(num.length<15)num+=k;dn.textContent=fmtN(num);const f=FQ[k];if(f){ac();tone(f[0],0,.12,.03);tone(f[1],0,.12,.03)}ds.innerHTML='&nbsp;'});
   dn.onclick=()=>{if(!calling){num=num.slice(0,-1);dn.textContent=fmtN(num)}};
+  /* a wrong number plays the "not a working number" recording (YouTube's own embedded player, visible) and then hangs up when it ends */
+  let hangNow=null;
+  const loadYT=()=>{
+    if(window.YT&&window.YT.Player)return Promise.resolve(true);
+    if(window._ytReady)return window._ytReady;
+    window._ytReady=new Promise(res=>{
+      const prev=window.onYouTubeIframeAPIReady;window.onYouTubeIframeAPIReady=()=>{if(prev)try{prev()}catch(e){}res(true)};
+      const s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';s.onerror=()=>{window._ytReady=null;res(false)};document.head.appendChild(s);
+      setTimeout(()=>res(false),7000);
+    });
+    return window._ytReady;
+  };
+  const resetCall=()=>{calling=false;cl.classList.remove('end');ds.innerHTML='&nbsp;'};
+  const wrongNumber=()=>{
+    const ov=document.createElement('div');ov.className='callov';
+    ov.innerHTML='<div class="cn"></div><div class="cs">Call failed</div><div class="ytw"><div id="ytp"></div></div><div class="cm">We&rsquo;re sorry, but the number you dialed is not the right number. Keep trying.</div><button class="cend" type="button">End call</button>';
+    ov.querySelector('.cn').textContent=dn.textContent;root.appendChild(ov);
+    let done=false,player=null,fell=false,watchdog=null;
+    const hang=()=>{if(done)return;done=true;clearTimeout(watchdog);hangNow=null;try{if(player&&player.destroy)player.destroy()}catch(e){}ov.remove();num='';dn.textContent='';resetCall();tone(480,0,.14,.04);tone(380,.17,.2,.04)};
+    hangNow=hang;ov.querySelector('.cend').onclick=hang;
+    const fallback=()=>{if(done||fell)return;fell=true;try{if(player&&player.destroy)player.destroy()}catch(e){}ov.querySelector('.ytw').style.display='none';tone(950,0,.3,.05);tone(1400,.34,.3,.05);tone(1800,.68,.3,.05);setTimeout(hang,6500)};
+    watchdog=setTimeout(fallback,9000);
+    loadYT().then(ok=>{
+      if(done||fell)return;
+      if(!ok||!window.YT||!window.YT.Player)return fallback();
+      player=new window.YT.Player('ytp',{videoId:'UqHUEGWNzQQ',width:'100%',height:'200',playerVars:{autoplay:1,controls:1,rel:0,playsinline:1,modestbranding:1,fs:0,disablekb:1,iv_load_policy:3},
+        events:{onReady:ev=>{try{ev.target.unMute();ev.target.setVolume(100);ev.target.playVideo()}catch(x){}},
+          onStateChange:ev=>{if(ev.data===1)clearTimeout(watchdog);if(ev.data===0)hang()},onError:()=>fallback()}});
+    });
+  };
   cl.onclick=()=>{
-    if(calling){clearTimeout(tm);calling=false;cl.classList.remove('end');ds.innerHTML='&nbsp;';return}
+    if(calling){clearTimeout(tm);if(hangNow)hangNow();else resetCall();return}
     if(!num){ds.textContent='Tap a number first';return}
     calling=true;cl.classList.add('end');ds.textContent='calling…';ac();tone(440,0,.4,.04);tone(480,0,.4,.04);tone(440,1.2,.4,.04);tone(480,1.2,.4,.04);
-    tm=setTimeout(()=>{ds.innerHTML='<span style="color:#ff9d8a">We&rsquo;re sorry, but the number you dialed is not the right number. Keep trying.</span>';tone(950,0,.3,.05);tone(1400,.34,.3,.05);tone(1800,.68,.3,.05);calling=false;cl.classList.remove('end');setTimeout(()=>{if(!calling)ds.innerHTML='&nbsp;'},9000)},2800);
+    loadYT();tm=setTimeout(wrongNumber,2800);
   };
-  return{destroy(){clearTimeout(tm)}};
+  return{destroy(){clearTimeout(tm);if(hangNow)hangNow()}};
 }
 function buildCam(root){
   let n=P.photos||0;
@@ -1880,14 +1917,21 @@ function buildRunGame(root){
       if(!alive)return;
       if(r&&r.runId){newRun(r.seed,r.wallet);runSession=r;verified=true}
       else if(online)toast(API.token?'📡 <span>Couldn&rsquo;t reach the leaderboard. This run won&rsquo;t count.</span>':'🔒 <span>Your session ended. Reconnect Glyph in Chair Run so runs count.</span>',4200);
-      S.st='run';acc=0;last=performance.now();setTimeout(()=>{hud.cn.innerHTML=''},700);
+      S.st='run';acc=0;last=performance.now();setTimeout(()=>{hud.cn.innerHTML=''},700);beatStart();
     };
     const step=()=>{if(!alive)return;hud.cn.innerHTML=n>0?`<span>${n}</span>`:`<span style="font-size:80px">RUN</span>`;tone(n>0?440:880,0,n>0?.1:.25,.05,'triangle');
       if(n===0){begin();return}n--;setTimeout(step,700)};
     step();
   }
+  let beatT=null;
+  const beatStop=()=>{clearInterval(beatT);beatT=null};
+  const beatStart=()=>{
+    beatStop();if(!verified||!runSession||!API.token)return;
+    const send=()=>{if(S.st!=='run'&&S.st!=='revive')return;API.j('/api/run/beat',{method:'POST',body:JSON.stringify({runId:runSession.runId,score:Math.floor(S.score),dist:Math.floor(S.dist),coins:S.coins})}).catch(()=>{})};
+    send();beatT=setInterval(send,6000);
+  };
   function gameOver(quit){
-    if(S.st==='over')return;S.st='over';
+    if(S.st==='over')return;S.st='over';beatStop();
     const score=Math.floor(S.score),prevBest=P.best;if(score>P.best)P.best=score;
     const dist=S.deadDist!==undefined?S.deadDist:S.dist;
     P.runs++;P.dist+=dist;P.coins+=S.coins;P.totalCoins+=S.coins;S.cleared.forEach((n,i)=>P.cleared[i]+=n);
@@ -2155,7 +2199,7 @@ function buildRunGame(root){
     if(S.st==='run'){const t=fmt(Math.floor(S.score));if(hud.sc.textContent!==t)hud.sc.textContent=t;const cc=String(S.coins);if(hud.co.textContent!==cc)hud.co.textContent=cc}
   }
   reset();raf=requestAnimationFrame(frame);showStart();
-  return{destroy(){alive=false;cancelAnimationFrame(raf);removeEventListener('keydown',key);document.removeEventListener('visibilitychange',vis)}};
+  return{destroy(){alive=false;beatStop();cancelAnimationFrame(raf);removeEventListener('keydown',key);document.removeEventListener('visibilitychange',vis)}};
 }
 
 /* ---------------- TMF Pass ceremony (earned by playing, not minted) ---------------- */

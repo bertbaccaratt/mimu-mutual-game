@@ -353,6 +353,19 @@ async function handleAvatarGet(env, req, url) {
   return new Response(bytes, { headers: { 'Content-Type': type, 'Cache-Control': 'public, max-age=300', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; sandbox", 'Cross-Origin-Resource-Policy': 'cross-origin' } });
 }
 
+/* ---------- live runs: the game pings every few seconds while a run is in progress (display only, never counts for score) ---------- */
+async function handleRunBeat(env, req) {
+  const sess = await readToken(env, req);
+  if (!sess) return json(env, req, { error: 'sign in first' }, 401);
+  if (await limited(env, 'RL_RUN', sess.sub)) return tooMany(env, req);
+  let b = {}; try { b = await req.json(); } catch { return json(env, req, { error: 'bad json' }, 400); }
+  if (typeof b.runId !== 'string' || !/^[0-9a-f]{32}$/.test(b.runId)) return json(env, req, { error: 'bad request' }, 400);
+  const n = (v, max) => Math.max(0, Math.min(max, Math.floor(Number(v) || 0)));
+  await env.DB.prepare("UPDATE runs SET last_beat=?1, live_score=?2, live_dist=?3, live_coins=?4 WHERE id=?5 AND address=?6 AND status='open'")
+    .bind(Date.now(), n(b.score, 99999999), n(b.dist, 9999999), n(b.coins, 9999999), b.runId, sess.sub).run();
+  return json(env, req, { ok: true });
+}
+
 /* ---------- player-to-player texts (the Messages app) ----------
  * Signed-in players can text anyone on the leaderboard. Messages live here, keyed by wallet, so both sides see the same
  * thread on any device. Plain text only, 280 characters, rate limited, and a player can block someone. Admin can read and delete. */
@@ -579,6 +592,11 @@ async function handleAdmin(env, req, url) {
   if (!env.ADMIN_TOKEN || !safeEq(enc.encode(tok), enc.encode(env.ADMIN_TOKEN))) { await adminFail(env, ip); return out({ error: 'forbidden' }, 403); }
   const path = url.pathname.replace('/api/admin/', '');
   let b = {}; if (req.method === 'POST') { try { b = await req.json(); } catch { return out({ error: 'bad json' }, 400); } }
+  if (path === 'live' && req.method === 'GET') {                       // runs happening right now (a ping in the last 25 seconds), newest first
+    const since = Date.now() - 25000;
+    const rows = (await env.DB.prepare("SELECT r.id, p.name n, r.started_at st, COALESCE(r.last_beat, r.started_at) lb, COALESCE(r.live_score,0) sc, COALESCE(r.live_dist,0) d, COALESCE(r.live_coins,0) c FROM runs r LEFT JOIN players p ON p.address=r.address WHERE r.status='open' AND COALESCE(r.last_beat, r.started_at)>?1 ORDER BY lb DESC").bind(since).all()).results || [];
+    return out({ now: Date.now(), count: rows.length, runs: rows.slice(0, 3) });
+  }
   if (path === 'dashboard' && req.method === 'GET') {
     const week = weekNow(), q = (sql, ...a) => env.DB.prepare(sql).bind(...a);
     const top = (col) => q(`SELECT s.address a, ${col} v, p.name n, p.x_handle x FROM scores s JOIN players p ON p.address=s.address WHERE s.week=?1 AND ${col}>0 ORDER BY ${col} DESC, s.updated_at ASC LIMIT 10`, week).all();
@@ -674,6 +692,7 @@ export default {
       if (url.pathname === '/api/run/chunk' && req.method === 'POST') return handleRunChunk(env, req);
       if (url.pathname === '/api/leaderboard' && req.method === 'GET') return handleBoard(env, req, url);
       if (url.pathname === '/api/hit' && req.method === 'POST') return handleHit(env, req);
+      if (url.pathname === '/api/run/beat' && req.method === 'POST') return handleRunBeat(env, req);
       if (url.pathname === '/api/messages/threads' && req.method === 'GET') return handleMsgThreads(env, req);
       if (url.pathname === '/api/messages/thread' && req.method === 'GET') return handleMsgThread(env, req, url);
       if (url.pathname === '/api/messages/send' && req.method === 'POST') return handleMsgSend(env, req);
@@ -687,7 +706,7 @@ export default {
       if (url.pathname === '/api/x/callback' && req.method === 'GET') { if (await limited(env, 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleXCallback(env, req, url); }
       if (url.pathname === '/api/x/link' && req.method === 'POST') return handleXLink(env, req);
       if (url.pathname === '/api/x/handle' && req.method === 'POST') return handleXHandle(env, req);
-      if (url.pathname.startsWith('/api/admin/')) { if (await limited(env, 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleAdmin(env, req, url); }
+      if (url.pathname.startsWith('/api/admin/')) { if (await limited(env, url.pathname === '/api/admin/live' ? 'RL_READ' : 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleAdmin(env, req, url); }
       return json(env, req, { error: 'not found' }, 404);
     } catch (e) {
       console.error('server error', String(e && e.stack || e));

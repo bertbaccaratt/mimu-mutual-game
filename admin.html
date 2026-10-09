@@ -85,6 +85,16 @@ td.n{width:44px;white-space:nowrap;color:var(--gold);font-weight:600}td.r{text-a
 .flags{display:flex;gap:5px;flex-wrap:wrap}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:10px 18px;border-radius:12px;background:#000e;border:1px solid var(--gold);color:var(--cream);z-index:50;display:none}
 .xl{color:#9ad1ff}
+.live3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:16px}
+.lsq{aspect-ratio:1;border-radius:18px;border:3px solid #e0332f;background:#140808;box-shadow:0 0 18px rgba(224,51,47,.28);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px;text-align:center;overflow:hidden;transition:border-color .3s,background .3s,box-shadow .3s}
+.lsq.on{border-color:#2fd36b;background:#07140b;box-shadow:0 0 24px rgba(47,211,107,.42)}
+.lsq .nm{font:600 12px var(--mono);color:var(--cream);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lsq .sc{font:700 clamp(26px,4.2vw,44px)/1 var(--cond);color:#7dffa8;font-variant-numeric:tabular-nums}
+.lsq small{font:500 10px var(--mono);color:var(--muted);letter-spacing:.06em}
+.lsq em{font:600 11px var(--mono);color:#7dffa8;font-style:normal;letter-spacing:.1em}
+.lsq .pulse{width:9px;height:9px;border-radius:50%;background:#2fd36b;box-shadow:0 0 10px #2fd36b;animation:pulse 1.4s infinite}
+.spin{width:34px;height:34px;border-radius:50%;border:3px solid #4a1d1b;border-top-color:#e0332f;animation:spin 1s linear infinite;display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
 .camp{margin:16px auto 0;max-width:520px;padding:10px 16px;border:2px solid #e0332f;border-radius:14px;box-shadow:0 0 16px rgba(224,51,47,.3);background:#120706;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;font-size:11px;letter-spacing:.16em;text-transform:uppercase}
 .camp[hidden]{display:none}.camp .cl{color:#ff7a70;font-weight:600}.camp b{font:700 20px var(--cond);letter-spacing:.1em;color:var(--cream);font-variant-numeric:tabular-nums}
 .camp.live .cl{color:var(--up)}
@@ -122,7 +132,9 @@ td.n{width:44px;white-space:nowrap;color:var(--gold);font-weight:600}td.r{text-a
 
   <section class="sec"><h2>Player texts <small>Messages app &middot; latest 100</small></h2><div class="scroll" id="msgs" style="max-height:340px"></div></section>
 
-  <section class="sec"><h2>Players <small id="ucount">Glyph + X</small></h2><div class="scroll" id="users"></div></section>
+  <section class="sec"><h2>Players <small id="ucount">Glyph + username</small></h2><div class="scroll" id="users"></div></section>
+
+  <section class="sec"><h2>Live Chair Runs <small id="livecount">happening now</small></h2><div class="live3" id="live3"></div></section>
 </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -243,14 +255,28 @@ function render(d){
   // player texts
   $('#msgs').innerHTML=(d.messages||[]).length?'<table><thead><tr><th>When</th><th>From</th><th>To</th><th>Text</th><th></th></tr></thead><tbody>'+d.messages.map(m=>`<tr><td>${ago(m.ts)}</td><td>${esc(m.sn||short(m.sa))}</td><td>${esc(m.rn||short(m.ra))}</td><td style="max-width:260px">${esc(m.body)}</td><td><button class="btn no" data-dm="${m.id}">Delete</button></td></tr>`).join('')+'</tbody></table>':'<div class="empty">No texts yet.</div>';
   // players
-  $('#ucount').textContent=nf(d.users.length)+' players · Glyph + X';
-  $('#users').innerHTML=d.users.length?'<table><thead><tr><th>Glyph</th><th>Wallet</th><th>X account</th><th>Last seen</th><th></th></tr></thead><tbody>'+d.users.map(u=>`<tr>
+  $('#ucount').textContent=nf(d.users.length)+' players · Glyph + username';
+  $('#users').innerHTML=d.users.length?'<table><thead><tr><th>Glyph</th><th>Wallet</th><th>Username</th><th>Last seen</th><th></th></tr></thead><tbody>'+d.users.map(u=>`<tr>
     <td>${u.pic&&/^https:\/\//.test(u.pic)?`<img class="av" src="${esc(u.pic)}" alt="" referrerpolicy="no-referrer" loading="lazy">`:''}${esc(u.g||u.n)}${u.banned?' <span class="tag bad">banned</span>':''}</td>
     <td>${wal(u.a)}<br><span style="color:var(--muted);font-size:10px">${esc(u.a)}</span></td>
     <td>${xlink(u.x)}${u.x&&!u.xv?' <span class="tag warn" title="Typed by the player, not verified by X">typed</span>':''}</td><td>${ago(u.t)}</td>
     <td><div class="btns">${u.banned?`<button class="btn ghost" data-ub="${esc(u.a)}">Unban</button>`:`<button class="btn ghost" data-bn="${esc(u.a)}">Ban</button>`}${/\/api\/avatar\//.test(u.pic||'')?`<button class="btn ghost" data-rm="${esc(u.a)}">Remove photo</button>`:''}</div></td></tr>`).join('')+'</tbody></table>':'<div class="empty">No players yet.</div>';
   $('#upd').textContent='updated '+new Date().toLocaleTimeString();
 }
+
+/* ---------- live Chair Run squares: green = a run is happening, red = empty (spinner) ---------- */
+let LIVE_RUNS=[];
+function paintLive(){
+  const box=$('#live3');if(!box)return;
+  const now=Date.now(),mmss=ms=>{const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+  box.innerHTML=[0,1,2].map(i=>{const r=LIVE_RUNS[i];return r?`<div class="lsq on"><span class="pulse"></span><div class="nm">${esc(r.n||'player')}</div><div class="sc">${nf(r.sc)}</div><small>${nf(r.d)} m &middot; ${nf(r.c)} $TMF</small><em data-st="${r.st}">${mmss(now-r.st)}</em></div>`:'<div class="lsq"><i class="spin"></i></div>'}).join('');
+}
+async function pollLive(force){
+  if($('#app').hidden||(!force&&document.hidden))return;
+  try{const d=await call('live');LIVE_RUNS=d.runs||[];$('#livecount').textContent=d.count?d.count+' running now':'waiting for runs';paintLive()}catch(e){}
+}
+setInterval(()=>{document.querySelectorAll('#live3 em[data-st]').forEach(el=>{const s=Math.max(0,Math.floor((Date.now()-Number(el.dataset.st))/1000));el.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')})},1000);
+setInterval(pollLive,4000);
 
 /* ---------- actions ---------- */
 document.addEventListener('click',async e=>{
@@ -278,7 +304,7 @@ function start(){
   $('#login').hidden=true;$('#app').hidden=false;
   buildDigits(0);showCount(0);
   campTick();
-  refresh();
+  refresh();paintLive();pollLive(true);
   clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},15000);
 }
 function logout(bad){

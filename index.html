@@ -315,7 +315,8 @@ body.native #screen,body.native #screen:after{border-radius:0}
 .xapp .xh{flex:none;display:flex;align-items:center;gap:10px;padding:6px 16px 10px;border-bottom:1px solid #2f3336}
 .xapp .xh svg{width:22px;height:22px;flex:none}
 .xapp .xh b{font:700 16px var(--sans);display:block;line-height:1.15}.xapp .xh span{font:400 12.5px var(--sans);color:#71767b}
-.xapp .xbody{flex:1;min-height:0;position:relative}
+.xapp .xbody{flex:1;min-height:0;position:relative;overflow-y:auto;scrollbar-width:none}
+.xapp .xshot{display:block;width:100%;height:auto;margin-top:-14.13%}
 .xapp .xfr{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000;color-scheme:dark}
 .xapp .xopen{flex:none;padding:6px 11px;border-radius:999px;background:#eff3f4;color:#0f1419;font:700 11px var(--sans);text-decoration:none}
 .xapp .xload{position:absolute;inset:0;display:grid;place-items:center;color:#71767b;font:500 13px var(--sans)}
@@ -2525,9 +2526,7 @@ function buildMail(root){
 function buildX(root){
   const HANDLE='mimuonape',URL_='https://x.com/'+HANDLE;
   const logo='<svg viewBox="0 0 24 24"><path fill="#fff" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>';
-  root.innerHTML='<div class="xapp"><div class="xh">'+logo+'<div style="flex:1;min-width:0"><b>Mimu On Ape</b><span>@'+HANDLE+'</span></div><a class="xopen" href="'+URL_+'" target="_blank" rel="noopener noreferrer">Open on x.com</a></div><div class="xbody"><div class="xload">Loading @'+HANDLE+'&hellip;</div><iframe class="xfr" title="Mimu On Ape on X" src="https://syndication.twitter.com/srv/timeline-profile/screen-name/'+HANDLE+'?dnt=true&amp;theme=dark&amp;showReplies=false" referrerpolicy="no-referrer" loading="eager"></iframe></div></div>';
-  const fr=root.querySelector('.xfr'),ld=root.querySelector('.xload');
-  fr.addEventListener('load',()=>{if(ld)ld.remove()});
+  root.innerHTML='<div class="xapp"><div class="xh">'+logo+'<div style="flex:1;min-width:0"><b>Mimu On Ape</b><span>@'+HANDLE+'</span></div><a class="xopen" href="'+URL_+'" target="_blank" rel="noopener noreferrer">Open on X</a></div><div class="xbody"><img class="xshot" src="assets/x-profile.jpg" alt="The Mimu On Ape profile on X: MIMU, @mimuonape, 3,470 followers" width="750" height="1624" decoding="async"></div></div>';
   return{destroy(){}};
 }
 function buildTop5(root){

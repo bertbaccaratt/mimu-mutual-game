@@ -315,7 +315,9 @@ body.native #screen,body.native #screen:after{border-radius:0}
 .xapp .xh{flex:none;display:flex;align-items:center;gap:10px;padding:6px 16px 10px;border-bottom:1px solid #2f3336}
 .xapp .xh svg{width:22px;height:22px;flex:none}
 .xapp .xh b{font:700 16px var(--sans);display:block;line-height:1.15}.xapp .xh span{font:400 12.5px var(--sans);color:#71767b}
-.xapp .xbody{flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;position:relative}
+.xapp .xbody{flex:1;min-height:0;position:relative}
+.xapp .xfr{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000;color-scheme:dark}
+.xapp .xopen{flex:none;padding:6px 11px;border-radius:999px;background:#eff3f4;color:#0f1419;font:700 11px var(--sans);text-decoration:none}
 .xapp .xload{position:absolute;inset:0;display:grid;place-items:center;color:#71767b;font:500 13px var(--sans)}
 .xapp .xcard{padding:28px 24px;text-align:center}
 .xapp .xcard .xav{width:84px;height:84px;border-radius:50%;margin:0 auto 12px;border:2px solid #2f3336;overflow:hidden;background:#16181c}
@@ -819,7 +821,7 @@ body.enter .footbar{animation-name:chromeInB}
         <div><b>Alarm</b><span>The campaign countdown and schedule, in Los Angeles time. The icon lights up and wiggles when gaming stops.</span></div>
         <div><b>Messages</b><span>A few welcome texts, plus (after you connect your Glyph) texting with other players on the leaderboard. You can block anyone.</span></div>
         <div><b>Phone, Camera, Settings</b><span>Dial a number (you will get the classic wrong-number message), snap a photo and browse the gallery, or flip sound on and off and disconnect Glyph. </span></div>
-        <div><b>X</b><span>The Mimu On Ape profile on X, shown right inside the phone (using X&rsquo;s own embedded timeline).</span></div>
+        <div><b>X</b><span>The Mimu On Ape profile on X, shown right inside the phone.</span></div>
         <div><b>Mimu Mail</b><span>Your inbox. Emails from the Mimu On Ape team (with a subject, a message and sometimes a photo) arrive here for every phone signed in with Glyph. It starts empty. Only the team can send mail, and you can&rsquo;t reply.</span></div>
       </div>
 
@@ -857,7 +859,7 @@ body.enter .footbar{animation-name:chromeInB}
       <h3>7 · Fair play</h3><p>Every leaderboard score is checked by our server, which replays your run from the moves you made. Runs that can&rsquo;t be verified, or that come from bots, scripts, automated input, edited code or exploits, don&rsquo;t count and may be removed along with the account&rsquo;s results. Do not use multiple identities to gain an advantage, and do not interfere with the Game or other players. Chair Run runs on your device, so keep your connection open until the &ldquo;run complete&rdquo; screen finishes ranking you. Some runs are held for review before they count. We may remove scores, texts, pictures or players, or restrict access, where we reasonably suspect misuse.</p>
       <h3>8 · Glyph, usernames and pictures</h3><p>Chair Run asks you to connect a Glyph wallet. We read your Glyph name, profile picture and wallet address, and we check which NFTs that wallet holds: you need a Mimu On Ape to play, and wallets holding a TMF Pass or a Dengs can&rsquo;t play. You then choose a username, which must be your X handle. You type it yourself and we do not verify it, only one wallet can use a given username, and we may change or remove usernames that impersonate someone else. Your username is shown publicly as your name on the leaderboards, in the Top 5 app and in texts, together with your scores and your profile picture. You may upload a profile picture, which is shown publicly too; do not upload anything unlawful, offensive or that is not yours, and we may remove it. Connecting only asks for a signature that proves you own the wallet. It costs nothing, sends no transaction and can&rsquo;t move your assets. Disconnect any time in Settings.</p>
       <h3>9 · Mail, texts and conduct</h3><p>Emails from the team arrive in Mimu Mail on every phone signed in with Glyph; players cannot send mail. After you connect your Glyph you can text other players on the leaderboard. Texts are stored on our servers, can be read by the team, and may be deleted. Keep it friendly: no harassment, threats, hate or spam. You can block any player, and we may remove players who harass others.</p>
-      <h3>10 · Your data and third-party services</h3><p>On our servers we store your wallet address, Glyph name, username, profile picture, scores, $TMF gifts and texts, plus an anonymous browser ID and the time of your visits so we can count visitors. Our servers do not store your IP address or your location. Your handle, chosen Mimu, settings and progress also save in your own browser. We do not collect wallet keys, seed phrases or payment details through the Game and will never ask for them. The site is hosted on GitHub Pages and the leaderboard service runs on Cloudflare, which also provides the human check used before a run starts. Fonts load from Google Fonts, wallet connection uses Glyph, if you dial a wrong number in the phone app a short recording plays through YouTube&rsquo;s embedded player, and the X app in the phone shows the Mimu On Ape profile through X&rsquo;s embedded timeline. Each of these providers has its own privacy policy and may process your IP address to deliver its service.</p>
+      <h3>10 · Your data and third-party services</h3><p>On our servers we store your wallet address, Glyph name, username, profile picture, scores, $TMF gifts and texts, plus an anonymous browser ID and the time of your visits so we can count visitors. Our servers do not store your IP address or your location. Your handle, chosen Mimu, settings and progress also save in your own browser. We do not collect wallet keys, seed phrases or payment details through the Game and will never ask for them. The site is hosted on GitHub Pages and the leaderboard service runs on Cloudflare, which also provides the human check used before a run starts. Fonts load from Google Fonts, wallet connection uses Glyph, if you dial a wrong number in the phone app a short recording plays through YouTube&rsquo;s embedded player, and the X app in the phone shows the Mimu On Ape profile inside the phone. Each of these providers has its own privacy policy and may process your IP address to deliver its service.</p>
       <h3>11 · Not financial advice</h3><p>Mutual Mimu is a simulation. It does not involve real money, real investments or real markets, and nothing in it is investment, legal or tax advice. Past in-game results say nothing about real-world performance.</p>
       <h3>12 · Intellectual property</h3><p>The MIMU ON APE name, characters and artwork belong to MIMU ON APE and its respective creators and rights holders. THEMUTUAL.FUN names, marks and chair artwork belong to their respective owners. The Game’s design and code belong to their authors. You may play the Game for personal, non-commercial use but may not copy or redistribute it without permission.</p>
       <h3>13 · Third-party links</h3><p>The Game links to third-party sites, including OpenSea, themutual.fun and X. We do not control them and are not responsible for their content or practices.</p>
@@ -2523,27 +2525,10 @@ function buildMail(root){
 function buildX(root){
   const HANDLE='mimuonape',URL_='https://x.com/'+HANDLE;
   const logo='<svg viewBox="0 0 24 24"><path fill="#fff" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>';
-  root.innerHTML='<div class="xapp"><div class="xh">'+logo+'<div><b>Mimu On Ape</b><span>@'+HANDLE+'</span></div></div><div class="xbody" id="xbody"><div class="xload">Loading the timeline&hellip;</div></div></div>';
-  const body=root.querySelector('#xbody');let dead=false,timer=null;
-  const fallback=()=>{
-    if(dead||!body)return;
-    body.innerHTML='<div class="xcard"><div class="xav"><img src="assets/mimu-icon.jpg" alt=""></div><h3>Mimu On Ape</h3><p>@'+HANDLE+' on X. The live timeline could not load inside the phone right now (an ad blocker or privacy setting can block it).</p><a href="'+URL_+'" target="_blank" rel="noopener noreferrer">Open @'+HANDLE+' on X</a></div>';
-  };
-  const loadScript=()=>new Promise(res=>{
-    if(window.twttr&&window.twttr.widgets)return res(true);
-    if(window._twP)return window._twP.then(res);
-    window._twP=new Promise(r2=>{const s=document.createElement('script');s.src='https://platform.twitter.com/widgets.js';s.async=true;s.charset='utf-8';s.onload=()=>r2(!!(window.twttr&&window.twttr.widgets));s.onerror=()=>{window._twP=null;r2(false)};document.head.appendChild(s);setTimeout(()=>r2(false),8000)});
-    window._twP.then(res);
-  });
-  timer=setTimeout(fallback,12000);
-  loadScript().then(ok=>{
-    if(dead)return;
-    if(!ok)return fallback();
-    const holder=document.createElement('div');holder.style.cssText='min-height:300px';
-    window.twttr.widgets.createTimeline({sourceType:'profile',screenName:HANDLE},holder,{theme:'dark',chrome:'noheader nofooter transparent noborders',dnt:true,width:Math.max(280,body.clientWidth||340),height:Math.max(400,(body.clientHeight||560)-8)})
-      .then(el=>{if(dead)return;clearTimeout(timer);if(!el)return fallback();body.innerHTML='';body.appendChild(holder)},fallback);
-  });
-  return{destroy(){dead=true;clearTimeout(timer)}};
+  root.innerHTML='<div class="xapp"><div class="xh">'+logo+'<div style="flex:1;min-width:0"><b>Mimu On Ape</b><span>@'+HANDLE+'</span></div><a class="xopen" href="'+URL_+'" target="_blank" rel="noopener noreferrer">Open on x.com</a></div><div class="xbody"><div class="xload">Loading @'+HANDLE+'&hellip;</div><iframe class="xfr" title="Mimu On Ape on X" src="https://syndication.twitter.com/srv/timeline-profile/screen-name/'+HANDLE+'?dnt=true&amp;theme=dark&amp;showReplies=false" referrerpolicy="no-referrer" loading="eager"></iframe></div></div>';
+  const fr=root.querySelector('.xfr'),ld=root.querySelector('.xload');
+  fr.addEventListener('load',()=>{if(ld)ld.remove()});
+  return{destroy(){}};
 }
 function buildTop5(root){
   if(!(API.on()&&!LIVE.failed))return buildTop5Sim(root);

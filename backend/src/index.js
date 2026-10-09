@@ -379,6 +379,19 @@ async function handleAvatarGet(env, req, url) {
 }
 
 /* ---------- live runs: the game pings every few seconds while a run is in progress (display only, never counts for score) ---------- */
+/* a compact picture of the run as it is played (lane, jump, nearby obstacles). Only kept for the admin's live view; never part of the score. */
+let LIVE_TABLE = false;
+async function liveTable(env) {
+  if (LIVE_TABLE) return;
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS live_state (run_id TEXT PRIMARY KEY, state TEXT, at INTEGER NOT NULL DEFAULT 0, watch_until INTEGER NOT NULL DEFAULT 0)').run();
+  LIVE_TABLE = true;
+}
+function cleanState(st) {
+  if (!st || typeof st !== 'object') return null;
+  const num = (v, lo, hi) => Math.max(lo, Math.min(hi, Number(v) || 0));
+  const ob = Array.isArray(st.ob) ? st.ob.slice(0, 48).filter((a) => Array.isArray(a)).map((a) => [String(a[0]).slice(0, 1), Math.round(num(a[1], -1.5, 1.5) * 100) / 100, Math.round(num(a[2], -5, 120) * 10) / 10, num(a[3], 0, 9) | 0]) : [];
+  return { l: Math.round(num(st.l, -1.5, 1.5) * 100) / 100, y: Math.round(num(st.y, 0, 8) * 100) / 100, s: st.s ? 1 : 0, v: Math.round(num(st.v, 0, 80) * 10) / 10, d: num(st.d, 0, 9999999) | 0, lv: num(st.lv, 0, 9) | 0, sh: st.sh ? 1 : 0, mg: num(st.mg, 0, 30) | 0, x2: num(st.x2, 0, 30) | 0, ch: num(st.ch, 0, 99999) | 0, cm: num(st.cm, 1, 9) | 0, ob };
+}
 async function handleRunBeat(env, req) {
   const sess = await readToken(env, req);
   if (!sess) return json(env, req, { error: 'sign in first' }, 401);
@@ -388,7 +401,17 @@ async function handleRunBeat(env, req) {
   const n = (v, max) => Math.max(0, Math.min(max, Math.floor(Number(v) || 0)));
   await env.DB.prepare("UPDATE runs SET last_beat=?1, live_score=?2, live_dist=?3, live_coins=?4 WHERE id=?5 AND address=?6 AND status='open'")
     .bind(Date.now(), n(b.score, 99999999), n(b.dist, 9999999), n(b.coins, 9999999), b.runId, sess.sub).run();
-  return json(env, req, { ok: true });
+  let w = 0;
+  try {                                                              // the live picture is best effort: it can never get in the way of the beat itself
+    const st = cleanState(b.st);
+    if (st) {
+      await liveTable(env);
+      const row = await env.DB.prepare('INSERT INTO live_state(run_id,state,at) SELECT ?1,?2,?3 WHERE EXISTS (SELECT 1 FROM runs WHERE id=?1 AND address=?4 AND status=\'open\') ON CONFLICT(run_id) DO UPDATE SET state=?2, at=?3 RETURNING watch_until')
+        .bind(b.runId, JSON.stringify(st), Date.now(), sess.sub).first();
+      w = row && row.watch_until > Date.now() ? 1 : 0;              // 1 = the admin is looking at this run right now, so send pictures faster
+    }
+  } catch (e) { console.error('live state', String(e && e.message || e)); }
+  return json(env, req, { ok: true, w });
 }
 
 /* ---------- Mimu Mail: emails only the admin can send, delivered to every phone signed in with Glyph ---------- */
@@ -715,6 +738,17 @@ async function handleAdmin(env, req, url) {
       r.rank = s && s.total > 0 ? await rankOf(env, week, TOTAL, s.total) : null;
       r.a = r.a.slice(0, 6) + '…' + r.a.slice(-4);
     }
+    try {                                                              // the top 3 get a live picture of the run itself
+      await liveTable(env);
+      const top3 = nine.slice(0, 3), now = Date.now();
+      if (top3.length) {
+        await env.DB.batch(top3.map((r) => env.DB.prepare('INSERT INTO live_state(run_id,state,at,watch_until) VALUES(?1,NULL,0,?2) ON CONFLICT(run_id) DO UPDATE SET watch_until=?2').bind(r.id, now + 20000)));
+        const sel = await env.DB.prepare(`SELECT run_id, state, at FROM live_state WHERE run_id IN (${top3.map((_, i) => '?' + (i + 1)).join(',')})`).bind(...top3.map((r) => r.id)).all();
+        const m = {}; for (const s of (sel.results || [])) m[s.run_id] = s;
+        for (const r of top3) { const s = m[r.id]; if (s && s.state) { try { r.gfx = JSON.parse(s.state); r.sat = s.at; } catch { /* skip */ } } }
+      }
+      if (Math.random() < 0.02) await env.DB.prepare('DELETE FROM live_state WHERE at<?1 AND watch_until<?1').bind(Date.now() - 3600000).run();
+    } catch (e) { console.error('live pictures', String(e && e.message || e)); }
     return out({ now: Date.now(), count: rows.length, runs: nine });
   }
   if (path === 'dashboard' && req.method === 'GET') {

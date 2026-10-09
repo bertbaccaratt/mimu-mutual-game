@@ -2057,11 +2057,21 @@ function buildRunGame(root){
       if(n===0){begin();return}n--;setTimeout(step,700)};
     step();
   }
-  let beatT=null;
-  const beatStop=()=>{clearInterval(beatT);beatT=null};
+  let beatT=null,fastT=null;
+  const beatStop=()=>{clearInterval(beatT);beatT=null;clearInterval(fastT);fastT=null};
+  /* a small picture of the run for the admin's live view: lane, jump, and the nearest obstacles */
+  const snap=()=>{
+    const ob=[];for(const o of S.obj){if(o.dead)continue;const dz=o.z-S.dist;if(dz<-3||dz>70)continue;
+      const c=o.t==='chair'?'c':o.t==='banner'?'b':o.t==='coin'?'o':o.t==='pick'?(o.k==='magnet'?'m':o.k==='shield'?'s':'x'):o.t==='gate'?'g':null;if(!c)continue;
+      ob.push([c,+o.x.toFixed(2),+dz.toFixed(1),o.type|0])}
+    ob.sort((a,b)=>a[2]-b[2]);
+    return{l:+S.px.toFixed(2),y:+S.py.toFixed(2),s:S.slide>0?1:0,v:+S.speed.toFixed(1),d:Math.floor(S.dist),lv:S.lives,sh:S.shield>0?1:0,mg:S.magnet>0?Math.ceil(S.magnet):0,x2:S.mult>0?Math.ceil(S.mult):0,ch:S.chain,cm:S.cm,ob:ob.slice(0,48)};
+  };
   const beatStart=()=>{
     beatStop();if(!verified||!runSession||!API.token)return;
-    const send=()=>{if(S.st!=='run'&&S.st!=='revive')return;API.j('/api/run/beat',{method:'POST',body:JSON.stringify({runId:runSession.runId,score:Math.floor(S.score),dist:Math.floor(S.dist),coins:S.coins})}).catch(()=>{})};
+    const send=()=>{if(S.st!=='run'&&S.st!=='revive')return;
+      API.j('/api/run/beat',{method:'POST',body:JSON.stringify({runId:runSession.runId,score:Math.floor(S.score),dist:Math.floor(S.dist),coins:S.coins,st:snap()})})
+        .then(r=>{if(r&&r.w){if(!fastT)fastT=setInterval(send,500)}else if(fastT){clearInterval(fastT);fastT=null}}).catch(()=>{})};
     send();beatT=setInterval(()=>{send();flushRun()},6000);
   };
   /* upload each completed 2000-tick piece as it happens; the server replays and keeps the state, so nothing is lost if the tab closes or the run is very long */

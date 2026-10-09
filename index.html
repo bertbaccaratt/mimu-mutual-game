@@ -1666,7 +1666,7 @@ const API={
     const r=await fetch(GAME_CONFIG.api.replace(/\/$/,'')+path,Object.assign({headers:h},opt));
     const b=await r.json().catch(()=>({}));
     if(!r.ok){
-      if(r.status===401&&API.token&&!/^/api/(nonce|auth)/.test(path)){          /* the server no longer accepts this session: sign out cleanly */
+      if(r.status===401&&API.token&&path!=='/api/nonce'&&path!=='/api/auth'){          /* the server no longer accepts this session: sign out cleanly */
         API.token=null;GATE.ok=false;clearSess();
         try{syncLocks();stopPMPoll();toast('🔒 <span>You were signed out. Tap <b>Mutual Mimu</b> to sign in again.</span>',5200)}catch(x){}
       }

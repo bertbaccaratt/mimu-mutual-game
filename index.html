@@ -1301,7 +1301,7 @@ const MSGS=[
 const PM={unread:0,threads:[],top:null,topAt:0,timer:null,seen:0,mail:0};
 const unreadN=()=>MSGS.filter(x=>!(P.mr&&P.mr[x.id])).length+(PM.unread||0);
 const pmOn=()=>!!(GATE.ok&&API.token&&API.on());
-const pAv=pic=>`<div class="av">${imgTag(safeUrl(pic)?pic:'assets/mimu-icon.jpg')}</div>`;
+const pAv=(pic,name)=>name==='Hype'?'<div class="av" style="background:linear-gradient(135deg,#46d36b,#1f8f43);color:#fff;font:700 17px var(--sans)">H</div>':`<div class="av">${imgTag(safeUrl(pic)?pic:'assets/mimu-icon.jpg')}</div>`;
 const tmAgo=ts=>{const s=Math.max(0,Math.floor((Date.now()-ts)/1000));return s<60?'now':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d'};
 function refreshMailBadge(){
   const b=document.querySelector('.grid [data-open=mail] .ic');if(!b)return;
@@ -1338,7 +1338,7 @@ function buildMsgs(root){
   const paintPM=()=>{
     const box=$('#pmbox',root);if(!box)return;
     if(!pmOn()){box.innerHTML=`<div class="pmh">Leaderboard texts</div><div class="pmlock"><b>&#128274; Locked</b><span>Connect your Glyph in Chair Run to text the other players on the leaderboard.</span></div>`;return}
-    const th=PM.threads.map(t=>`<button class="cv" data-pt="${escH(t.with)}" data-nm="${escH(t.name)}" data-pc="${escH(t.picture||'')}">${pAv(t.picture)}<div class="mid"><b>${escH(t.name)}</b><span>${t.mine?'You: ':''}${escH(t.last)}</span></div><div class="tm">${tmAgo(t.ts)}</div>${t.unread?'<i class="ud"></i>':''}</button>`).join('');
+    const th=PM.threads.map(t=>`<button class="cv" data-pt="${escH(t.with)}" data-nm="${escH(t.name)}" data-pc="${escH(t.picture||'')}">${pAv(t.picture,t.name)}<div class="mid"><b>${escH(t.name)}</b><span>${t.mine?'You: ':''}${escH(t.last)}</span></div><div class="tm">${tmAgo(t.ts)}</div>${t.unread?'<i class="ud"></i>':''}</button>`).join('');
     const rows=(PM.top?PM.top.rows:[]).filter(r=>r.id!==me()&&(!q||String(r.name).toLowerCase().includes(q)));
     box.innerHTML=`<div class="pmh">Your chats</div>${th||'<div class="pmem">No chats yet. Pick a player below and say something.</div>'}
       <div class="pmh">Players on the leaderboard</div><div class="pmsr"><input id="pmq" placeholder="search a player" value="${escH(q)}" autocomplete="off"></div>

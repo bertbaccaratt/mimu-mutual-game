@@ -398,6 +398,7 @@ async function handleMailImg(env, req, url) {
  * Signed-in players can text anyone on the leaderboard. Messages live here, keyed by wallet, so both sides see the same
  * thread on any device. Plain text only, 280 characters, rate limited, and a player can block someone. Admin can read and delete. */
 const MSG_MAX = 280;
+const HYPE = '0x' + '0'.repeat(39) + '1';                 // the "Hype" account: nobody holds a key for it, only the admin page can text as Hype
 async function msgAuth(env, req) {
   const sess = await readToken(env, req);
   if (!sess) return { err: json(env, req, { error: 'sign in first' }, 401) };
@@ -621,6 +622,18 @@ async function handleAdmin(env, req, url) {
   if (!env.ADMIN_TOKEN || !safeEq(enc.encode(tok), enc.encode(env.ADMIN_TOKEN))) { await adminFail(env, ip); return out({ error: 'forbidden' }, 403); }
   const path = url.pathname.replace('/api/admin/', '');
   let b = {}; if (req.method === 'POST') { try { b = await req.json(); } catch { return out({ error: 'bad json' }, 400); } }
+  if (path === 'hype' && req.method === 'POST') {                      // a one-on-one text from Hype to the chosen player
+    const to = String(b.to || '').toLowerCase();
+    const text = String(b.body || '').replace(/[\u0000-\u0008\u000b-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+    if (!/^0x[0-9a-f]{40}$/.test(to) || to === HYPE) return out({ error: 'Pick a player first.' }, 400);
+    if (!text) return out({ error: 'Type a message first.' }, 400);
+    if (text.length > MSG_MAX) return out({ error: 'Keep it under ' + MSG_MAX + ' characters.' }, 400);
+    const who = await env.DB.prepare('SELECT name FROM players WHERE address=?1').bind(to).first();
+    if (!who) return out({ error: 'That player has not signed in yet.' }, 404);
+    await env.DB.prepare("INSERT OR IGNORE INTO players(address,name,picture,glyph_name,updated_at) VALUES(?1,'Hype','','Hype',?2)").bind(HYPE, Date.now()).run();
+    const r = await env.DB.prepare('INSERT INTO messages(ts,sender,recipient,body,read) VALUES(?1,?2,?3,?4,0)').bind(Date.now(), HYPE, to, text).run();
+    return out({ ok: true, id: r.meta && r.meta.last_row_id, to: who.name });
+  }
   if (path === 'mail' && req.method === 'POST') {                      // the ONLY way an email is created: it goes to every phone signed in with Glyph
     const subject = String(b.subject || '').replace(/[\u0000-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, ' ').replace(/\s+/g, ' ').trim();
     const body = String(b.body || '').replace(/[\u0000-\u0008\u000b-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, '').replace(/\r\n?/g, '\n').replace(/\n{4,}/g, '\n\n\n').trim();
@@ -636,7 +649,7 @@ async function handleAdmin(env, req, url) {
       img = type + '|' + m[1]; ikey = hex(12);
     }
     const r = await env.DB.prepare('INSERT INTO broadcasts(ts,subject,body,img,ikey) VALUES(?1,?2,?3,?4,?5)').bind(Date.now(), subject, body, img, ikey).run();
-    const players = await env.DB.prepare('SELECT COUNT(*) c FROM players').first();
+    const players = await env.DB.prepare('SELECT COUNT(*) c FROM players WHERE address<>?1').bind(HYPE).first();
     return out({ ok: true, id: r.meta && r.meta.last_row_id, recipients: players.c });
   }
   if (path === 'delmail' && req.method === 'POST') {
@@ -653,23 +666,24 @@ async function handleAdmin(env, req, url) {
   if (path === 'dashboard' && req.method === 'GET') {
     const week = weekNow(), q = (sql, ...a) => env.DB.prepare(sql).bind(...a);
     const top = (col) => q(`SELECT s.address a, ${col} v, p.name n, p.x_handle x FROM scores s JOIN players p ON p.address=s.address WHERE s.week=?1 AND ${col}>0 ORDER BY ${col} DESC, s.updated_at ASC LIMIT 10`, week).all();
-    const [vis, tot, today, run, nw, held, users, banned, transfers, messages, mails] = await Promise.all([
+    const [vis, tot, today, run, nw, held, users, banned, transfers, messages, mails, hypes] = await Promise.all([
       q('SELECT COUNT(*) c FROM visitors').first(),
       q('SELECT COALESCE(SUM(visits),0) c FROM visitors').first(),
       q('SELECT COUNT(*) c FROM visitors WHERE last_seen>?1', Date.now() - 24 * 3600 * 1000).first(),
       top(SCORE), top('coins_total'),
       q("SELECT r.id, r.address a, p.name n, p.x_handle x, r.score, r.coins, r.last_tick ticks, r.flags, r.ended_at t FROM runs r LEFT JOIN players p ON p.address=r.address WHERE r.status='held' ORDER BY r.ended_at DESC LIMIT 50").all(),
-      q(`SELECT p.address a, p.name n, p.glyph_name g, ${picSql(req)} pic, p.x_handle x, (p.x_id IS NOT NULL) xv, p.updated_at t, (SELECT 1 FROM bans b WHERE b.address=p.address) banned FROM players p ORDER BY p.updated_at DESC LIMIT 1000`).all(),
+      q(`SELECT p.address a, p.name n, p.glyph_name g, ${picSql(req)} pic, p.x_handle x, (p.x_id IS NOT NULL) xv, p.updated_at t, (SELECT 1 FROM bans b WHERE b.address=p.address) banned FROM players p WHERE p.address<>'${HYPE}' ORDER BY p.updated_at DESC LIMIT 1000`).all(),
       q('SELECT COUNT(*) c FROM bans').first(),
       q('SELECT t.ts, t.amount, t.boost, t.sender sa, t.recipient ra, ps.name sn, pr.name rn FROM transfers t LEFT JOIN players ps ON ps.address=t.sender LEFT JOIN players pr ON pr.address=t.recipient ORDER BY t.id DESC LIMIT 50').all(),
       q('SELECT m.id, m.ts, m.body, m.sender sa, m.recipient ra, ps.name sn, pr.name rn FROM messages m LEFT JOIN players ps ON ps.address=m.sender LEFT JOIN players pr ON pr.address=m.recipient ORDER BY m.id DESC LIMIT 100').all(),
       q('SELECT b.id, b.ts, b.subject, (b.ikey IS NOT NULL) img, (SELECT COUNT(*) FROM mail_reads r WHERE r.id=b.id) reads FROM broadcasts b ORDER BY b.id DESC LIMIT 20').all(),
+      q('SELECT m.id, m.ts, m.body, pr.name rn FROM messages m LEFT JOIN players pr ON pr.address=m.recipient WHERE m.sender=?1 ORDER BY m.id DESC LIMIT 8', HYPE).all(),
     ]);
     return out({
       week, visitors: vis.c, visits: tot.c, today: today.c, banned: banned.c,
       topRun: run.results || [], topNw: nw.results || [],
       held: (held.results || []).map((r) => ({ ...r, flags: JSON.parse(r.flags || '[]'), seconds: Math.round(r.ticks / 60) })),
-      users: users.results || [], transfers: transfers.results || [], messages: messages.results || [], mails: mails.results || [], players: users.results ? users.results.length : 0,
+      users: users.results || [], transfers: transfers.results || [], messages: messages.results || [], mails: mails.results || [], hypes: hypes.results || [], players: users.results ? users.results.length : 0,
     });
   }
   if (path === 'held' && req.method === 'GET') {

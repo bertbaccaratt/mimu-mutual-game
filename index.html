@@ -313,6 +313,10 @@ body.native #screen,body.native #screen:after{border-radius:0}
 .xrow .xtile{grid-column:2}
 .xtile .ic{background:#000!important;border:1px solid #3a3a3f;box-shadow:0 0 0 1px rgba(255,255,255,.06),0 6px 16px rgba(0,0,0,.55)}
 .xtile .ic svg{width:60%;height:60%}
+.xrow .ostile{grid-column:3}
+.ostile .ic{background:linear-gradient(160deg,#3a96f0,#1868b7)!important;border:1px solid rgba(255,255,255,.22);box-shadow:0 0 0 1px rgba(255,255,255,.06),0 6px 16px rgba(0,0,0,.5)}
+.ostile .ic svg{width:64%;height:64%}
+.xapp .osw{aspect-ratio:750/1400;overflow:hidden}.xapp .osw img{display:block;width:100%;height:auto}
 .xapp{position:absolute;inset:0;background:#000;color:#e7e9ea;display:flex;flex-direction:column;padding-top:54px;font-family:var(--sans)}
 .xapp .xh{flex:none;display:flex;align-items:center;gap:10px;padding:6px 16px 10px;border-bottom:1px solid #2f3336}
 .xapp .xh svg{width:22px;height:22px;flex:none}
@@ -848,6 +852,7 @@ body.enter .footbar{animation-name:chromeInB}
         <div><b>Chair Run</b><span>The runner. Beat your best score every day. This is where you connect your Glyph.</span></div>
         <div><b>Mutual Mimu</b><span>The boardroom: stake $TMF, vote and join the lobby. A closing bell rings every 4h 20m and settles the round. It stays greyed out until you connect your Glyph in Chair Run.</span></div>
         <div><b>Leaderboards</b><span>Weekly boards for the best run and for $TMF found. Every score is checked by the server, which replays your run, so everyone is ranked fairly. Boards reset weekly.</span></div>
+        <div><b>X and OpenSea</b><span>Two apps on the home screen show the Mimu On Ape pages on X and on OpenSea as phone-view pictures. Each has an Open button that takes you to the real page.</span></div>
         <div><b>Long-run badges</b><span>Reach 1M, 10M, 20M, 50M or 100M in a single Chair Run for a special badge. Every 1M pops a surprise and every 10M the runway changes color. These are just for fun and do not affect the leaderboard.</span></div>
         <div><b>Badges</b><span>Your season meter, badges, chair gallery (jump 25 of each to unlock), patron status and career stats.</span></div>
         <div><b>Top 5</b><span>Every player ranked by total score (Chair Run points + $TMF found), with the top 5 in gold frames. The top 5 cannot send $TMF. Anyone outside the top 5 can give all their $TMF to one top 5 player to help them (+2 points for every $TMF), or send $TMF to any player who has registered at least 1 $TMF point. Ranks change live, so whether you can give changes with them.</span></div>
@@ -1166,6 +1171,7 @@ const IC={
   ff:'<svg viewBox="0 0 32 32" fill="none" stroke="#fff3d0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 26h20M16 4v3"/><path d="M9 22c0-8 2-12 7-12s7 4 7 12z" fill="#d9b25f" stroke="#fff3d0"/><circle cx="16" cy="25" r="2" fill="#fff3d0"/></svg>',
   lb:'<svg viewBox="0 0 32 32" fill="none" stroke="#fff3d0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5h12v8a6 6 0 01-12 0z" fill="#d9b25f"/><path d="M10 8H5c0 5 2 7 5 7M22 8h5c0 5-2 7-5 7M16 19v5M11 27h10"/></svg>',
   vault:'<svg viewBox="0 0 32 32" fill="none" stroke="#fff3d0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h24v4a3 3 0 000 6v4H4v-4a3 3 0 000-6z" fill="#d9b25f"/><path d="M20 11v14" stroke-dasharray="2 3"/></svg>',
+  os:'<svg viewBox="0 0 24 24"><path fill="#fff" d="M11.2 3.6c.2-.4.7-.3.8.1.9 2.4 1.5 5 1.5 7.600 0 .3-.2.5-.5.5H6.100c-.4 0-.6-.4-.4-.7zM14.600 8.500c0-.2.3-.3.4-.1 1.600 1.600 3.200 3.900 4 5.800.1.2-.1.4-.3.4h-4.100c-.3 0-.5-.2-.5-.5zM4 15.200c0-.2.2-.3.3-.3h15.400c.3 0 .4.2.4.4-.4 2.300-2.200 4.100-4.500 4.100H9.100C6.300 19.400 4.100 17.600 4 15.200z"/></svg>',
   x:'<svg viewBox="0 0 24 24"><path fill="#fff" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
   mail:'<svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="7.5" width="23" height="17" rx="3.2" fill="#fff" fill-opacity=".16"/><path d="M5.5 10l10.5 8 10.5-8"/></svg>',
   alarm:'<svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="17.500" r="8.200"/><path d="M16 12.800v5l3.200 2"/><path d="M5.800 9.200A5.200 5.200 0 0111 5M26.200 9.200A5.200 5.200 0 0021 5"/><path d="M9.500 26l-1.800 2M22.500 26l1.800 2"/></svg>',
@@ -1247,7 +1253,7 @@ function buildHome(anim){
     <button class="app-i mail" data-open="mail"><div class="ic" style="background:linear-gradient(135deg,#5aa8ff,#1d5fd6)">${IC.mail}${PM.mail?`<i class="bd">${PM.mail}</i>`:''}</div>Mimu Mail</button>
    </div>
    ${Date.now()<CAMPAIGN.close?`<div class="cdw" id="cdw" aria-live="off"><div class="cdh"><span class="cdl" id="cdl"></span><span class="cdd" id="cdd"></span></div>
-    <div class="cdt"><div><b id="cd-d">00</b><i>days</i></div><em>:</em><div><b id="cd-h">00</b><i>hrs</i></div><em>:</em><div><b id="cd-m">00</b><i>min</i></div><em>:</em><div><b id="cd-s">00</b><i>sec</i></div></div></div>`:''}<div class="xrow"><button class="app-i xtile" data-open="x"><div class="ic">${IC.x}</div>X</button></div></div>
+    <div class="cdt"><div><b id="cd-d">00</b><i>days</i></div><em>:</em><div><b id="cd-h">00</b><i>hrs</i></div><em>:</em><div><b id="cd-m">00</b><i>min</i></div><em>:</em><div><b id="cd-s">00</b><i>sec</i></div></div></div>`:''}<div class="xrow"><button class="app-i xtile" data-open="x"><div class="ic">${IC.x}</div>X</button><button class="app-i ostile" data-open="os"><div class="ic">${IC.os}</div>OpenSea</button></div></div>
    <div class="dock">${DOCK.map(a=>`<button class="app-i" data-open="${a.id}" style="font-size:0"><div class="ic" style="background:${a.bg}">${a.ic}${a.id==='msg'&&unreadN()?`<i class="bd">${unreadN()}</i>`:''}</div></button>`).join('')}</div>`;
   startCampaignClock();
   {const wc=$('#wallc');if(m.hero){wc.width=wc.height=160;wc.className='hero'}mimuFront(wc,m)}paintAll();
@@ -1564,7 +1570,7 @@ function openApp(id,from){
   const a=document.createElement('div');a.className='app';a.id='app-'+id;
   const [x,y]=from?relPos(from):[185,420];a.style.transformOrigin=`${x}px ${y}px`;
   $('#apps').appendChild(a);$('#home').classList.add('back');
-  appObj=({run:buildRun,ff:buildFF,lb:buildLB,vault:buildVault,top5:buildTop5,phone:buildPhone,msg:buildMsgs,cam:buildCam,set:buildSet,alarm:buildAlarm,mail:buildMail,x:buildX})[id](a);
+  appObj=({run:buildRun,ff:buildFF,lb:buildLB,vault:buildVault,top5:buildTop5,phone:buildPhone,msg:buildMsgs,cam:buildCam,set:buildSet,alarm:buildAlarm,mail:buildMail,x:buildX,os:buildOS})[id](a);
   requestAnimationFrame(()=>requestAnimationFrame(()=>a.classList.add('on')));
 }
 function goHome(){
@@ -2633,6 +2639,13 @@ function buildX(root){
   const HANDLE='mimuonape',URL_='https://x.com/'+HANDLE;
   const logo='<svg viewBox="0 0 24 24"><path fill="#fff" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>';
   root.innerHTML='<div class="xapp"><div class="xh">'+logo+'<div style="flex:1;min-width:0"><b>Mimu On Ape</b><span>@'+HANDLE+'</span></div><a class="xopen" href="'+URL_+'" target="_blank" rel="noopener noreferrer">Open on X</a></div><div class="xbody"><img class="xshot" src="assets/x-profile.jpg" alt="The Mimu On Ape profile on X: MIMU, @mimuonape, 3,470 followers" width="750" height="1624" decoding="async"></div></div>';
+  return{destroy(){}};
+}
+/* OpenSea app: a phone-view picture of the Mimu On Ape collection (opensea.io does not allow being shown inside another page) */
+function buildOS(root){
+  const URL_='https://opensea.io/collection/mimuonape';
+  const logo='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#2081e2"/><path fill="#fff" d="M11.200 4.800c.2-.4.7-.3.8.1.8 2 1.300 4.200 1.300 6.400 0 .3-.2.5-.5.500H7c-.4 0-.6-.4-.4-.7zM14.400 9c0-.2.3-.3.4-.1 1.400 1.400 2.700 3.300 3.400 5 .1.2-.1.4-.3.4h-3.500c-.3 0-.5-.2-.5-.5zM5.400 15.400c0-.2.2-.3.3-.3h12.600c.3 0 .4.2.4.4-.3 1.900-1.900 3.400-3.800 3.400H9.200c-2.100 0-3.700-1.400-3.800-3.500z"/></svg>';
+  root.innerHTML='<div class="xapp"><div class="xh">'+logo+'<div style="flex:1;min-width:0"><b>MIMU On Ape</b><span>OpenSea collection</span></div><a class="xopen" href="'+URL_+'" target="_blank" rel="noopener noreferrer">Open on OpenSea</a></div><div class="xbody"><div class="osw"><img src="assets/opensea-collection.jpg" alt="The MIMU On Ape collection on OpenSea: 5,555 items, floor price, volume and owners" width="750" height="1624" decoding="async"></div></div></div>';
   return{destroy(){}};
 }
 function buildTop5(root){

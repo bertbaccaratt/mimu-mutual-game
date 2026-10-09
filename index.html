@@ -1914,7 +1914,7 @@ function buildRunGame(root){
   for(let i=0;i<16;i++){const t=Math.pow(i/15,1.3)*.92;pal.cA.push(mix('#7a2430',FOG,t));pal.cB.push(mix('#5f1b26',FOG,t));pal.mA.push(mix('#cdbda3',FOG,t));pal.mB.push(mix('#b9a98f',FOG,t));pal.gd.push(mix('#d9b25f',FOG,t))}
   const freshSeed=()=>1+Math.floor(Math.random()*4294967294);
   let sim=MimuSim.create(freshSeed(),{wallet:0}),S=sim.S;Object.assign(S,{st:'idle',part:[],shake:0,bestShown:false,near:false});
-  let raf,last=performance.now(),msgN=0,acc=0,pv=null,inputs=[],runSession=null,verified=false,alive=true,lastChain=-1,lastCm=-1,pwSig='';
+  let raf,last=performance.now(),msgN=0,acc=0,pv=null,inputs=[],runSession=null,verified=false,up={from:0,seq:0,busy:false},alive=true,lastChain=-1,lastCm=-1,pwSig='';
   const hud={sc:$('#rsc',root),co:$('#rco',root),lv:$$('#rlv i',root),pw:$('#rpw',root),msg:$('#rmsg',root),card:$('#rcard',root),cn:$('#rcn',root),fl:$('#rfl',root)};
   function msg(t,cls=''){const d=document.createElement('div');d.className=cls;d.textContent=t;d.style.top=(msgN++%3)*28+'px';hud.msg.appendChild(d);setTimeout(()=>d.remove(),2300)}
   /* ---- chain / streak: every coin and clean chair hop builds it, 4s without a gain breaks it ---- */
@@ -1988,7 +1988,7 @@ function buildRunGame(root){
     const begin=async()=>{
       let r=null;try{r=await Promise.race([sessionP,sleep(10000).then(()=>null)])}catch(e){}
       if(!alive)return;
-      if(r&&r.runId){newRun(r.seed,r.wallet);runSession=r;verified=true}
+      if(r&&r.runId){newRun(r.seed,r.wallet);runSession=r;verified=true;up={from:0,seq:0,busy:false}}
       else if(online)toast(API.token?'📡 <span>Couldn&rsquo;t reach the leaderboard. This run won&rsquo;t count.</span>':'🔒 <span>Your session ended. Reconnect Glyph in Chair Run so runs count.</span>',4200);
       S.st='run';acc=0;last=performance.now();setTimeout(()=>{hud.cn.innerHTML=''},700);beatStart();
     };
@@ -2001,8 +2001,21 @@ function buildRunGame(root){
   const beatStart=()=>{
     beatStop();if(!verified||!runSession||!API.token)return;
     const send=()=>{if(S.st!=='run'&&S.st!=='revive')return;API.j('/api/run/beat',{method:'POST',body:JSON.stringify({runId:runSession.runId,score:Math.floor(S.score),dist:Math.floor(S.dist),coins:S.coins})}).catch(()=>{})};
-    send();beatT=setInterval(send,6000);
+    send();beatT=setInterval(()=>{send();flushRun()},6000);
   };
+  /* upload each completed 2000-tick piece as it happens; the server replays and keeps the state, so nothing is lost if the tab closes or the run is very long */
+  async function flushRun(){
+    if(!verified||!runSession||!API.token||up.busy)return;
+    up.busy=true;
+    try{
+      while(S.tick-up.from>=2400){
+        const to=up.from+2000,part=inputs.filter(i=>i[0]>=up.from&&i[0]<to);
+        const r=await API.j('/api/run/chunk',{method:'POST',body:JSON.stringify({runId:runSession.runId,seq:up.seq,to,inputs:part,final:false})});
+        if(!r||!r.ok)break;up.from=to;up.seq++;
+      }
+    }catch(e){}
+    up.busy=false;
+  }
   function gameOver(quit){
     if(S.st==='over')return;S.st='over';beatStop();
     const score=Math.floor(S.score),prevBest=P.best;if(score>P.best)P.best=score;
@@ -2010,7 +2023,11 @@ function buildRunGame(root){
     P.runs++;P.dist+=dist;P.coins+=S.coins;P.totalCoins+=S.coins;S.cleared.forEach((n,i)=>P.cleared[i]+=n);
     const qd=trackQ(score);let pp=Math.floor(score/5)+S.coins*2;qd.forEach(q=>pp+=q.sp);
     const before=passMeter(),passes=addPP(pp),rank=myRank('run');saveP();
-    if(verified&&API.on())submitRun().then(r=>{const e=$('#rkv',root);if(e)e.textContent=r&&r.rank?('#'+r.rank+(r.rank<=5?' · top 5':'')):'—';if(r&&r.final&&r.score!==score)console.warn('server score differs',r.score,score);return refreshBoards()});
+    const sendRun=()=>submitRun().then(r=>{const e=$('#rkv',root);
+      if(r&&r.final){if(e)e.textContent=r.held?'under review':(r.rank?('#'+r.rank+(r.rank<=5?' · top 5':'')):'saved');if(r.score!==score)console.warn('server score differs',r.score,score);return refreshBoards()}
+      if(e){e.innerHTML='not saved yet · <u id="rrt" style="cursor:pointer;color:var(--gold2)">retry</u>';const b=$('#rrt',root);if(b)b.onclick=()=>{e.textContent='…';sendRun()}}
+    });
+    if(verified&&API.on())sendRun();
     const gap=prevBest-score,hook=score>prevBest&&score>0?'':gap>0&&prevBest>0?(gap<prevBest*.25?`Only <b>${fmt(gap)}</b> short of your best. One more run?`:`Best this week: <b>${fmt(prevBest)}</b>`):'';
     const nb=score>prevBest&&score>0;sfx[nb?'win':'fail']();if(nb)confetti(40);
     showCard(`<div class="lbl" style="color:var(--gold)">${quit?'Run ended':'You got benched'}</div><div class="h2" style="font-size:28px;margin:4px 0">${nb?'New weekly <em>best</em>':'Run <em>complete</em>'}</div>
@@ -2093,18 +2110,19 @@ function buildRunGame(root){
   /* ---- send the finished run to the leaderboard server as its recorded inputs; the server replays it and decides the score ---- */
   async function submitRun(){
     if(!verified||!runSession||!API.token||!API.on())return null;
-    const id=runSession.runId,total=S.tick,CH=2000;let from=0,seq=0,res=null;
-    const cuts=[];for(let t=0;t<total;t+=CH)cuts.push(Math.min(total,t+CH));if(!cuts.length)cuts.push(0);
+    for(let w=0;up.busy&&w<200;w++)await sleep(100);                  /* let an upload that is in flight finish first */
+    const id=runSession.runId,total=S.tick,CH=2000;let from=up.from,seq=up.seq,res=null;
+    const cuts=[];for(let t=from;t<total;t+=CH)cuts.push(Math.min(total,t+CH));if(!cuts.length)cuts.push(total);
     for(let k=0;k<cuts.length;k++){
       const to=cuts[k],fin=k===cuts.length-1;
       const part=inputs.filter(i=>i[0]>=from&&(i[0]<to||(fin&&i[0]===to)));
       let r=null;
-      for(let attempt=0;attempt<5&&!r;attempt++){
+      for(let attempt=0;attempt<8&&!r;attempt++){
         try{r=await API.j('/api/run/chunk',{method:'POST',body:JSON.stringify({runId:id,seq,to,inputs:part,final:fin})})}
-        catch(e){if(e.status===401||e.status===409||e.status===422||e.status===404)return {error:e.message,status:e.status};await sleep(900*(attempt+1))}
+        catch(e){if(e.status===401||e.status===409||e.status===422||e.status===404||e.status===400)return {error:e.message,status:e.status};await sleep(900*(attempt+1)+(e.status===429?2500:0))}
       }
       if(!r)return {error:'network'};
-      from=to;seq++;res=r;
+      from=to;seq++;up.from=from;up.seq=seq;res=r;
     }
     return res;
   }

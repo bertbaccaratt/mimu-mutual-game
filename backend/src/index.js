@@ -233,6 +233,22 @@ async function applyScore(env, address, week, score, coins, now) {
       ON CONFLICT(address,week) DO UPDATE SET run_best=MAX(run_best,?3), coins_total=coins_total+?4, runs=runs+1, updated_at=?5`).bind(address, week, score, coins, now).run();
 }
 
+/* A run whose tab closed or whose last piece never arrived: score it as far as the server verified it (never lose earned progress). */
+async function salvageOpenRuns(env, address, now) {
+  try {
+    const rows = (await env.DB.prepare("SELECT * FROM runs WHERE address=?1 AND status='open' AND snapshot IS NOT NULL AND last_tick>=120").bind(address).all()).results || [];
+    for (const run of rows) {
+      const sim = Sim.create(run.seed, { wallet: run.wallet }); sim.restore(run.snapshot);
+      const S = sim.S, stats = run.stats ? JSON.parse(run.stats) : newStats();
+      const score = Math.max(0, Math.floor(S.score)), coins = Math.max(0, Math.floor(S.coins)), dist = Math.floor(S.dist);
+      const flags = judge(stats, S, S.tick, Number(env.BOT_MIN) || 40);
+      if (flags.length) { await env.DB.prepare("UPDATE runs SET status='held', snapshot=NULL, stats=?1, flags=?2, score=?3, coins=?4, dist=?5, ended_at=?6 WHERE id=?7").bind(JSON.stringify(stats), JSON.stringify(flags), score, coins, dist, now, run.id).run(); continue; }
+      await env.DB.prepare("UPDATE runs SET status='done', snapshot=NULL, stats=NULL, score=?1, coins=?2, dist=?3, ended_at=?4 WHERE id=?5").bind(score, coins, dist, now, run.id).run();
+      if (score > 0) await applyScore(env, address, weekNow(), score, coins, now);
+    }
+  } catch (e) { console.error('salvage failed', String(e && e.message || e)); }
+}
+
 async function handleRunStart(env, req) {
   const sess = await readToken(env, req);
   if (!sess) return json(env, req, { error: 'sign in first' }, 401);
@@ -247,6 +263,7 @@ async function handleRunStart(env, req) {
   const wallet = Math.max(0, Math.min(10000000, Math.floor(Number(b.wallet) || 0)));
   const now = Date.now();
   await env.DB.prepare('DELETE FROM runs WHERE started_at<?1 AND status NOT IN (\'held\')').bind(now - 24 * 3600 * 1000).run();
+  await salvageOpenRuns(env, sess.sub, now);                       // an interrupted run keeps the progress the server already verified
   await env.DB.prepare("UPDATE runs SET status='abandoned', snapshot=NULL WHERE address=?1 AND status='open'").bind(sess.sub).run();   // one live run per player
   const id = hex(16), seed = crypto.getRandomValues(new Uint32Array(1))[0] || 1;
   await env.DB.prepare("INSERT INTO runs(id,address,seed,wallet,started_at,last_tick,seq,snapshot,status) VALUES(?1,?2,?3,?4,?5,0,0,NULL,'open')")

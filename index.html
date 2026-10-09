@@ -1144,6 +1144,16 @@ const sfx={tap(){tone(660,0,.06,.04,'triangle')},select(){tone(520,0,.08,.05,'tr
   power(){[440,660,880].forEach((f,i)=>tone(f,i*.06,.18,.05,'triangle'))},tick(){tone(1900,0,.02,.025,'square')}};
 
 /* ---------------- DOM helpers ---------------- */
+/* run a redraw of an app and put every scrolled area back where it was, so a refresh never throws the reader back to the top */
+function keepScroll(root,fn){
+  const sig=e=>e.tagName+'.'+e.className,snap=[],cnt={};
+  [root,...root.querySelectorAll('*')].forEach(e=>{const k=sig(e),i=cnt[k]=(cnt[k]||0);cnt[k]++;if(e.scrollTop>0||e.scrollLeft>0)snap.push([k,i,e.scrollTop,e.scrollLeft])});
+  fn();
+  if(!snap.length)return;
+  const idx={},c2={};
+  [root,...root.querySelectorAll('*')].forEach(e=>{const k=sig(e),i=c2[k]=(c2[k]||0);c2[k]++;(idx[k]=idx[k]||[])[i]=e});
+  snap.forEach(([k,i,top,left])=>{const e=idx[k]&&idx[k][i];if(e){e.scrollTop=top;e.scrollLeft=left}});
+}
 function morph(a,html){const t=document.createElement('template');t.innerHTML=html;patch(a,t.content)}
 function patch(a,b){const ca=[...a.childNodes],bc=[...b.childNodes];
   for(let i=0;i<bc.length;i++){const x=ca[i],y=bc[i];
@@ -1397,7 +1407,8 @@ function buildMsgs(root){
   let inList=true,q='',thrTimer=null;
   const me=()=>P.glyph&&P.glyph.address?P.glyph.address.toLowerCase():'';
   const loadTop=()=>(PM.pl&&Date.now()-PM.plAt<15000)?Promise.resolve():API.j('/api/players').then(d=>{PM.pl=d;PM.plAt=Date.now()}).catch(()=>{});
-  const paintPM=()=>{
+  const paintPM=()=>keepScroll(root,paintPM0);
+  const paintPM0=()=>{
     const box=$('#pmbox',root);if(!box)return;
     if(!pmOn()){box.innerHTML=`<div class="pmh">Leaderboard texts</div><div class="pmlock"><b>&#128274; Locked</b><span>Connect your Glyph in Chair Run to text the other players on the leaderboard.</span></div>`;return}
     const th=PM.threads.map(t=>`<button class="cv" data-pt="${escH(t.with)}" data-nm="${escH(t.name)}" data-pc="${escH(t.picture||'')}">${pAv(t.picture,t.name)}<div class="mid"><b>${escH(t.name)}</b><span>${t.mine?'You: ':''}${escH(t.last)}</span></div><div class="tm">${tmAgo(t.ts)}</div>${t.unread?'<i class="ud"></i>':''}</button>`).join('');
@@ -1535,7 +1546,8 @@ function buildCam(root){
 }
 function buildSet(root){
   let armed=false;
-  const draw=()=>{
+  const draw=()=>keepScroll(root,drawBody);
+  const drawBody=()=>{
     root.innerHTML=`<div class="sc"><div class="sysh"><h1>Settings</h1></div><div class="scroll" style="padding:0 0 60px">
      <div class="sgrp"><div class="srow"><div class="si" style="background:#000;border:1px solid #fff3;overflow:hidden">${imgTag(P.glyph&&safeUrl(P.glyph.picture)?P.glyph.picture:'assets/mimu-icon.jpg')}</div><div><b style="font:600 16px var(--sans);display:block">${escH(P.handle||'mimu')}</b><span style="font:400 12px var(--sans);color:var(--muted)">Season One · ${fmt(P.coins)} $TMF</span></div></div></div>
      <div class="sgl">General</div>
@@ -2438,7 +2450,8 @@ function buildLB(root){
 const LONG_BADGES=[[1e6,'1M','Million Mile','#cd7f32','#f3c18a'],[1e7,'10M','Ten Million Club','#9aa6b6','#f1f5fb'],[2e7,'20M','Twenty Mil Legend','#d9b25f','#fff0b8'],[5e7,'50M','Fifty Mil Immortal','#3fb6d8','#c9f4ff'],[1e8,'100M','Hundred Mil Myth','#d24fb0','#ffd3f1']];
 const medalSVG=(b,i)=>`<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="lg${i}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${b[4]}"/><stop offset="1" stop-color="${b[3]}"/></linearGradient></defs><path d="M20 3h10l6 22H26zM34 3h10L38 25H28z" fill="${b[3]}" opacity=".75"/><circle cx="32" cy="40" r="19" fill="url(#lg${i})" stroke="#1a0f12" stroke-width="2.5"/><circle cx="32" cy="40" r="14.5" fill="none" stroke="#1a0f12" stroke-opacity=".35" stroke-width="1.5"/><text x="32" y="45" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-weight="700" font-size="${b[1].length>3?10:12}" fill="#1a0f12">${b[1]}</text></svg>`;
 function buildVault(root){
-  const draw=()=>{
+  const draw=()=>keepScroll(root,drawBody);
+  const drawBody=()=>{
     const m=passMeter(),next=P.passGoal-P.pp;
     root.innerHTML=`<div class="sc"><div class="ah"><h1>Badges</h1><div class="sp"></div><div class="pill"><span class="coin"></span>${fmt(P.coins)}</div></div><div class="scroll" style="padding-bottom:30px">
      <div class="ticket"><div class="sh"></div><div class="row"><div><div class="tt">Season Badge</div><div class="lbl" style="color:var(--cream);margin-top:6px">Next badge · no.${String(P.passes.length+1).padStart(3,'0')}</div></div><div class="sp"></div><div style="width:58px;height:58px;border-radius:14px;overflow:hidden;border:2px solid var(--gold)">${pcvM(P.mimu,'vm')}</div></div>
@@ -2481,7 +2494,8 @@ function buildFF(root){
   if(!P.ff||!P.ff.opts)ffNew();
   if(P.ff.round==null)P.ff.round=voteRound();
   let ringing=false;
-  const draw=()=>{
+  const draw=()=>keepScroll(root,drawBody);
+  const drawBody=()=>{
     const f=P.ff,T=ffTally(f),tot=T.reduce((a,b)=>a+b,0)||1,lead=T.indexOf(Math.max(...T)),mx=Math.floor(P.coins/10)*10;
     if(f.stake>mx)f.stake=mx;
     const props=f.opts.map((o,i)=>{const a=ASSETS.find(x=>x.sym===o.sym),sel=f.vote===i;return`<button class="prop2 ${sel?'sel':''} ${i===lead?'lead':''}" data-v="${i}"><div class="chk"></div>
@@ -2645,7 +2659,8 @@ function buildMail(root){
   const initial=()=>((P.handle||'M').replace(/^@/,'')[0]||'M').toUpperCase();
   const top=()=>`<div class="mx-search"><span>&#9776;</span><span>Search in mail</span><div class="mx-av">${escH(initial())}</div></div>`;
   const locked=()=>{root.innerHTML=`<div class="mailx">${top()}<div class="mx-empty"><div class="mx-ico">${env}</div><b>Sign in to get mail</b><span>Connect your Glyph in Chair Run. Emails from the Mimu On Ape team land here.</span></div></div>`};
-  const list=()=>{
+  const list=()=>keepScroll(root,list0);
+  const list0=()=>{
     view='list';
     if(!pmOn())return locked();
     const rows=items||[];
@@ -2693,7 +2708,8 @@ function buildTop5(root){
   const mine=()=>P.glyph&&P.glyph.address?P.glyph.address.toLowerCase():null;
   const loadStatus=()=>{if(!API.token){st=null;return Promise.resolve()}return API.j('/api/send/status').then(s=>{st=s;stErr=''}).catch(e=>{st=null;stErr=e.status===401?'Reconnect Glyph in Chair Run to send.':''})};
   const loadTop=()=>API.j('/api/top9').then(d=>{T=d}).catch(()=>{});
-  const draw=()=>{
+  const draw=()=>keepScroll(root,drawBody);
+  const drawBody=()=>{
     const all=T?T.rows:[],me=mine(),can=!!(st&&st.canSend);
     const dn=st&&st.donate?st.donate:{open:Date.now()>=ALARM_AT&&Date.now()<CAMPAIGN.close,state:Date.now()<ALARM_AT?'early':Date.now()>=CAMPAIGN.close?'closed':'open'};
     const rows=all.filter(r=>!q||String(r.name).toLowerCase().includes(q));
@@ -2771,7 +2787,8 @@ function buildTop5(root){
 }
 function buildTop5Sim(root){
   ensureRivals();
-  const draw=()=>{
+  const draw=()=>keepScroll(root,drawBody);
+  const drawBody=()=>{
     const rows=board('run').slice(0,5);if(!rows.length){root.innerHTML='<div class="sc"><div class="ah"><h1>Top 5</h1></div><div class="scroll"><div class="card" style="text-align:center"><div class="h2" style="font-size:18px">No runners yet</div><div class="sub2" style="margin-top:4px">The top five appear once the first scores land.</div></div></div></div>';return}const lead=rows[0].v,coins=P.coins,led=(P.backed||[]).slice(0,4);
     const cards=rows.map((r,i)=>{const idx=r.me?-1:+r.id.slice(1),behind=lead-r.v;
       return`<div class="t5 ${r.me?'me':''} ${i===0?'first':''}" style="animation-delay:${i*60}ms"><div class="t5rk">${i+1}</div><div class="av">${avOf(r)}</div>

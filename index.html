@@ -461,9 +461,25 @@ canvas.hero{display:block;image-rendering:auto;width:100%;height:100%}
 @keyframes howp{0%,100%{box-shadow:0 0 0 0 rgba(217,178,95,.55)}50%{box-shadow:0 0 0 9px rgba(217,178,95,0)}}
 .howov{position:absolute;inset:0;z-index:12;background:rgba(10,6,8,.78);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:54px 14px 40px;pointer-events:auto}
 .howc{width:100%;max-height:100%;overflow-y:auto;scrollbar-width:thin;padding:20px 18px;border-radius:26px;background:linear-gradient(180deg,rgba(43,31,33,.98),rgba(24,15,17,.99));border:1px solid var(--line2)}
-.howc .fxr{padding:8px 0;border-top:1px solid rgba(255,255,255,.07)}
-.howc .fxr b{display:block;font:700 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--gold2);margin-bottom:2px}
-.howc .fxr span{font:400 12.5px/1.45 var(--sans);color:var(--cream);opacity:.88}
+.mmhub{margin:0 auto 4px;width:132px;padding:12px 8px;border-radius:50% / 42%;text-align:center;background:radial-gradient(circle at 30% 25%,#ffe9a8,#d9b25f 55%,#a8741f);box-shadow:0 0 0 3px rgba(217,178,95,.25),0 0 28px rgba(217,178,95,.55);color:#2a1a08}
+.mmhub span{font-size:26px;display:block;line-height:1}.mmhub b{display:block;font:800 15px var(--sans);letter-spacing:.08em}.mmhub small{font:600 9.5px var(--mono);opacity:.75;text-transform:uppercase;letter-spacing:.08em}
+.mmtrunk{position:relative;margin:0 0 0 14px;padding:14px 0 0 22px;border-left:3px solid transparent;border-image:linear-gradient(180deg,#5aa0ff,#e9c24f,#ff6fb5,#9b7bff,#ff9a4a,#ff5a5a,#4fd1a5,#d0d6e0,#5be08a) 1}
+.fm{position:relative;margin-bottom:11px}
+.fm::before{content:"";position:absolute;left:-22px;top:20px;width:20px;height:3px;background:var(--cc,#e9c24f);border-radius:2px}
+.mmd{position:absolute;left:-30px;top:13px;width:13px;height:13px;border-radius:50%;background:var(--cc,#e9c24f);box-shadow:0 0 0 3px rgba(0,0,0,.45),0 0 12px var(--cc,#e9c24f)}
+.mmc{padding:10px 12px 11px;border-radius:16px;background:#241619;background:linear-gradient(135deg,color-mix(in srgb,var(--cc,#e9c24f) 26%,#1a0f12),#1a0f12 78%);border:1px solid var(--cc,#e9c24f);border:1px solid color-mix(in srgb,var(--cc,#e9c24f) 60%,transparent)}
+.mmh{display:flex;align-items:center;gap:8px;margin-bottom:3px}.mmi{display:grid;place-items:center;width:26px;height:26px;border-radius:9px;background:var(--cc,#e9c24f);color:#1a0f12;font-size:14px;flex:none}
+.mmh b{font:800 13px var(--sans);letter-spacing:.04em;text-transform:uppercase;color:var(--cc,#e9c24f)}
+.mmc p{font:400 12.2px/1.45 var(--sans);color:var(--cream);opacity:.92;margin:0}.mmc p b{color:#fff;opacity:1}
+.c-blue{--cc:#5aa0ff}.c-gold{--cc:#f0c64a}.c-pink{--cc:#ff6fb5}.c-violet{--cc:#9b7bff}.c-orange{--cc:#ff9a4a}.c-red{--cc:#ff5a5a}.c-green{--cc:#4fd1a5}.c-silver{--cc:#d0d6e0}.c-rainbow{--cc:#ff7bd5}
+.c-rainbow .mmh b{background:linear-gradient(90deg,#ff5a5a,#f0c64a,#5be08a,#5aa0ff,#c07bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.mmk{display:grid;gap:7px;margin-top:9px;position:relative;padding-left:12px}
+.mmk::before{content:"";position:absolute;left:3px;top:6px;bottom:6px;width:2px;background:rgba(255,111,181,.5);border-radius:2px}
+.mmk .k{position:relative;display:grid;grid-template-columns:30px 1fr;column-gap:8px;padding:7px 9px;border-radius:12px;background:rgba(255,255,255,.05)}
+.mmk .k::before{content:"";position:absolute;left:-9px;top:50%;width:9px;height:2px;background:rgba(255,111,181,.5)}
+.mmk .k span{grid-row:1/3;display:grid;place-items:center;font-size:20px;border-radius:10px;background:rgba(0,0,0,.35)}
+.mmk .k b{font:700 12px var(--sans);color:#fff}.mmk .k em{font:400 11.5px/1.35 var(--sans);font-style:normal;color:var(--cream);opacity:.85}
+.mmk .k1{box-shadow:inset 3px 0 0 #f0c64a}.mmk .k2{box-shadow:inset 3px 0 0 #7ac8ff}.mmk .k3{box-shadow:inset 3px 0 0 #b98cff}
 .lgb{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}
 .lgb div{text-align:center}.lgb svg{width:100%;height:auto;display:block}
 .lgb small{display:block;margin-top:4px;font:600 9px var(--mono);color:var(--cream);opacity:.85}
@@ -810,7 +826,7 @@ body.enter .footbar{animation-name:chromeInB}
         <div><kbd>Esc</kbd> or <kbd>P</kbd><span>pause. Resuming gives you a 3-2-1.</span></div>
       </div>
       <p><b>Connecting:</b> Chair Run is where you connect your Glyph. After you connect and pass the wallet checks, <em>Mutual Mimu</em> and texting other players unlock. Your username (your X handle) and picture show up on the Leaderboards, the Top 5 app and your texts. You need a Mimu On Ape to play, and wallets that already hold a TMF Pass or a Dengs can&rsquo;t play.</p>
-      <p><b>$TMF coins</b> are your score fuel. Every coin and clean chair hop builds a <b>chain</b> that multiplies your score up to x5, but four seconds without a gain breaks it. <b>Power-ups</b> show up on the floor: a coin magnet, a briefcase shield and a gilded x2. Hit a milestone every 250m for a bonus. Lose your last life and you can pay 30 $TMF for a one-time <b>Second Wind</b>.</p>
+      <p><b>$TMF coins</b> are your score fuel. Every coin and clean chair hop builds a <b>chain</b> that multiplies your score up to x5, but four seconds without a gain breaks it. <b>Power-ups</b> show up on the floor: a <b>Bell</b> 🔔 coin magnet, a <b>Briefcase</b> 💼 shield and a <b>Star</b> ✨ gilded x2 (double points for 10 seconds). Hit a milestone every 250m for a bonus. Lose your last life and you can pay 30 $TMF for a <b>Second Wind</b> to try again. It works <b>one time per run</b>.</p>
       <p><b>Ballot Gates</b> appear down the hall. Pick a lane to vote on an asset. About 110m later the closing bell pays a dividend or takes a drawdown from your run's $TMF. Risky picks swing harder.</p>
       <p><b>Daily quests</b> (three a day) and a daily streak give you bonus season points. Each run also earns season points toward your Badges meter.</p>
 
@@ -1994,17 +2010,7 @@ function buildRunGame(root){
     if(S.st==='run')pause();
     if(!P.howSeen){P.howSeen=1;saveP();howBtn.classList.remove('pulse')}
     const o=document.createElement('div');o.className='howov';
-    o.innerHTML='<div class="howc"><div class="lbl" style="color:var(--gold)">Chair Run</div><div class="h2" style="font-size:25px;margin:2px 0 10px">Game <em>features</em></div>'+
-      '<div class="fxr"><b>Move</b><span>Swipe or use the arrow keys / A D W S. Left and right dodge, up jumps chairs, down slides under banners.</span></div>'+
-      '<div class="fxr"><b>$TMF</b><span>Grab the coins as you run. They add to your total and you can give them to Top 5 players.</span></div>'+
-      '<div class="fxr"><b>Ballot Gate</b><span>Pick a lane at each gate. Your vote decides what the bell pays.</span></div>'+
-      '<div class="fxr"><b>Power-ups</b><span>Shield blocks a hit, Magnet pulls coins in, and the multiplier boosts your score for a short time.</span></div>'+
-      '<div class="fxr"><b>Chains</b><span>Clear obstacles back to back to build a chain and a bigger multiplier. Slip up and it resets.</span></div>'+
-      '<div class="fxr"><b>Second wind</b><span>When you are benched you can spend $TMF to keep running.</span></div>'+
-      '<div class="fxr"><b>Milestones</b><span>Every 1 million points pops a surprise. Every 10 million the runway changes color.</span></div>'+
-      '<div class="fxr"><b>Long-run badges</b><span>Reach 1M, 10M, 20M, 50M and 100M in one run to unlock special badges in the Badges app. They are just for fun and do not touch the leaderboard.</span></div>'+
-      '<div class="fxr"><b>Scores</b><span>Every run is replayed and checked by the server, so the leaderboard is fair. Daily quests and your streak give bonus season points.</span></div>'+
-      '<button class="btn gold" id="hwx" style="margin-top:6px">Got it</button></div>';
+    o.innerHTML='<div class=\"howc\"><div class=\"mmhub\"><span>&#129681;</span><b>CHAIR RUN</b><small>how it all works</small></div><div class=\"mmtrunk\"><div class=\"fm c-blue\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">↔</span><b>Move</b></div><p>Swipe or use the arrow keys / A D W S. Left and right dodge. Up jumps chairs. Down slides under banners.</p></div></div><div class=\"fm c-gold\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">🪙</span><b>$TMF coins</b></div><p>Grab coins as you run. They feed your chain, your score and your total, and you can give them to the Top 5 during the donation window.</p></div></div><div class=\"fm c-pink\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">⚡</span><b>Power-ups</b></div><p>Floating pickups on the floor. Run into one to grab it.</p><div class=\"mmk\"><div class=\"k k1\"><span>✨</span><b>Star</b><em>Gilded x2. Double points and double coins for 10 seconds.</em></div><div class=\"k k2\"><span>💼</span><b>Briefcase</b><em>Shield. Blocks your next hit, then it breaks.</em></div><div class=\"k k3\"><span>🔔</span><b>Bell</b><em>Coin magnet. Pulls nearby coins to you for 9 seconds.</em></div></div></div></div><div class=\"fm c-violet\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">🗳</span><b>Ballot Gate</b></div><p>Pick a lane at each gate. Your vote decides what the closing bell pays, as a $TMF dividend or a drawdown.</p></div></div><div class=\"fm c-orange\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">🔥</span><b>Chains</b></div><p>Clear coins and chairs back to back to build a chain. Every 10 in a row raises your multiplier, up to x5. Four seconds without a gain breaks it.</p></div></div><div class=\"fm c-red\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">❤</span><b>Second Wind</b></div><p>Lose your last life and you can pay <b>30 $TMF to try again, ONE TIME per run</b>. Use it and the next fall ends the run.</p></div></div><div class=\"fm c-rainbow\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">🌈</span><b>Milestones</b></div><p>Every 1 million points pops a surprise. Every 10 million the runway changes color.</p></div></div><div class=\"fm c-silver\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">🏅</span><b>Long-run badges</b></div><p>Reach 1M, 10M, 20M, 50M and 100M in a single run to unlock special badges in the Badges app. Just for fun, separate from the leaderboard.</p></div></div><div class=\"fm c-green\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">✅</span><b>Fair scores</b></div><p>Every run is replayed and checked by the server. Daily quests and your streak give bonus season points.</p></div></div></div><button class=\"btn gold\" id=\"hwx\" style=\"margin-top:12px\">Got it</button></div>';
     root.querySelector('.sc').appendChild(o);
     $('#hwx',o).onclick=()=>o.remove();o.onclick=e=>{if(e.target===o)o.remove()};
   }

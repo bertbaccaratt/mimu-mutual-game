@@ -1758,7 +1758,7 @@ const myRank=kind=>board(kind).findIndex(x=>x.me)+1;
 }catch(e){}})();
 const GATE={ok:false};
 /* Chair Run is greyed out and closed until the campaign countdown ends; then it opens by itself. Login, scores and the other apps are not affected. */
-const chairOpen=()=>Date.now()>=CAMPAIGN.open;
+const chairOpen=()=>{const n=Date.now();return n>=CAMPAIGN.open&&n<ALARM_AT};
 /* keep players signed in across reloads: the server's own 12-hour session token is remembered in this browser */
 const SESS_KEY='mimu_sess';
 function saveSess(tok,exp,addr){try{localStorage.setItem(SESS_KEY,JSON.stringify({t:tok,e:exp,a:String(addr||'').toLowerCase()}))}catch(e){}}
@@ -1793,8 +1793,8 @@ function disconnectGlyph(){
 function buildRun(root){
   const ctl={inner:null,dead:false,destroy(){ctl.dead=true;if(ctl.inner&&ctl.inner.destroy)ctl.inner.destroy()}};
   const closed=()=>{
-    root.innerHTML=`<div class="sc"><div class="closed-card"><div class="lock">\u{1FA91}</div><h2>Chair Run opens soon</h2>
-      <p>The halls open when the campaign countdown ends: <b>Sat Oct 10 at 6:00 PM PST</b>. Your login and $TMF are saved, and Mutual Mimu, the Top 5, the leaderboards and your texts are open now.</p>
+    root.innerHTML=`<div class="sc"><div class="closed-card"><div class="lock">\u{1FA91}</div><h2>${Date.now()<CAMPAIGN.open?'Chair Run opens soon':'Gaming has stopped'}</h2>
+      <p>${Date.now()<CAMPAIGN.open?'The halls open when the campaign countdown ends: <b>Sat Oct 10 at 6:00 PM PST</b>. Your login and $TMF are saved, and Mutual Mimu, the Top 5, the leaderboards and your texts are open now.':'No more Chair Runs this campaign. Your scores, login and $TMF are saved. The <b>24-hour donation window</b> is next, in the Top 5 app (Tue 6:00 AM to Wed 6:00 AM PST).'}</p>
       <button class="btn gold" id="crh" style="max-width:260px">Back to the phone</button></div></div>`;
     const b=root.querySelector('#crh');if(b)b.onclick=()=>goHome();
   };

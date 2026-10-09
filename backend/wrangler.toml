@@ -39,5 +39,5 @@ RPC_33139 = "https://apechain.calderachain.xyz/http,https://rpc.apechain.com/htt
 RPC_1     = "https://cloudflare-eth.com"
 RPC_4663  = "https://robinhood-rpc.publicnode.com,https://robinhood.drpc.org,https://4663.rpc.thirdweb.com,https://rpc.mainnet.chain.robinhood.com"   # several = automatic fallback
 EXPLORER_4663 = "https://robinhoodchain.blockscout.com"   # keyless fallback if every RPC is busy
-# Chair Run opens by itself when the campaign countdown ends (Sat Oct 10, 6:00 PM Pacific). Set CHAIR_RUN_OPEN = "0" to force it closed or "1" to force it open.
+# Chair Run is open from the campaign opening (Sat Oct 10, 6:00 PM Pacific) until gaming stops (Tue Oct 13, 6:00 AM Pacific). Set CHAIR_RUN_OPEN = "0" to force it closed or "1" to force it open.
 X_REQUIRED = "1"   # every player must add an X handle (typed until real X login is set up)

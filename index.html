@@ -457,6 +457,8 @@ canvas.hero{display:block;image-rendering:auto;width:100%;height:100%}
 .chip.c b{display:flex;align-items:center;gap:6px;font-size:18px}
 .rbtn{pointer-events:auto;width:40px;height:40px;border-radius:14px;background:rgba(20,12,14,.62);border:1px solid rgba(255,255,255,.1);display:grid;place-items:center;margin-left:auto;cursor:pointer}
 .rbtn svg{width:16px;height:16px;fill:var(--cream)}
+.ffq{pointer-events:auto;flex:none;width:34px;height:34px;margin-right:8px;border-radius:12px;background:rgba(20,12,14,.62);border:1px solid var(--gold);color:var(--gold2);font:700 17px var(--serif);display:grid;place-items:center;cursor:pointer}
+.ffq.pulse{animation:howp 1.3s ease-in-out infinite}
 .rbtn.pulse{border-color:var(--gold);animation:howp 1.3s ease-in-out infinite}
 @keyframes howp{0%,100%{box-shadow:0 0 0 0 rgba(217,178,95,.55)}50%{box-shadow:0 0 0 9px rgba(217,178,95,0)}}
 .howov{position:absolute;inset:0;z-index:12;background:rgba(10,6,8,.78);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:54px 14px 40px;pointer-events:auto}
@@ -950,7 +952,7 @@ const VOTE_MS=(4*60+20)*60*1000;
 const voteRound=()=>Math.floor((Date.now()-EPOCH)/VOTE_MS);
 const nextVoteMs=()=>VOTE_MS-((Date.now()-EPOCH)%VOTE_MS);
 const fmtCD=ms=>{const h=Math.floor(ms/36e5),m=Math.floor(ms/6e4)%60,s=Math.floor(ms/1e3)%60;return`${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`};
-function defaultP(){return{handle:'',mimu:null,coins:0,pp:0,passPrev:0,passGoal:2500,passes:[],best:0,top:0,howSeen:0,runs:0,dist:0,totalCoins:0,cleared:[0,0,0,0,0,0,0,0],wk:weekKey(),rivals:null,ff:null,nwBest:0,q:null,streak:0,lastDay:'',glyph:null}}
+function defaultP(){return{handle:'',mimu:null,coins:0,pp:0,passPrev:0,passGoal:2500,passes:[],best:0,top:0,howSeen:0,ffHow:0,runs:0,dist:0,totalCoins:0,cleared:[0,0,0,0,0,0,0,0],wk:weekKey(),rivals:null,ff:null,nwBest:0,q:null,streak:0,lastDay:'',glyph:null}}
 function saveP(){try{localStorage.setItem(KEY,JSON.stringify(P))}catch(e){}}
 function loadP(){try{const j=localStorage.getItem(KEY);if(j){const o=JSON.parse(j);if(o&&o.mimu){o.mimu=HERO;o.top=Math.max(o.top||0,o.best||0);return Object.assign(defaultP(),o)}}}catch(e){}return null}
 
@@ -2442,7 +2444,7 @@ function buildFF(root){
     const bl=f.blocs.map(b=>{const lo=f.lobby[b.id],ch=lo!=null?lo:b.choice,a=ASSETS.find(x=>x.sym===f.opts[ch].sym),cost=b.w*3;
       return`<div class="bloc"><div><div class="n">${b.name}</div><div class="l">${b.w} weight · ${lo!=null?'<b style="color:var(--gold)">bought → '+a.sym+'</b>':'leans <b>'+a.sym+'</b>'}</div></div><button class="btn sm ${lo!=null?'ghost':''}" data-lob="${b.id}" ${lo!=null||P.coins<cost?'disabled':''}>${lo!=null?'Sold':'Court · '+cost}</button></div>`}).join('');
     const hist=f.hist.slice(-5).reverse().map(h=>`<div class="row" style="padding:8px 0;border-top:1px solid var(--line)"><span class="tag">Rd ${h.w}</span><div style="flex:1;font:500 12.5px var(--sans)">${h.sym} <span class="${h.ret>=0?'up':'down'} mono">${pct(h.ret)}</span></div><b class="mono ${h.pl>=0?'up':'down'}" style="font-size:13px">${h.pl>=0?'+':''}${fmt(h.pl)}</b></div>`).join('');
-    morph(root,`<div class="sc"><div class="ah"><div><h1>Mutual Mimu</h1><div class="sub">The Mimu Fund · round ${f.week}</div></div><div class="sp"></div><div class="pill"><span class="coin"></span>${num(P.coins)}</div></div>
+    morph(root,`<div class="sc"><div class="ah"><div><h1>Mutual Mimu</h1><div class="sub">The Mimu Fund · round ${f.week}</div></div><div class="sp"></div><button class="ffq${P.ffHow?'':' pulse'}" id="ffhow" type="button" aria-label="How Mutual Mimu works">?</button><div class="pill"><span class="coin"></span>${num(P.coins)}</div></div>
      <div class="scroll" style="padding-bottom:30px">
       <div class="card" style="border-color:rgba(217,178,95,.45)"><div class="row"><div style="font-size:30px">🔔</div><div style="flex:1"><div class="lbl" style="color:var(--gold)">Next closing bell</div><div class="bignum" id="cd" style="font-size:30px;margin-top:3px">${fmtCD(nextVoteMs())}</div></div></div>
        <div class="bar" style="margin:12px 0 8px"><i id="cdbar" style="width:${(1-nextVoteMs()/VOTE_MS)*100}%;transition:width 1s linear"></i></div>
@@ -2471,7 +2473,27 @@ function buildFF(root){
       const bl=f.blocs.find(x=>x.id===b.dataset.lob),cost=bl.w*3;if(P.coins<cost){sfx.fail();return}P.coins-=cost;f.lobby[bl.id]=f.vote;sfx.coin();toast(`🤝 <span><b>${bl.name}</b> will follow you for ${cost} $TMF</span>`);saveP();draw()});
     const s=$('#stk',root);s.oninput=()=>{P.ff.stake=+s.value;s.style.setProperty('--p',(s.max?s.value/s.max*100:0)+'%');light()};s.onchange=()=>saveP();
     const g=$('[data-go=run]',root);if(g)g.onclick=()=>{goHome();setTimeout(()=>openApp('run'),700)};
+    const hb=$('#ffhow',root);if(hb)hb.onclick=showHow;
   };
+  /* how it works: a colourful mind map */
+  const mm=(cls,ico,title,body)=>'<div class="fm '+cls+'"><i class="mmd"></i><div class="mmc"><div class="mmh"><span class="mmi">'+ico+'</span><b>'+title+'</b></div><p>'+body+'</p></div></div>';
+  function showHow(){
+    if(!P.ffHow){P.ffHow=1;saveP();const hb=$('#ffhow',root);if(hb)hb.classList.remove('pulse')}
+    const o=document.createElement('div');o.className='howov';
+    o.innerHTML='<div class="howc"><div class="mmhub"><span>&#128276;</span><b>MUTUAL MIMU</b><small>how it works</small></div><div class="mmtrunk">'+
+      mm('c-gold','🔔','Closing bell','Every <b>4 hours 20 minutes</b> the bell rings. Votes lock, the round settles, and a fresh ballot opens straight away. It rings even while you are away.')+
+      mm('c-blue','☀','Weather forecast','A guess at the market mood: risk-on, risk-off or choppy, with a &ldquo;% sure&rdquo; tag. It is a forecast, not a promise. <b>Growth and degen</b> amplify the weather. <b>Safe and gold</b> lean against it.')+
+      mm('c-violet','🗳','Proxy ballot','Four proposals, from boring to wild. Tap one to cast your vote. The room votes and the <b>biggest total wins</b>. The risk dots show how bumpy each one is, and &ldquo;last rd&rdquo; shows how it paid last time.')+
+      mm('c-green','💰','Stake','Slide how much $TMF rides on your pick, in steps of 10. A heavier stake gives you <b>more weight in the vote</b>. Your stake rides the winner, and you can never lose more than your stake.')+
+      mm('c-orange','⚡','Leverage','Choose 1x, 2x or 3x. It multiplies the win <b>and</b> the loss on your stake. Bigger swings, bigger bell.')+
+      mm('c-pink','🤝','Voting blocs','Three groups with their own leanings. Pick a proposal first, then <b>court</b> a bloc for 3 $TMF per point of its weight and it follows your pick.')+
+      mm('c-red','🏆','The bell pays','If your pick wins, your stake earns the return times your leverage. If the room goes another way you carry that result instead. No vote means you just watch from the gallery.')+
+      mm('c-silver','🏅','Season points','Every bell gives <b>+50 season points</b>, and <b>+100 more</b> when you walk away in profit. They fill your Badges meter.')+
+      mm('c-rainbow','🪑','Where $TMF comes from','Earn $TMF by running the halls in Chair Run, then bring it here to stake. Mutual Mimu unlocks once you connect Glyph in Chair Run.')+
+      '</div><button class="btn gold" id="ffx" style="margin-top:12px">Got it</button></div>';
+    root.appendChild(o);
+    $('#ffx',o).onclick=()=>o.remove();o.onclick=e=>{if(e.target===o)o.remove()};
+  }
   async function ring(){
     if(ringing)return;ringing=true;const f=P.ff,T=ffTally(f),mxT=Math.max(...T),cands=T.map((t,i)=>t===mxT?i:-1).filter(i=>i>=0),win=cands[Math.floor(Math.random()*cands.length)];
     const o=f.opts[win],a=ASSETS.find(x=>x.sym===o.sym),stake=f.vote!=null?Math.min(f.stake,Math.floor(P.coins/10)*10):0,lev=f.lev;

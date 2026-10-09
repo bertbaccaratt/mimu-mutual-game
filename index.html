@@ -1210,15 +1210,10 @@ const DOCK=[
 .kp{display:grid;grid-template-columns:repeat(3,70px);gap:14px 18px;justify-content:center}
 .kp button{width:70px;height:70px;border-radius:50%;background:#2d2c33;display:flex;flex-direction:column;align-items:center;justify-content:center;font:400 28px/1 var(--sans);transition:background .15s}
 .kp button:active{background:#55545e}.kp button small{font:600 9px var(--sans);letter-spacing:.14em;color:var(--muted);margin-top:2px;min-height:10px}
-.callov{position:absolute;inset:0;z-index:20;background:radial-gradient(420px 360px at 50% 0%,#3a1a20,transparent 70%),#0c0909;display:flex;flex-direction:column;align-items:center;padding:92px 20px 26px;gap:12px;text-align:center}
-.callov .cn{font:300 34px var(--sans);letter-spacing:.02em}
-.callov .cs{font:500 13px var(--sans);color:#ff8a80}
-.callov .ytw{width:100%;max-width:352px;height:200px;border-radius:14px;overflow:hidden;background:#000;border:1px solid var(--line2)}
-.callov .ytw iframe{width:100%;height:100%;display:block;border:0}
-.callov .cm{font:500 13px/1.4 var(--sans);color:var(--cream);max-width:300px}
-.callov .cend{margin-top:auto;width:76px;height:76px;border-radius:50%;background:#e0332f;color:#fff;font:700 11px var(--sans);display:grid;place-items:center;box-shadow:0 8px 20px rgba(224,51,47,.4)}
 .callb{margin-top:18px;width:70px;height:70px;border-radius:50%;background:#2fbd55;display:grid;place-items:center}.callb svg{width:32px;height:32px}
-.callb.end{background:#e0443c}
+.callb.end{background:#e0443c;animation:callpulse 1.3s ease-out infinite}
+@keyframes callpulse{0%{box-shadow:0 0 0 0 rgba(224,68,60,.55)}100%{box-shadow:0 0 0 22px rgba(224,68,60,0)}}
+.ythide{position:fixed;left:-400px;bottom:0;width:200px;height:200px;opacity:0;pointer-events:none;overflow:hidden}
 .camv{position:absolute;inset:0;background:#000;display:flex;flex-direction:column}
 .camv .vf{position:absolute;left:0;right:0;top:96px;bottom:150px;overflow:hidden;background:radial-gradient(circle at 50% 38%,#2a1b1f,#050304)}
 .camv .vf .hero,.camv .vf canvas{position:absolute;left:50%;top:50%;width:112%;height:auto;transform:translate(-50%,-50%);image-rendering:auto}
@@ -1374,18 +1369,17 @@ function buildPhone(root){
   };
   const resetCall=()=>{calling=false;cl.classList.remove('end');ds.innerHTML='&nbsp;'};
   const wrongNumber=()=>{
-    const ov=document.createElement('div');ov.className='callov';
-    ov.innerHTML='<div class="cn"></div><div class="cs">Call failed</div><div class="ytw"><div id="ytp"></div></div><div class="cm">We&rsquo;re sorry, but the number you dialed is not the right number. Keep trying.</div><button class="cend" type="button">End call</button>';
-    ov.querySelector('.cn').textContent=dn.textContent;root.appendChild(ov);
+    ds.innerHTML='<span style="color:#ff9d8a">We&rsquo;re sorry, but the number you dialed is not the right number. Keep trying.</span>';
+    const box=document.createElement('div');box.className='ythide';box.setAttribute('aria-hidden','true');box.innerHTML='<div id="ytp"></div>';root.appendChild(box);
     let done=false,player=null,fell=false,watchdog=null;
-    const hang=()=>{if(done)return;done=true;clearTimeout(watchdog);hangNow=null;try{if(player&&player.destroy)player.destroy()}catch(e){}ov.remove();num='';dn.textContent='';resetCall();tone(480,0,.14,.04);tone(380,.17,.2,.04)};
-    hangNow=hang;ov.querySelector('.cend').onclick=hang;
-    const fallback=()=>{if(done||fell)return;fell=true;try{if(player&&player.destroy)player.destroy()}catch(e){}ov.querySelector('.ytw').style.display='none';tone(950,0,.3,.05);tone(1400,.34,.3,.05);tone(1800,.68,.3,.05);setTimeout(hang,6500)};
+    const hang=()=>{if(done)return;done=true;clearTimeout(watchdog);hangNow=null;try{if(player&&player.destroy)player.destroy()}catch(e){}box.remove();num='';dn.textContent='';resetCall();tone(480,0,.14,.04);tone(380,.17,.2,.04)};
+    hangNow=hang;
+    const fallback=()=>{if(done||fell)return;fell=true;try{if(player&&player.destroy)player.destroy()}catch(e){}tone(950,0,.3,.05);tone(1400,.34,.3,.05);tone(1800,.68,.3,.05);setTimeout(hang,6500)};
     watchdog=setTimeout(fallback,9000);
     loadYT().then(ok=>{
       if(done||fell)return;
       if(!ok||!window.YT||!window.YT.Player)return fallback();
-      player=new window.YT.Player('ytp',{videoId:'UqHUEGWNzQQ',width:'100%',height:'200',playerVars:{autoplay:1,controls:1,rel:0,playsinline:1,modestbranding:1,fs:0,disablekb:1,iv_load_policy:3},
+      player=new window.YT.Player('ytp',{videoId:'UqHUEGWNzQQ',width:'200',height:'200',playerVars:{autoplay:1,controls:0,rel:0,playsinline:1,modestbranding:1,fs:0,disablekb:1,iv_load_policy:3},
         events:{onReady:ev=>{try{ev.target.unMute();ev.target.setVolume(100);ev.target.playVideo()}catch(x){}},
           onStateChange:ev=>{if(ev.data===1)clearTimeout(watchdog);if(ev.data===0)hang()},onError:()=>fallback()}});
     });

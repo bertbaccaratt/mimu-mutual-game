@@ -80,6 +80,8 @@ async function signToken(env, payload) {
   const body = b64u(enc.encode(JSON.stringify(payload)));
   return body + '.' + b64u(await hmac(env.SESSION_SECRET, body));
 }
+/* Every sign-in session issued before this moment is refused, so everyone has to sign in again (launch reset, 2026-10-09T23:46:42.081Z). The env value SESSIONS_VALID_AFTER can move it later. */
+const SESSIONS_VALID_AFTER = 1791589602081;
 async function readToken(env, req) {
   const m = /^Bearer (.+)$/.exec(req.headers.get('Authorization') || '');
   if (!m) return null;
@@ -88,6 +90,7 @@ async function readToken(env, req) {
   try {
     if (!safeEq(unb64u(sig), await hmac(env.SESSION_SECRET, body))) return null;
     const p = JSON.parse(new TextDecoder().decode(unb64u(body)));
+    if (p.sub && p.exp - SESSION_MS < (Number(env.SESSIONS_VALID_AFTER) || SESSIONS_VALID_AFTER)) return null;   // signed in before the launch reset
     return p.sub && p.exp > Date.now() ? p : null;          // sign-in sessions only (X proofs and OAuth state carry no "sub")
   } catch { return null; }
 }

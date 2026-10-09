@@ -2613,17 +2613,20 @@ function buildTop5(root){
   const loadTop=()=>API.j('/api/top9').then(d=>{T=d}).catch(()=>{});
   const draw=()=>{
     const all=T?T.rows:[],me=mine(),can=!!(st&&st.canSend);
+    const dn=st&&st.donate?st.donate:{open:Date.now()>=ALARM_AT&&Date.now()<CAMPAIGN.close,state:Date.now()<ALARM_AT?'early':Date.now()>=CAMPAIGN.close?'closed':'open'};
     const rows=all.filter(r=>!q||String(r.name).toLowerCase().includes(q));
     const rules=`<div class="card" style="border-color:rgba(217,178,95,.45)"><div class="lbl" style="color:var(--gold)">The rules</div>
       <ul style="margin:8px 0 0 18px;padding:0;font:400 12.5px/1.55 var(--sans);color:var(--muted)">
        <li><b style="color:var(--cream)">Total score = Chair Run points + $TMF found.</b> Everyone is ranked by it.</li>
        <li>The 5 highest totals get <b style="color:var(--gold2)">gold frames</b>. <b style="color:var(--cream)">The top 5 cannot send $TMF.</b></li>
+       <li><b style="color:var(--gold2)">Giving opens only during the 24-hour donation window</b> (Tue Oct 13, 6:00 AM PST to Wed Oct 14, 6:00 AM PST).</li>
        <li>Anyone outside the top 5 can <b style="color:var(--cream)">give all their $TMF to one top 5 runner</b> to help them, or send any amount to a player who has registered at least 1 $TMF point.</li>
        <li><b style="color:var(--cream)">$TMF given to a top 5 runner boosts them:</b> +2 Chair Run points for every $TMF.</li>
        <li>Gifts are final and can&rsquo;t be taken back. $TMF here is virtual and has no cash value.</li></ul></div>`;
     const status=!API.token?`<div class="card" style="text-align:center"><div class="sub2">Connect your Glyph in <button style="color:var(--gold2);text-decoration:underline" data-go="run">Chair Run</button> to send $TMF.</div></div>`
       :stErr?`<div class="card" style="text-align:center"><div class="sub2">${escH(stErr)}</div></div>`
       :!st?`<div class="card" style="text-align:center"><div class="sub2">Checking your seat&hellip;</div></div>`
+      :!dn.open?`<div class="card" style="border-color:rgba(217,178,95,.5)"><div class="lbl" style="color:var(--gold)">${dn.state==='early'?'Donations open soon':'Donations closed'}</div><div class="sub2" style="margin-top:4px">${dn.state==='early'?'Giving $TMF is locked until the alarm goes off. The <b style="color:var(--cream)">24-hour donation window</b> opens <b style="color:var(--cream)">Tue Oct 13 at 6:00 AM PST</b> and runs until Wed Oct 14 at 6:00 AM PST. Keep collecting $TMF until then.':'The 24-hour donation window has ended. Thanks for playing.'}</div></div>`
       :st.top9?`<div class="card" style="border-color:rgba(224,103,95,.5)"><div class="lbl" style="color:#ff8a80">Sending is locked</div><div class="sub2" style="margin-top:4px">You are <b style="color:var(--cream)">#${st.rank}</b> this week, inside the top 5, so you can&rsquo;t send $TMF. Fall out of the top 5 and the lock lifts.</div></div>`
       :`<div class="card"><div class="row"><div><div class="lbl">Your $TMF to give</div><div class="mono" style="font-size:22px;color:var(--gold2);margin-top:2px">${fmt(st.balance)}</div></div><div class="sp"></div><span class="tag" style="color:var(--up);border-color:var(--up)">${st.balance>0?'you can give':'earn some first'}</span></div>${st.rank?`<div class="sub2" style="margin-top:6px;font-size:12px">You are #${st.rank} with a total of ${fmt(st.total)}.</div>`:''}</div>`;
     const list=!T?`<div class="sub2" style="padding:8px 2px">Loading the leaderboard&hellip;</div>`
@@ -2644,6 +2647,7 @@ function buildTop5(root){
     const start=async(id,giveAll)=>{
       sfx.select();await Promise.all([loadTop(),loadStatus()]);draw();
       const r=T&&T.rows.find(x=>x.id===id);if(!r)return;
+      if(st&&st.donate&&!st.donate.open){toast(st.donate.state==='early'?'&#128274; <span>Donations open when the alarm goes off, <b>Tue 6:00 AM PST</b>.</span>':'&#128274; <span>The donation window has closed.</span>',3600);return}
       if(!st||!st.canSend){toast(st&&st.top9?'&#128274; <span>You are in the top 5 right now, so you can&rsquo;t send.</span>':'&#128274; <span>You have no $TMF to give right now.</span>',3200);return}
       if(r.tmf<1){toast('That player has no $TMF yet, so they can&rsquo;t receive.',3000);return}
       openSend(r,giveAll);

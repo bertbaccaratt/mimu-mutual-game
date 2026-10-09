@@ -39,6 +39,8 @@ RPC_33139 = "https://apechain.calderachain.xyz/http"
 RPC_1     = "https://cloudflare-eth.com"
 RPC_4663  = "https://robinhood-rpc.publicnode.com,https://robinhood.drpc.org,https://4663.rpc.thirdweb.com,https://rpc.mainnet.chain.robinhood.com"   # several = automatic fallback
 EXPLORER_4663 = "https://robinhoodchain.blockscout.com"   # keyless fallback if every RPC is busy
+DONATE_FROM = "0"            # staging: gifts always open so the tests can run
+DONATE_UNTIL = "99999999999999"
 X_REQUIRED = "1"   # every player must add an X handle (typed until real X login is set up)
 
 # test server only: judge timing after 8 inputs instead of 40 so the hold/release flow can be tested quickly

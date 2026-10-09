@@ -523,6 +523,12 @@ async function handleTop9(env, req) {
       WHERE s.week=?1 AND ${TOTAL}>0 ORDER BY ${TOTAL} DESC, s.updated_at ASC LIMIT 300`).bind(week).all()).results || [];
   return json(env, req, { week, count: rows.length, rows: rows.map((r, i) => ({ rank: i + 1, id: r.a, name: r.n, picture: r.pic || '', total: r.total, run: r.run, tmf: r.tmf, top9: i < TOP_N })) });
 }
+/* The 24-hour donation window: opens when the alarm goes off (Tue Oct 13 2026, 6:00 AM Pacific) and ends when the campaign closes (Wed Oct 14, 6:00 AM Pacific). Staging overrides it so the tests can run. */
+function donateWindow(env, now = Date.now()) {
+  const num = (v, d) => (v != null && v !== '' && Number.isFinite(Number(v))) ? Number(v) : d;
+  const from = num(env.DONATE_FROM, Date.UTC(2026, 9, 13, 13, 0, 0)), until = num(env.DONATE_UNTIL, Date.UTC(2026, 9, 14, 13, 0, 0));
+  return { from, until, open: now >= from && now < until, state: now < from ? 'early' : now >= until ? 'closed' : 'open' };
+}
 async function handleSendStatus(env, req) {
   const sess = await readToken(env, req);
   if (!sess) return json(env, req, { error: 'sign in first' }, 401);
@@ -531,13 +537,16 @@ async function handleSendStatus(env, req) {
   const [top, mine] = await Promise.all([topNine(env, week), env.DB.prepare(`SELECT ${TOTAL} AS sc, run_best, coins_total FROM scores WHERE address=?1 AND week=?2`).bind(sess.sub, week).first()]);
   const inTop = top.includes(sess.sub), balance = mine ? mine.coins_total : 0;
   const rank = mine && mine.sc > 0 ? await rankOf(env, week, TOTAL, mine.sc) : null;
-  return json(env, req, { week, balance, rank, total: mine ? mine.sc : 0, top9: inTop, canSend: !inTop && balance > 0 });
+  const dw = donateWindow(env);
+  return json(env, req, { week, balance, rank, total: mine ? mine.sc : 0, top9: inTop, canSend: dw.open && !inTop && balance > 0, donate: { open: dw.open, state: dw.state, from: dw.from, until: dw.until } });
 }
 async function handleTransfer(env, req) {
   const sess = await readToken(env, req);
   if (!sess) return json(env, req, { error: 'sign in first' }, 401);
   if (await limited(env, 'RL_RUN', sess.sub)) return tooMany(env, req);
   if (await isBanned(env, sess.sub)) return json(env, req, { error: 'blocked' }, 403);
+  const dw = donateWindow(env);
+  if (!dw.open) return json(env, req, { error: dw.state === 'early' ? 'Donations are not open yet. They open when the alarm goes off, Tue Oct 13 at 6:00 AM PST, for 24 hours.' : 'The 24-hour donation window has closed.', donate: { open: false, state: dw.state, from: dw.from, until: dw.until } }, 403);
   let b = {}; try { b = await req.json(); } catch { return json(env, req, { error: 'bad json' }, 400); }
   const to = String(b.to || '').toLowerCase(), all = b.all === true;
   let amount = Number(b.amount);

@@ -258,6 +258,7 @@ async function handleRunStart(env, req) {
     const me = await env.DB.prepare('SELECT x_handle FROM players WHERE address=?1').bind(sess.sub).first();
     if (!me || !me.x_handle) return json(env, req, { error: 'add your X handle first', needX: true }, 403);
   }
+  if (env.CHAIR_RUN_OPEN === '0') return json(env, req, { error: 'Chair Run is closed. Thanks for playing! Your scores and login are saved.', closed: true }, 403);   // runs already in progress can still finish and count
   let b = {}; try { b = await req.json(); } catch { /* optional body */ }
   if (!(await humanOk(env, b.cf, clientIp(req)))) return json(env, req, { error: 'human check failed' }, 403);
   const wallet = Math.max(0, Math.min(10000000, Math.floor(Number(b.wallet) || 0)));

@@ -263,6 +263,10 @@ body.native #screen,body.native #screen:after{border-radius:0}
 .app-i .ic{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;position:relative;box-shadow:0 8px 18px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.28),inset 0 -8px 14px rgba(0,0,0,.2)}
 .app-i .ic svg{width:34px;height:34px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4))}
 .app-i.lk{opacity:.5}
+.app-i.lk[data-open=run] .ic{filter:grayscale(1)}
+.closed-card{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:70px 26px 60px;text-align:center;background:radial-gradient(circle at 50% 0,#2a1519,#120a0c)}
+.closed-card h2{font:600 28px var(--serif);margin:0}.closed-card p{margin:0;color:var(--muted);font:400 14px/1.5 var(--sans);max-width:300px}
+.closed-card .lock{width:74px;height:74px;border-radius:22px;display:grid;place-items:center;font-size:34px;background:#2a2024;border:1px solid var(--line2);filter:grayscale(1)}
 @keyframes alwig{0%,100%{transform:rotate(0)}15%{transform:rotate(-14deg)}30%{transform:rotate(12deg)}45%{transform:rotate(-10deg)}60%{transform:rotate(8deg)}75%{transform:rotate(-4deg)}}
 @keyframes alglow{0%,100%{box-shadow:0 0 10px 2px rgba(255,30,30,.7)}50%{box-shadow:0 0 26px 9px rgba(255,30,30,.95)}}
 .pmh{font:600 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--gold);padding:18px 16px 8px}
@@ -831,7 +835,7 @@ body.enter .footbar{animation-name:chromeInB}
         <div><kbd>← →</kbd> or <kbd>A D</kbd><span>change lane (swipe left or right on a phone)</span></div>
         <div><kbd>↑</kbd> <kbd>W</kbd> <kbd>Space</kbd><span>jump a chair (swipe up or tap)</span></div>
         <div><kbd>↓</kbd> or <kbd>S</kbd><span>slide under banners (swipe down)</span></div>
-        <div><kbd>Esc</kbd> or <kbd>P</kbd><span>pause. Resuming gives you a 3-2-1.</span></div>
+        <div><kbd>No pause</kbd><span>Chair Run cannot be paused. A run keeps going until you are benched.</span></div>
       </div>
       <p><b>Connecting:</b> Chair Run is where you connect your Glyph. After you connect and pass the wallet checks, <em>Mutual Mimu</em> and texting other players unlock. Your username (your X handle) and picture show up on the Leaderboards, the Top 5 app and your texts. You need a Mimu On Ape to play, and wallets that already hold a TMF Pass or a Dengs can&rsquo;t play.</p>
       <p><b>$TMF coins</b> are your score fuel. Every coin and clean chair hop builds a <b>chain</b> that multiplies your score up to x5, but four seconds without a gain breaks it. <b>Power-ups</b> show up on the floor: a <b>Bell</b> 🔔 coin magnet, a <b>Briefcase</b> 💼 shield and a <b>Star</b> ✨ gilded x2 (double points for 10 seconds). Hit a milestone every 250m for a bonus. Lose your last life and you can pay 30 $TMF for a <b>Second Wind</b> to try again. It works <b>one time per run</b>.</p>
@@ -1248,7 +1252,7 @@ function buildHome(anim){
     <button class="w" data-open="lb"><div class="l">Weekly rank</div><div class="v">${rank?'#'+rank:'—'}</div><div class="l" style="margin-top:6px">${rank&&rank<=5?'<span style="color:var(--up)">in the top 5</span>':rank?'chasing top 5':'not ranked yet'}</div>
       <div class="row" style="margin-top:8px;gap:6px"><div style="width:24px;height:24px;border-radius:8px;overflow:hidden;border:1px solid var(--line2)">${meAv()}</div><div class="l" style="color:var(--cream)">${escH(P.handle)}</div></div></button>
    </div>
-   <div class="grid">${APPS.map(a=>`<button class="app-i${a.id==='ff'&&!GATE.ok?' lk':''}" data-open="${a.id}"${a.id==='ff'&&!GATE.ok?' disabled aria-disabled="true" title="Connect Glyph in Chair Run first"':''}><div class="ic" style="background:${a.bg}">${a.ic}${a.id==='top5'&&P.coins>0?'<i class="bd">♥</i>':''}</div>${a.n}</button>`).join('')}
+   <div class="grid">${APPS.map(a=>`<button class="app-i${(a.id==='ff'&&!GATE.ok)||(a.id==='run'&&!CHAIR_RUN_OPEN)?' lk':''}" data-open="${a.id}"${a.id==='ff'&&!GATE.ok?' disabled aria-disabled="true" title="Connect Glyph in Chair Run first"':''}><div class="ic" style="background:${a.bg}">${a.ic}${a.id==='top5'&&P.coins>0?'<i class="bd">♥</i>':''}</div>${a.n}</button>`).join('')}
     <button class="app-i alarm" data-open="alarm"><div class="ic" style="background:linear-gradient(135deg,#ff8a4c,#d4362f)">${IC.alarm}</div>Alarm</button>
     <button class="app-i mail" data-open="mail"><div class="ic" style="background:linear-gradient(135deg,#5aa8ff,#1d5fd6)">${IC.mail}${PM.mail?`<i class="bd">${PM.mail}</i>`:''}</div>Mimu Mail</button>
    </div>
@@ -1658,11 +1662,11 @@ const API={
       catch(e){err=e;if(e.status&&e.status<500&&e.status!==429)break;await new Promise(z=>setTimeout(z,700*(i+1)+Math.random()*400))}
     }
     if(!r)throw err;
-    API.token=r.token;return r;
+    API.token=r.token;saveSess(r.token,r.expiresAt,addr);return r;
   },
   submit(kind,value,dist,nw){
     if(!API.on()||!API.token)return Promise.resolve(null);
-    return API.j('/api/score',{method:'POST',body:JSON.stringify({kind,value,dist,nw})}).catch(e=>{if(e.status===401){API.token=null;GATE.ok=false;try{toast('🔒 <span>Your session ended. Reopen <b>Chair Run</b> and connect Glyph again to save scores.</span>',5200)}catch(x){}}return null});
+    return API.j('/api/score',{method:'POST',body:JSON.stringify({kind,value,dist,nw})}).catch(e=>{if(e.status===401){API.token=null;GATE.ok=false;clearSess();try{toast('🔒 <span>Your session ended. Reopen <b>Chair Run</b> and connect Glyph again to save scores.</span>',5200)}catch(x){}}return null});
   }
 };
 
@@ -1753,6 +1757,19 @@ const myRank=kind=>board(kind).findIndex(x=>x.me)+1;
   fetch(GAME_CONFIG.api.replace(/\/$/,'')+'/api/hit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid:v}),keepalive:true}).catch(()=>{});
 }catch(e){}})();
 const GATE={ok:false};
+const CHAIR_RUN_OPEN=false;   /* Chair Run is closed: the tile is greyed out and no new runs start. Login, scores and the other apps stay as they are. */
+/* keep players signed in across reloads: the server's own 12-hour session token is remembered in this browser */
+const SESS_KEY='mimu_sess';
+function saveSess(tok,exp,addr){try{localStorage.setItem(SESS_KEY,JSON.stringify({t:tok,e:exp,a:String(addr||'').toLowerCase()}))}catch(e){}}
+function clearSess(){try{localStorage.removeItem(SESS_KEY)}catch(e){}}
+function restoreSess(){
+  try{
+    const s=JSON.parse(localStorage.getItem(SESS_KEY)||'null');
+    if(!s||!s.t||!(s.e>Date.now()+60000))return false;
+    if(!P||!P.glyph||!P.glyph.address||String(P.glyph.address).toLowerCase()!==s.a)return false;
+    API.token=s.t;GATE.ok=true;return true;
+  }catch(e){return false}
+}
 const GEM_SVG='<svg viewBox="0 0 88 88"><defs><linearGradient id="gmA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3d0"/><stop offset=".5" stop-color="#d9b25f"/><stop offset="1" stop-color="#8a5a14"/></linearGradient><linearGradient id="gmB" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff7ad9"/><stop offset=".5" stop-color="#7aa7ff"/><stop offset="1" stop-color="#7affd2"/></linearGradient></defs><path d="M44 6l30 24-30 52L14 30z" fill="url(#gmA)"/><path d="M44 6l30 24H14z" fill="#fff" fill-opacity=".38"/><path d="M14 30h60L44 82z" fill="url(#gmB)" fill-opacity=".34"/><path d="M44 6v76M14 30l30 52 30-52" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1.4"/></svg>';
 const demoGate=()=>{if(gatesConfigured()&&!/^(localhost|127\.0\.0\.1)$/.test(location.hostname))return null;const m=/[?&]gate=(\w+)/.exec(location.search);return m?m[1]:null};
 function loadGlyph(){
@@ -1770,10 +1787,21 @@ function applyIdentity(){
 }
 function disconnectGlyph(){
   try{if(window.MimuGlyph)window.MimuGlyph.disconnect()}catch(e){}
-  P.glyph=null;API.token=null;GATE.ok=false;saveP();syncLocks();stopPMPoll();
+  P.glyph=null;API.token=null;GATE.ok=false;clearSess();saveP();syncLocks();stopPMPoll();
 }
 function buildRun(root){
   const ctl={inner:null,dead:false,destroy(){ctl.dead=true;if(ctl.inner&&ctl.inner.destroy)ctl.inner.destroy()}};
+  const closed=()=>{
+    root.innerHTML=`<div class="sc"><div class="closed-card"><div class="lock">\u{1FA91}</div><h2>Chair Run is closed</h2>
+      <p>Thanks for running the halls. Your scores, your login and your $TMF are saved. Mutual Mimu, the Top 5, the leaderboards and your texts are still open.</p>
+      <button class="btn gold" id="crh" style="max-width:260px">Back to the phone</button></div></div>`;
+    const b=root.querySelector('#crh');if(b)b.onclick=()=>goHome();
+  };
+  if(!CHAIR_RUN_OPEN){
+    if(GATE.ok){closed();return ctl}
+    runGate(root,ctl,closed);                                   /* signing in still works, so the other apps can unlock */
+    return ctl;
+  }
   if(GATE.ok){ctl.inner=buildRunGame(root);return ctl}
   runGate(root,ctl,()=>{ctl.inner=buildRunGame(root)});
   return ctl;
@@ -1910,7 +1938,7 @@ function runGate(root,ctl,enter){
     show(`<div class="gl-hero"><div class="badge">✓</div><div class="card3"><img src="mimu-hero.jpg" alt="Mimu On Ape"><div class="holo"></div><div class="tag"><span>Mimu On Ape</span><span>verified</span></div></div>
       <i class="spark" style="left:6%;top:18%"></i><i class="spark" style="right:4%;top:36%;animation-delay:.8s"></i><i class="spark" style="left:14%;bottom:10%;animation-delay:1.5s"></i></div>
       <h2>Mimu <em>found</em></h2><p>Welcome, <b>${escH(g.name)}</b>. The halls are yours.</p>
-      <div class="acts"><button class="btn gold" id="ge" style="padding:16px">Enter the halls</button><button class="btn ghost" id="gs" style="max-width:300px">Switch account</button></div>`);
+      <div class="acts"><button class="btn gold" id="ge" style="padding:16px">${CHAIR_RUN_OPEN?'Enter the halls':'Continue'}</button><button class="btn ghost" id="gs" style="max-width:300px">Switch account</button></div>`);
     $('#ge',root).onclick=()=>{sfx.select();enter()};
     $('#gs',root).onclick=()=>{disconnectGlyph();intro()};
   };
@@ -1939,7 +1967,7 @@ function buildRunGame(root){
   ensureRivals();
   root.innerHTML=`<div class="sc run"><canvas id="rc"></canvas>
    <div class="rflash" id="rfl"></div>
-   <div class="rhud"><div class="rtop"><div class="chip"><small>Score</small><b id="rsc">0</b></div><div class="chip c"><small>$TMF</small><b><span class="coin"></span><span id="rco">0</span></b></div><div class="rbtn" id="rhow" style="margin-left:auto" aria-label="Game features" role="button"><b style="font:700 17px var(--serif);color:var(--gold2)">?</b></div><div class="rbtn" id="rps" style="margin-left:0"><svg viewBox="0 0 16 16"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg></div></div>
+   <div class="rhud"><div class="rtop"><div class="chip"><small>Score</small><b id="rsc">0</b></div><div class="chip c"><small>$TMF</small><b><span class="coin"></span><span id="rco">0</span></b></div><div class="rbtn" id="rhow" style="margin-left:auto" aria-label="Game features" role="button"><b style="font:700 17px var(--serif);color:var(--gold2)">?</b></div></div>
     <div class="lives" id="rlv"><i></i><i></i><i></i></div><div class="pw" id="rpw"></div><div class="cmb" id="rcmb"><b></b><small>chain</small><div class="cb"><i></i></div></div><div id="rmsg"></div></div>
    <div class="rcount" id="rcn"></div>
    <div class="rcard" id="rcard"></div></div>`;
@@ -2012,12 +2040,11 @@ function buildRunGame(root){
     if(S.st==='over'&&(e.key==='Enter'||e.key===' ')){e.preventDefault();const b=$('#ra',root);if(b)b.click();return}
     if(S.st==='revive'&&(e.key==='Enter'||e.key===' ')){e.preventDefault();const b=$('#rv1',root);if(b)b.click();return}
     const m=({ArrowLeft:'L',a:'L',A:'L',ArrowRight:'R',d:'R',D:'R',ArrowUp:'U',w:'U',W:'U',' ':'U',ArrowDown:'D',s:'D',S:'D'})[e.key];
-    if(m){e.preventDefault();if(S.st==='idle')startCount();else act(m)}else if(e.key==='Escape'||e.key==='p')pause()};
+    if(m){e.preventDefault();if(S.st==='idle')startCount();else act(m)}};
   addEventListener('keydown',key);
-  $('#rps',root).onclick=()=>pause();
   const howBtn=$('#rhow',root);if(!P.howSeen)howBtn.classList.add('pulse');
   function showHow(){
-    if(S.st==='run')pause();
+    if(S.st==='run')return;                                   /* the guide is for before a run, since the game cannot be paused */
     if(!P.howSeen){P.howSeen=1;saveP();howBtn.classList.remove('pulse')}
     const o=document.createElement('div');o.className='howov';
     o.innerHTML='<div class=\"howc\"><div class=\"mmhub\"><span>&#129681;</span><b>CHAIR RUN</b><small>how it all works</small></div><div class=\"mmtrunk\"><div class=\"fm c-blue\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">↔</span><b>Move</b></div><p>Swipe or use the arrow keys / A D W S. Left and right dodge. Up jumps chairs. Down slides under banners.</p></div></div><div class=\"fm c-gold\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">🪙</span><b>$TMF coins</b></div><p>Grab coins as you run. They feed your chain, your score and your total, and you can give them to the Top 5 during the donation window.</p></div></div><div class=\"fm c-pink\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">⚡</span><b>Power-ups</b></div><p>Floating pickups on the floor. Run into one to grab it.</p><div class=\"mmk\"><div class=\"k k1\"><span>✨</span><b>Star</b><em>Gilded x2. Double points and double coins for 10 seconds.</em></div><div class=\"k k2\"><span>💼</span><b>Briefcase</b><em>Shield. Blocks your next hit, then it breaks.</em></div><div class=\"k k3\"><span>🔔</span><b>Bell</b><em>Coin magnet. Pulls nearby coins to you for 9 seconds.</em></div></div></div></div><div class=\"fm c-violet\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">🗳</span><b>Ballot Gate</b></div><p>Pick a lane at each gate. Your vote decides what the closing bell pays, as a $TMF dividend or a drawdown.</p></div></div><div class=\"fm c-orange\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">🔥</span><b>Chains</b></div><p>Clear coins and chairs back to back to build a chain. Every 10 in a row raises your multiplier, up to x5. Four seconds without a gain breaks it.</p></div></div><div class=\"fm c-red\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">❤</span><b>Second Wind</b></div><p>Lose your last life and you can pay <b>30 $TMF to try again, ONE TIME per run</b>. Use it and the next fall ends the run.</p></div></div><div class=\"fm c-rainbow\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">🌈</span><b>Milestones</b></div><p>Every 1 million points pops a surprise. Every 10 million the runway changes color.</p></div></div><div class=\"fm c-silver\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">🏅</span><b>Long-run badges</b></div><p>Reach 1M, 10M, 20M, 50M and 100M in a single run to unlock special badges in the Badges app. Just for fun, separate from the leaderboard.</p></div></div><div class=\"fm c-green\"><i class=\"mmd\"></i><div class=\"mmc\"><div class=\"mmh\"><span class=\"mmi\">✅</span><b>Fair scores</b></div><p>Every run is replayed and checked by the server. Daily quests and your streak give bonus season points.</p></div></div></div><button class=\"btn gold\" id=\"hwx\" style=\"margin-top:12px\">Got it</button></div>';
@@ -2026,11 +2053,12 @@ function buildRunGame(root){
   }
   howBtn.onclick=showHow;
   function pause(){
+    return;   /* no pausing in Chair Run */
     if(S.st==='run'){S.st='paused';showCard(`<div class="h2" style="font-size:26px">Paused</div><div class="sub2" style="margin:6px 0 16px">The hall can wait.</div><button class="btn gold" id="rb1">Resume</button><button class="btn ghost" id="rb2" style="margin-top:8px">End run</button>`);
       $('#rb1',root).onclick=()=>resumeCount();$('#rb2',root).onclick=()=>{hideCard();gameOver(true)}}
   }
   function resumeCount(){hideCard();S.st='resume';let n=3;const step=()=>{if(!alive||S.st!=='resume')return;hud.cn.innerHTML=n>0?`<span>${n}</span>`:'';tone(n>0?440:660,0,.08,.04,'triangle');if(n===0){S.st='run';return}n--;setTimeout(step,450)};step()}
-  const vis=()=>{if(document.hidden)pause()};document.addEventListener('visibilitychange',vis);
+  const vis=()=>{};
   function showCard(h){hud.card.classList.remove('on');hud.card.innerHTML=h;requestAnimationFrame(()=>requestAnimationFrame(()=>hud.card.classList.add('on')))}
   function hideCard(){hud.card.classList.remove('on')}
   /* ---- flow ---- */
@@ -3053,7 +3081,8 @@ function setVolStep(n,quiet){
   });
   const st=document.createElement('style');st.textContent='.prop [role=button]:focus-visible,.card-hit:focus-visible{outline:2px solid #f0d28a;outline-offset:3px}';document.head.appendChild(st);
 })();
-P=loadP()||defaultP();if(API.on())refreshBoards().then(()=>{const h=document.getElementById('home');if(!curApp&&P.mimu&&h&&h.innerHTML)buildHome()});muted=!!P.mute;setVolStep(P.vol==null?7:P.vol,true);if(P.mimu)ensureRivals();tick();buildLock();
+P=loadP()||defaultP();if(restoreSess()){try{syncLocks();startPMPoll()}catch(e){}}
+if(API.on())refreshBoards().then(()=>{const h=document.getElementById('home');if(!curApp&&P.mimu&&h&&h.innerHTML)buildHome()});muted=!!P.mute;setVolStep(P.vol==null?7:P.vol,true);if(P.mimu)ensureRivals();tick();buildLock();
 </script>
 </body>
 </html>

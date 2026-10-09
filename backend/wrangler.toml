@@ -8,7 +8,7 @@ preview_urls = false
 [[ratelimits]]
 name = "RL_AUTH"          # sign-in: nonce + auth, per IP
 namespace_id = "1001"
-simple = { limit = 10, period = 60 }
+simple = { limit = 60, period = 60 }
 
 [[ratelimits]]
 name = "RL_RUN"           # starting runs and uploading run chunks, per player
@@ -35,7 +35,7 @@ GATE_PASS  = "4663:0xED37605FF0e513e46d50B26244DEb2024189751a"   # TMF Pass (Rob
 GATE_DENGS = "33139:0x2CF92fe634909A9cF5e41291f54e5784d234cF8d"   # Dengs (ApeChain, ERC-721): holding one BLOCKS play
 
 # Public RPC per chain id used for the holdings checks (swap for your own provider key if you like).
-RPC_33139 = "https://apechain.calderachain.xyz/http"
+RPC_33139 = "https://apechain.calderachain.xyz/http,https://rpc.apechain.com/http,https://33139.rpc.thirdweb.com"   # several = automatic fallback
 RPC_1     = "https://cloudflare-eth.com"
 RPC_4663  = "https://robinhood-rpc.publicnode.com,https://robinhood.drpc.org,https://4663.rpc.thirdweb.com,https://rpc.mainnet.chain.robinhood.com"   # several = automatic fallback
 EXPLORER_4663 = "https://robinhoodchain.blockscout.com"   # keyless fallback if every RPC is busy

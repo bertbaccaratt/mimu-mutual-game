@@ -137,13 +137,21 @@ async function holds(env, gate, owner, key) {
     try { v = await holdsViaExplorer(env, gate, owner); }
     catch (e2) { if (row) return !!row.held; throw e1; }            // an old answer beats failing the sign-in
   }
-  await env.DB.prepare('INSERT INTO holdings(address,gate,held,expires) VALUES(?1,?2,?3,?4) ON CONFLICT(address,gate) DO UPDATE SET held=?3, expires=?4').bind(addr, key, v ? 1 : 0, now + HOLD_TTL).run();
+  await env.DB.prepare('INSERT INTO holdings(address,gate,held,expires) VALUES(?1,?2,?3,?4) ON CONFLICT(address,gate) DO UPDATE SET held=?3, expires=?4').bind(addr, key, v ? 1 : 0, now + (v || key !== 'mimu' ? HOLD_TTL : 60000)).run();      // a 'no Mimu' answer is only remembered for a minute, so a fresh buyer gets in fast
   return v;
 }
 async function checkGates(env, owner) {
   const g = { mimu: parseGate(env.GATE_MIMU), pass: parseGate(env.GATE_PASS), dengs: parseGate(env.GATE_DENGS) };
   const out = { mimu: null, pass: null, dengs: null };            // null = rule not configured yet
-  for (const k of Object.keys(g)) if (g[k]) out[k] = await holds(env, g[k], owner, k);
+  for (const k of ['mimu', 'pass', 'dengs']) {
+    if (!g[k]) continue;
+    try { out[k] = await holds(env, g[k], owner, k); }
+    catch (e) {
+      if (k === 'mimu') throw e;                                      // cannot tell whether they hold a Mimu: ask them to retry
+      console.error('side check unavailable', k, String(e && e.message || e));
+      out[k] = false;                                                 // a blocker rule we cannot read right now never locks a holder out
+    }
+  }
   let reason = '';
   if (out.pass === true) reason = 'pass';
   else if (out.dengs === true) reason = 'dengs';

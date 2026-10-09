@@ -1611,7 +1611,13 @@ const API={
     const n=await API.j('/api/nonce'),addr=P.glyph.address;
     const msg=`Sign in to Chair Run × Mutual Mimu\nThis only proves you own this wallet. It costs nothing, sends no transaction and cannot move your assets.\n\nDomain: ${location.host}\nAddress: ${addr}\nNonce: ${n.nonce}\nIssued: ${n.issuedAt}`;
     const sig=await window.MimuGlyph.signMessage(msg);
-    const r=await API.j('/api/auth',{method:'POST',body:JSON.stringify({address:addr,nonce:n.nonce,issuedAt:n.issuedAt,signature:sig,name:P.glyph.name,picture:P.glyph.picture})});
+    const body=JSON.stringify({address:addr,nonce:n.nonce,issuedAt:n.issuedAt,signature:sig,name:P.glyph.name,picture:P.glyph.picture});
+    let r,err;
+    for(let i=0;i<4&&!r;i++){                                   /* same signature, only the request is retried when the service is busy */
+      try{r=await API.j('/api/auth',{method:'POST',body});err=null}
+      catch(e){err=e;if(e.status&&e.status<500&&e.status!==429)break;await new Promise(z=>setTimeout(z,700*(i+1)+Math.random()*400))}
+    }
+    if(!r)throw err;
     API.token=r.token;return r;
   },
   submit(kind,value,dist,nw){
@@ -1770,15 +1776,22 @@ function runGate(root,ctl,enter){
     show(`<div class="gl-ring" id="gring"><div class="pic">${g.picture?imgTag(g.picture):pcvM(P.mimu||HERO,'gv')}</div></div><div class="gl-name">${escH(g.name)}</div><div class="gl-addr">${escH(shortAddr(g.address))}</div>
       <div class="gl-rows">${defs.map(([k,t])=>`<div class="gl-row" data-k="${k}"><div class="st"></div><span>${t}</span><em></em></div>`).join('')}</div><div class="gl-scan" id="gscan"><i></i></div>`);
     if(P.mimu===null||!g.picture)paintAll();
-    const demo=demoGate();
+    const demo=demoGate();let serverRes=null,serverErr=null;
     const found=(async()=>{
       if(demo)return{mimu:demo!=='nomimu',pass:demo==='pass',dengs:demo==='dengs'};
       if(!gatesConfigured())return{mimu:true,pass:false,dengs:false};          /* no rules set yet: everyone passes */
+      if(API.on()){                                                            /* the server decides (cached, several RPC fallbacks); no fragile browser-side chain calls */
+        let r=null,err=null;
+        try{r=await API.login()}catch(e){err=e}
+        if(r){serverRes=r;const q=r.gates||{};return{mimu:q.mimu==null?true:!!q.mimu,pass:!!q.pass,dengs:!!q.dengs}}
+        if(err&&err.body&&err.body.gates){serverErr=err;const q=err.body.gates;return{mimu:q.mimu==null?true:!!q.mimu,pass:!!q.pass,dengs:!!q.dengs}}
+        serverErr=err||new Error('no answer');throw serverErr;
+      }
       const h=await window.MimuGlyph.checkHoldings(GAME_CONFIG.gates,g.address);
       return{mimu:h.mimu==null?true:!!h.mimu,pass:h.pass==null?false:!!h.pass,dengs:h.dengs==null?false:!!h.dengs};
     })();
     let res;
-    try{res=await found}catch(e){if(alive())problem('Couldn’t check your wallet','The holdings check failed. Try again in a moment.',verify);return}
+    try{res=await found}catch(e){if(alive())problem('Couldn’t sign you in',e&&e.status===401?'The signature was rejected. Try again.':e&&e.status===429?'Lots of players are signing in right now. Wait a few seconds and press Try again.':e&&e.status===403&&e.body&&e.body.error==='blocked'?'This wallet has been blocked.':'It is busy right now. Press Try again, it usually works on the second try.',verify);return}
     const rows={};$$('.gl-row',root).forEach(r=>rows[r.dataset.k]=r);
     const marks={mimu:[res.mimu,'Mimu found','No Mimu'],pass:[!res.pass,'None found','Pass found'],dengs:[!res.dengs,'None found','Dengs found']};
     await sleep(500);
@@ -1791,13 +1804,8 @@ function runGate(root,ctl,enter){
     }
     let reason=res.pass?'pass':res.dengs?'dengs':!res.mimu?'nomimu':'',needX=false;
     /* the server re-checks everything and is the source of truth once it is live */
-    if(!reason&&API.on()&&!demo){
-      try{const r=await API.login();if(r&&r.gates&&!r.gates.allowed)reason=r.gates.reason;else if(r){if(r.x&&(!P.x||P.x.handle!==r.x))P.x={handle:r.x,proof:null,pic:''};if(r.needX)needX=true}}
-      catch(e){
-        if(e.body&&e.body.gates&&e.body.gates.reason)reason=e.body.gates.reason;
-        else{if(alive())problem('Couldn’t sign you in',e.status===401?'The signature was rejected. Try again.':'The leaderboard service didn’t answer. Try again in a moment.',verify);return}
-      }
-    }
+    if(serverErr&&serverErr.body&&serverErr.body.gates&&serverErr.body.gates.reason)reason=serverErr.body.gates.reason;
+    else if(serverRes){const r=serverRes;if(r.gates&&!r.gates.allowed)reason=r.gates.reason||reason;else{if(r.x&&(!P.x||P.x.handle!==r.x))P.x={handle:r.x,proof:null,pic:''};if(r.needX)needX=true}}
     await sleep(500);if(!alive())return;
     const ring=$('#gring',root);if(ring)ring.classList.add(reason?'bad':'done');
     await sleep(420);if(!alive())return;

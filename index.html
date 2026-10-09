@@ -457,6 +457,17 @@ canvas.hero{display:block;image-rendering:auto;width:100%;height:100%}
 .chip.c b{display:flex;align-items:center;gap:6px;font-size:18px}
 .rbtn{pointer-events:auto;width:40px;height:40px;border-radius:14px;background:rgba(20,12,14,.62);border:1px solid rgba(255,255,255,.1);display:grid;place-items:center;margin-left:auto;cursor:pointer}
 .rbtn svg{width:16px;height:16px;fill:var(--cream)}
+.rbtn.pulse{border-color:var(--gold);animation:howp 1.3s ease-in-out infinite}
+@keyframes howp{0%,100%{box-shadow:0 0 0 0 rgba(217,178,95,.55)}50%{box-shadow:0 0 0 9px rgba(217,178,95,0)}}
+.howov{position:absolute;inset:0;z-index:12;background:rgba(10,6,8,.78);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:54px 14px 40px;pointer-events:auto}
+.howc{width:100%;max-height:100%;overflow-y:auto;scrollbar-width:thin;padding:20px 18px;border-radius:26px;background:linear-gradient(180deg,rgba(43,31,33,.98),rgba(24,15,17,.99));border:1px solid var(--line2)}
+.howc .fxr{padding:8px 0;border-top:1px solid rgba(255,255,255,.07)}
+.howc .fxr b{display:block;font:700 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--gold2);margin-bottom:2px}
+.howc .fxr span{font:400 12.5px/1.45 var(--sans);color:var(--cream);opacity:.88}
+.lgb{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}
+.lgb div{text-align:center}.lgb svg{width:100%;height:auto;display:block}
+.lgb small{display:block;margin-top:4px;font:600 9px var(--mono);color:var(--cream);opacity:.85}
+.lgb .lk svg{filter:grayscale(1) brightness(.5)}.lgb .lk small{opacity:.45}
 .lives{display:flex;gap:5px;margin-top:8px}
 .lives i{width:20px;height:20px;border-radius:6px;background:linear-gradient(180deg,#e7c675,#b98d34);border:1px solid #fff3;transition:transform .4s var(--spring),opacity .3s,filter .3s;box-shadow:0 2px 6px #0006}
 .lives i.x{opacity:.25;filter:grayscale(1);transform:scale(.7)}
@@ -817,6 +828,7 @@ body.enter .footbar{animation-name:chromeInB}
         <div><b>Chair Run</b><span>The runner. Beat your best score every day. This is where you connect your Glyph.</span></div>
         <div><b>Mutual Mimu</b><span>The boardroom: stake $TMF, vote and join the lobby. A closing bell rings every 4h 20m and settles the round. It stays greyed out until you connect your Glyph in Chair Run.</span></div>
         <div><b>Leaderboards</b><span>Weekly boards for the best run and for $TMF found. Every score is checked by the server, which replays your run, so everyone is ranked fairly. Boards reset weekly.</span></div>
+        <div><b>Long-run badges</b><span>Reach 1M, 10M, 20M, 50M or 100M in a single Chair Run for a special badge. Every 1M pops a surprise and every 10M the runway changes color. These are just for fun and do not affect the leaderboard.</span></div>
         <div><b>Badges</b><span>Your season meter, badges, chair gallery (jump 25 of each to unlock), patron status and career stats.</span></div>
         <div><b>Top 5</b><span>Every player ranked by total score (Chair Run points + $TMF found), with the top 5 in gold frames. The top 5 cannot send $TMF. Anyone outside the top 5 can give all their $TMF to one top 5 player to help them (+2 points for every $TMF), or send $TMF to any player who has registered at least 1 $TMF point. Ranks change live, so whether you can give changes with them.</span></div>
         <div><b>Alarm</b><span>The campaign countdown and schedule, in Los Angeles time. The icon lights up and wiggles when gaming stops.</span></div>
@@ -922,9 +934,9 @@ const VOTE_MS=(4*60+20)*60*1000;
 const voteRound=()=>Math.floor((Date.now()-EPOCH)/VOTE_MS);
 const nextVoteMs=()=>VOTE_MS-((Date.now()-EPOCH)%VOTE_MS);
 const fmtCD=ms=>{const h=Math.floor(ms/36e5),m=Math.floor(ms/6e4)%60,s=Math.floor(ms/1e3)%60;return`${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`};
-function defaultP(){return{handle:'',mimu:null,coins:0,pp:0,passPrev:0,passGoal:2500,passes:[],best:0,runs:0,dist:0,totalCoins:0,cleared:[0,0,0,0,0,0,0,0],wk:weekKey(),rivals:null,ff:null,nwBest:0,q:null,streak:0,lastDay:'',glyph:null}}
+function defaultP(){return{handle:'',mimu:null,coins:0,pp:0,passPrev:0,passGoal:2500,passes:[],best:0,top:0,howSeen:0,runs:0,dist:0,totalCoins:0,cleared:[0,0,0,0,0,0,0,0],wk:weekKey(),rivals:null,ff:null,nwBest:0,q:null,streak:0,lastDay:'',glyph:null}}
 function saveP(){try{localStorage.setItem(KEY,JSON.stringify(P))}catch(e){}}
-function loadP(){try{const j=localStorage.getItem(KEY);if(j){const o=JSON.parse(j);if(o&&o.mimu){o.mimu=HERO;return Object.assign(defaultP(),o)}}}catch(e){}return null}
+function loadP(){try{const j=localStorage.getItem(KEY);if(j){const o=JSON.parse(j);if(o&&o.mimu){o.mimu=HERO;o.top=Math.max(o.top||0,o.best||0);return Object.assign(defaultP(),o)}}}catch(e){}return null}
 
 /* ---------------- Mimu pixel art (original placeholder art, inspired by the collection) ---------------- */
 const FURS=[['#e8913a','#f6c47a'],['#6bb04a','#bde08f'],['#8a64d6','#cdb6f4'],['#4a8fd8','#aad2f7'],['#d65a5a','#f4aaa2'],['#9a9aa6','#d6d6de'],['#3a3a48','#7a7a8c'],['#e0c14a','#f8ea9f']];
@@ -1349,20 +1361,20 @@ function buildMsgs(root){
   const list=()=>{
     root.innerHTML=`<div class="sc"><div class="sysh"><h1>Messages</h1></div><div class="scroll" style="padding:0 0 60px">${MSGS.map(x=>{const u=!(P.mr&&P.mr[x.id]);return`<button class="cv" data-th="${x.id}">${av(x)}<div class="mid"><b>${x.n}</b><span>${x.m[x.m.length-1]}</span></div><div class="tm">${x.t}</div>${u?'<i class="ud"></i>':''}</button>`}).join('')}<div id="pmbox"></div></div></div>`;
     $$('[data-th]',root).forEach(b=>b.onclick=()=>thread(b.dataset.th));
-    inList=true;paintPM();if(pmOn()){loadTop().then(()=>{if(inList)paintPM()});pmPoll()}
+    inList=true;paintPM();if(pmOn()){loadTop().then(()=>{if(inList)paintPM()});pmPoll();clearInterval(PM.plT);PM.plT=setInterval(()=>{if(!inList||!document.body.contains(root))return clearInterval(PM.plT);PM.plAt=0;loadTop().then(()=>{if(inList&&document.activeElement!==$('#pmq',root))paintPM()})},15000)}
   };
   /* ---- live chats with other players ---- */
   let inList=true,q='',thrTimer=null;
   const me=()=>P.glyph&&P.glyph.address?P.glyph.address.toLowerCase():'';
-  const loadTop=()=>(PM.top&&Date.now()-PM.topAt<60000)?Promise.resolve():API.j('/api/top9').then(d=>{PM.top=d;PM.topAt=Date.now()}).catch(()=>{});
+  const loadTop=()=>(PM.pl&&Date.now()-PM.plAt<15000)?Promise.resolve():API.j('/api/players').then(d=>{PM.pl=d;PM.plAt=Date.now()}).catch(()=>{});
   const paintPM=()=>{
     const box=$('#pmbox',root);if(!box)return;
     if(!pmOn()){box.innerHTML=`<div class="pmh">Leaderboard texts</div><div class="pmlock"><b>&#128274; Locked</b><span>Connect your Glyph in Chair Run to text the other players on the leaderboard.</span></div>`;return}
     const th=PM.threads.map(t=>`<button class="cv" data-pt="${escH(t.with)}" data-nm="${escH(t.name)}" data-pc="${escH(t.picture||'')}">${pAv(t.picture,t.name)}<div class="mid"><b>${escH(t.name)}</b><span>${t.mine?'You: ':''}${escH(t.last)}</span></div><div class="tm">${tmAgo(t.ts)}</div>${t.unread?'<i class="ud"></i>':''}</button>`).join('');
-    const rows=(PM.top?PM.top.rows:[]).filter(r=>r.id!==me()&&(!q||String(r.name).toLowerCase().includes(q)));
+    const rows=(PM.pl?PM.pl.players:[]).filter(r=>r.id!==me()&&(!q||String(r.name).toLowerCase().includes(q)));
     box.innerHTML=`<div class="pmh">Your chats</div>${th||'<div class="pmem">No chats yet. Pick a player below and say something.</div>'}
-      <div class="pmh">Players on the leaderboard</div><div class="pmsr"><input id="pmq" placeholder="search a player" value="${escH(q)}" autocomplete="off"></div>
-      <div class="pmlist">${rows.length?rows.slice(0,150).map(r=>`<button class="cv" data-pt="${escH(r.id)}" data-nm="${escH(r.name)}" data-pc="${escH(r.picture||'')}">${pAv(r.picture)}<div class="mid"><b>${escH(r.name)}</b><span>#${r.rank} &middot; ${fmt(r.total)} points${r.top9?' &middot; top 5':''}</span></div><div class="tm">Text</div></button>`).join(''):`<div class="pmem">${PM.top?'No players match.':'Loading players&hellip;'}</div>`}</div>`;
+      <div class="pmh">All players${PM.pl?' &middot; '+PM.pl.players.length:''}</div><div class="pmsr"><input id="pmq" placeholder="search a player" value="${escH(q)}" autocomplete="off"></div>
+      <div class="pmlist">${rows.length?rows.slice(0,150).map(r=>`<button class="cv" data-pt="${escH(r.id)}" data-nm="${escH(r.name)}" data-pc="${escH(r.picture||'')}">${pAv(r.picture)}<div class="mid"><b>${escH(r.name)}</b><span>${r.total>0?fmt(r.total)+' points':'signed in'}</span></div><div class="tm">Text</div></button>`).join(''):`<div class="pmem">${PM.pl?'No players match.':'Loading players&hellip;'}</div>`}</div>`;
     $$('[data-pt]',box).forEach(b=>b.onclick=()=>{ac();sfx.tap();pmThread(b.dataset.pt,b.dataset.nm,b.dataset.pc)});
     const qi=$('#pmq',box);if(qi)qi.oninput=()=>{q=qi.value.trim().toLowerCase();const pos=qi.selectionStart;paintPM();const n=$('#pmq',root);if(n){n.focus();n.setSelectionRange(pos,pos)}};
   };
@@ -1864,7 +1876,7 @@ function runGate(root,ctl,enter){
     };
   };
   const welcome=()=>{
-    GATE.ok=true;syncLocks();applyIdentity();refreshBoards();startPMPoll();
+    GATE.ok=true;syncLocks();applyIdentity();refreshBoards();startPMPoll();API.j('/api/mybest').then(d=>{if(d&&d.best>(P.top||0)){P.top=d.best;saveP()}}).catch(()=>{});
     sfx.win();confetti(46);
     const g=P.glyph;
     show(`<div class="gl-hero"><div class="badge">✓</div><div class="card3"><img src="mimu-hero.jpg" alt="Mimu On Ape"><div class="holo"></div><div class="tag"><span>Mimu On Ape</span><span>verified</span></div></div>
@@ -1899,7 +1911,7 @@ function buildRunGame(root){
   ensureRivals();
   root.innerHTML=`<div class="sc run"><canvas id="rc"></canvas>
    <div class="rflash" id="rfl"></div>
-   <div class="rhud"><div class="rtop"><div class="chip"><small>Score</small><b id="rsc">0</b></div><div class="chip c"><small>$TMF</small><b><span class="coin"></span><span id="rco">0</span></b></div><div class="rbtn" id="rps"><svg viewBox="0 0 16 16"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg></div></div>
+   <div class="rhud"><div class="rtop"><div class="chip"><small>Score</small><b id="rsc">0</b></div><div class="chip c"><small>$TMF</small><b><span class="coin"></span><span id="rco">0</span></b></div><div class="rbtn" id="rhow" style="margin-left:auto" aria-label="Game features" role="button"><b style="font:700 17px var(--serif);color:var(--gold2)">?</b></div><div class="rbtn" id="rps" style="margin-left:0"><svg viewBox="0 0 16 16"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg></div></div>
     <div class="lives" id="rlv"><i></i><i></i><i></i></div><div class="pw" id="rpw"></div><div class="cmb" id="rcmb"><b></b><small>chain</small><div class="cb"><i></i></div></div><div id="rmsg"></div></div>
    <div class="rcount" id="rcn"></div>
    <div class="rcard" id="rcard"></div></div>`;
@@ -1912,8 +1924,19 @@ function buildRunGame(root){
   const avatars=[...P.rivals.slice(0,6).map(r=>r.m),mimu].map(m=>{const c=document.createElement('canvas');c.width=c.height=m.hero?160:32;mimuFront(c,m);if(m.hero)heroImg.addEventListener('load',()=>mimuFront(c,m));return c});
   const FOG='#1a0f12',pal={cA:[],cB:[],mA:[],mB:[],gd:[]};
   for(let i=0;i<16;i++){const t=Math.pow(i/15,1.3)*.92;pal.cA.push(mix('#7a2430',FOG,t));pal.cB.push(mix('#5f1b26',FOG,t));pal.mA.push(mix('#cdbda3',FOG,t));pal.mB.push(mix('#b9a98f',FOG,t));pal.gd.push(mix('#d9b25f',FOG,t))}
+  /* runway colour: changes every 10 million (display only; the game itself is untouched) */
+  const TIERS=[['#7a2430','#5f1b26','#d9b25f'],['#2a4aa8','#1f3780','#8fb4ff'],['#1f8f5a','#16704a','#9ff0c4'],['#7a35a8','#5d2882','#e0b3ff'],['#1f8f98','#177079','#9ff5ff'],['#c0821c','#8f5f12','#fff0a0'],['#a82a6a','#7e1f50','#ffb3dc'],['#3a3a44','#26262e','#e0e0ff'],['#b34a14','#85360d','#ffd0a0'],['#1a1a2e','#10101c','#39ff88']];
+  function setTier(n){const T=TIERS[n%TIERS.length];for(let i=0;i<16;i++){const k=Math.pow(i/15,1.3)*.92;pal.cA[i]=mix(T[0],FOG,k);pal.cB[i]=mix(T[1],FOG,k);pal.gd[i]=mix(T[2],FOG,k)}}
+  const MQ=['Chairs are scared','Hype spat his coffee','TMF Pass is nervous','The banners bow','Your Mimu is a menace','Hall monitor claps','Carpet is blushing','Ghosts salute you','The bell rings for you','Legendary hallway'];
+  const MBADGE={1:'Million Mile',10:'Ten Million Club',20:'Twenty Mil Legend',50:'Fifty Mil Immortal',100:'Hundred Mil Myth'};
+  function milestone(m){
+    if((P.top||0)<m*1e6){P.top=m*1e6;saveP()}
+    if(m%10===0){setTier(m/10);msg('🌈 '+m+' MILLION · new runway!','big');confetti(36);sfx.win()}
+    else{msg('🪑 '+m+' MILLION · '+MQ[(m-1)%MQ.length],'big');sfx.power();if(m%5===0)confetti(18)}
+    if(MBADGE[m])setTimeout(()=>msg('🏅 Badge unlocked: '+MBADGE[m],'big'),750);
+  }
   const freshSeed=()=>1+Math.floor(Math.random()*4294967294);
-  let sim=MimuSim.create(freshSeed(),{wallet:0}),S=sim.S;Object.assign(S,{st:'idle',part:[],shake:0,bestShown:false,near:false});
+  let sim=MimuSim.create(freshSeed(),{wallet:0}),S=sim.S;Object.assign(S,{st:'idle',part:[],shake:0,bestShown:false,near:false,mile:0});
   let raf,last=performance.now(),msgN=0,acc=0,pv=null,inputs=[],runSession=null,verified=false,up={from:0,seq:0,busy:false},alive=true,lastChain=-1,lastCm=-1,pwSig='';
   const hud={sc:$('#rsc',root),co:$('#rco',root),lv:$$('#rlv i',root),pw:$('#rpw',root),msg:$('#rmsg',root),card:$('#rcard',root),cn:$('#rcn',root),fl:$('#rfl',root)};
   function msg(t,cls=''){const d=document.createElement('div');d.className=cls;d.textContent=t;d.style.top=(msgN++%3)*28+'px';hud.msg.appendChild(d);setTimeout(()=>d.remove(),2300)}
@@ -1954,7 +1977,7 @@ function buildRunGame(root){
   }
   let sx0=null,sy0=null,done=false,t0=0;
   const sc=$('.run',root);
-  sc.onpointerdown=e=>{if(e.target.closest('.rcard,.rbtn'))return;sx0=e.clientX;sy0=e.clientY;done=false;t0=performance.now()};
+  sc.onpointerdown=e=>{if(e.target.closest('.rcard,.rbtn,.howov'))return;sx0=e.clientX;sy0=e.clientY;done=false;t0=performance.now()};
   sc.onpointermove=e=>{if(sx0==null||done)return;const dx=e.clientX-sx0,dy=e.clientY-sy0;if(Math.hypot(dx,dy)>22){done=true;if(Math.abs(dx)>Math.abs(dy))act(dx>0?'R':'L');else act(dy<0?'U':'D')}};
   sc.onpointerup=()=>{if(sx0!=null&&!done&&performance.now()-t0<250)act('U');sx0=null};
   const key=e=>{if(curApp!=='run')return;
@@ -1964,6 +1987,26 @@ function buildRunGame(root){
     if(m){e.preventDefault();if(S.st==='idle')startCount();else act(m)}else if(e.key==='Escape'||e.key==='p')pause()};
   addEventListener('keydown',key);
   $('#rps',root).onclick=()=>pause();
+  const howBtn=$('#rhow',root);if(!P.howSeen)howBtn.classList.add('pulse');
+  function showHow(){
+    if(S.st==='run')pause();
+    if(!P.howSeen){P.howSeen=1;saveP();howBtn.classList.remove('pulse')}
+    const o=document.createElement('div');o.className='howov';
+    o.innerHTML='<div class="howc"><div class="lbl" style="color:var(--gold)">Chair Run</div><div class="h2" style="font-size:25px;margin:2px 0 10px">Game <em>features</em></div>'+
+      '<div class="fxr"><b>Move</b><span>Swipe or use the arrow keys / A D W S. Left and right dodge, up jumps chairs, down slides under banners.</span></div>'+
+      '<div class="fxr"><b>$TMF</b><span>Grab the coins as you run. They add to your total and you can give them to Top 5 players.</span></div>'+
+      '<div class="fxr"><b>Ballot Gate</b><span>Pick a lane at each gate. Your vote decides what the bell pays.</span></div>'+
+      '<div class="fxr"><b>Power-ups</b><span>Shield blocks a hit, Magnet pulls coins in, and the multiplier boosts your score for a short time.</span></div>'+
+      '<div class="fxr"><b>Chains</b><span>Clear obstacles back to back to build a chain and a bigger multiplier. Slip up and it resets.</span></div>'+
+      '<div class="fxr"><b>Second wind</b><span>When you are benched you can spend $TMF to keep running.</span></div>'+
+      '<div class="fxr"><b>Milestones</b><span>Every 1 million points pops a surprise. Every 10 million the runway changes color.</span></div>'+
+      '<div class="fxr"><b>Long-run badges</b><span>Reach 1M, 10M, 20M, 50M and 100M in one run to unlock special badges in the Badges app. They are just for fun and do not touch the leaderboard.</span></div>'+
+      '<div class="fxr"><b>Scores</b><span>Every run is replayed and checked by the server, so the leaderboard is fair. Daily quests and your streak give bonus season points.</span></div>'+
+      '<button class="btn gold" id="hwx" style="margin-top:6px">Got it</button></div>';
+    root.querySelector('.sc').appendChild(o);
+    $('#hwx',o).onclick=()=>o.remove();o.onclick=e=>{if(e.target===o)o.remove()};
+  }
+  howBtn.onclick=showHow;
   function pause(){
     if(S.st==='run'){S.st='paused';showCard(`<div class="h2" style="font-size:26px">Paused</div><div class="sub2" style="margin:6px 0 16px">The hall can wait.</div><button class="btn gold" id="rb1">Resume</button><button class="btn ghost" id="rb2" style="margin-top:8px">End run</button>`);
       $('#rb1',root).onclick=()=>resumeCount();$('#rb2',root).onclick=()=>{hideCard();gameOver(true)}}
@@ -1978,8 +2021,8 @@ function buildRunGame(root){
     showCard(`<div class="row"><div style="width:54px;height:54px;border-radius:14px;overflow:hidden;border:1px solid var(--gold);flex:none">${meAv()}</div><div><div class="lbl" style="color:var(--gold)">Chair Run · TMF × Mimu On Ape</div><div class="h2" style="font-size:24px">Run the <em>halls</em></div></div></div>
     <div class="hintbar"><div><b>↔</b>dodge</div><div><b>↑</b>jump chairs</div><div><b>↓</b>slide banners</div></div>
     <div class="sub2" style="font-size:12.5px;margin-bottom:14px">Grab $TMF, hop the chairs, and pick a lane at each <b style="color:var(--gold2)">Ballot Gate</b>: your vote decides what the bell pays. Best this week: <b class="mono" style="color:var(--gold2)">${fmt(P.best)}</b></div>
-    ${questHTML()}<button class="btn gold" id="rgo" style="padding:16px">Run</button>`);
-    paintAll();$('#rgo',root).onclick=()=>{ac();startCount()};
+    ${questHTML()}<button class="btn gold" id="rgo" style="padding:16px">Run</button><button class="btn ghost" id="rhw" style="margin-top:8px;font-size:12.5px">Game features</button>`);
+    paintAll();$('#rgo',root).onclick=()=>{ac();startCount()};$('#rhw',root).onclick=()=>showHow();
   }
   function startCount(){
     if(S.st!=='idle')return;hideCard();reset();S.st='count';let n=3;verified=false;runSession=null;
@@ -2018,7 +2061,7 @@ function buildRunGame(root){
   }
   function gameOver(quit){
     if(S.st==='over')return;S.st='over';beatStop();
-    const score=Math.floor(S.score),prevBest=P.best;if(score>P.best)P.best=score;
+    const score=Math.floor(S.score),prevBest=P.best;if(score>P.best)P.best=score;if(score>(P.top||0))P.top=score;
     const dist=S.deadDist!==undefined?S.deadDist:S.dist;
     P.runs++;P.dist+=dist;P.coins+=S.coins;P.totalCoins+=S.coins;S.cleared.forEach((n,i)=>P.cleared[i]+=n);
     const qd=trackQ(score);let pp=Math.floor(score/5)+S.coins*2;qd.forEach(q=>pp+=q.sp);
@@ -2054,7 +2097,7 @@ function buildRunGame(root){
   function newRun(seed,wallet){
     const keep=S?{st:S.st,part:S.part}:{st:'idle',part:[]};
     sim=MimuSim.create(seed,{wallet});S=sim.S;
-    Object.assign(S,{st:keep.st,part:keep.part,shake:0,bestShown:false,near:false,deadDist:undefined});
+    Object.assign(S,{st:keep.st,part:keep.part,shake:0,bestShown:false,near:false,deadDist:undefined,mile:0});setTier(0);
     inputs=[];acc=0;pv=null;lastChain=-1;lastCm=-1;
   }
   function stepSim(realDt){
@@ -2277,6 +2320,7 @@ function buildRunGame(root){
       for(const p of S.part){p.l-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=240*dt}S.part=S.part.filter(p=>p.l>0);
       if(P.best>0&&!S.near&&S.score>P.best*.85&&S.score<=P.best){S.near=true;msg('So close to your best…','')}
       if(P.best>0&&S.score>P.best&&!S.bestShown){S.bestShown=true;msg('🏆 New weekly best!','big');sfx.win()}
+      {const ml=Math.floor(S.score/1e6);if(ml>(S.mile||0)){for(let m=(S.mile||0)+1;m<=ml;m++)milestone(m);S.mile=ml}}
       if(S.chain!==lastChain||S.cm!==lastCm){lastChain=S.chain;lastCm=S.cm;cmbUI(false)}else if(S.chain>0)cmbEl.querySelector('i').style.width=Math.max(0,S.ct/4*100)+'%';
       const sig=(S.shield>0?'S':'')+(S.magnet>0?'M'+Math.ceil(S.magnet):'')+(S.mult>0?'X'+Math.ceil(S.mult):'');if(sig!==pwSig){pwSig=sig;updPW()}
     }
@@ -2333,6 +2377,9 @@ function buildLB(root){
 /* =====================================================================
    PASS VAULT
    ===================================================================== */
+/* long-run achievement badges: purely for fun, nothing to do with the leaderboard */
+const LONG_BADGES=[[1e6,'1M','Million Mile','#cd7f32','#f3c18a'],[1e7,'10M','Ten Million Club','#9aa6b6','#f1f5fb'],[2e7,'20M','Twenty Mil Legend','#d9b25f','#fff0b8'],[5e7,'50M','Fifty Mil Immortal','#3fb6d8','#c9f4ff'],[1e8,'100M','Hundred Mil Myth','#d24fb0','#ffd3f1']];
+const medalSVG=(b,i)=>`<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="lg${i}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${b[4]}"/><stop offset="1" stop-color="${b[3]}"/></linearGradient></defs><path d="M20 3h10l6 22H26zM34 3h10L38 25H28z" fill="${b[3]}" opacity=".75"/><circle cx="32" cy="40" r="19" fill="url(#lg${i})" stroke="#1a0f12" stroke-width="2.5"/><circle cx="32" cy="40" r="14.5" fill="none" stroke="#1a0f12" stroke-opacity=".35" stroke-width="1.5"/><text x="32" y="45" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-weight="700" font-size="${b[1].length>3?10:12}" fill="#1a0f12">${b[1]}</text></svg>`;
 function buildVault(root){
   const draw=()=>{
     const m=passMeter(),next=P.passGoal-P.pp;
@@ -2341,6 +2388,7 @@ function buildVault(root){
       <div class="dash"></div><div class="row"><div class="lbl" style="color:var(--cream)">Season meter</div><div class="sp"></div><b class="mono" style="color:var(--gold2)">${fmt(P.pp)} / ${fmt(P.passGoal)} SP</b></div>
       <div class="bar" style="margin-top:9px;background:#0004"><i style="width:${m*100}%"></i></div><div class="lbl" style="color:var(--cream);margin-top:8px;opacity:.8">${fmt(next)} SP to the next badge · runs and bell votes both count</div></div>
      <div class="card"><div class="lbl">Badges unlocked</div>${P.passes.length?`<div class="row" style="flex-wrap:wrap;margin-top:10px">${P.passes.map(p=>`<span class="tag" style="color:var(--gold2);border-color:var(--gold)"><span class="pmini"></span>#${String(p.n).padStart(3,'0')}</span>`).join('')}</div>`:'<div class="sub2" style="margin-top:6px">None yet. Run a few halls.</div>'}</div>
+     <div class="card"><div class="row"><div class="lbl">Long-run badges</div><div class="sp"></div><div class="lbl">best run ${fmt(P.top||0)}</div></div><div class="lgb">${LONG_BADGES.map((b,i)=>`<div class="${(P.top||0)>=b[0]?'':'lk'}">${medalSVG(b,i)}<small>${b[2]}</small></div>`).join('')}</div><div class="sub2" style="margin-top:8px;font-size:11.5px">Reach 1M, 10M, 20M, 50M or 100M points in a single Chair Run. Just for fun, separate from the leaderboard.</div></div>
      <div class="card"><div class="row" style="margin-bottom:10px"><div class="lbl">Chair gallery</div><div class="sp"></div><div class="lbl">jump 25 to unlock</div></div><div class="chairs">${CHAIRS.map((c,i)=>{const n=P.cleared[i],u=n>=25;return`<div class="chr ${u?'un':''} ${n>0?'':'lk'}">${chairCv(i)}<small>${Math.min(n,25)}/25${u?' ✦':''}</small></div>`}).join('')}</div></div>
      <div class="card"><div class="lbl" style="margin-bottom:10px">Your Mimu</div><div class="row" style="gap:14px"><div style="width:96px;height:96px;border-radius:18px;overflow:hidden;border:1.5px solid var(--gold);flex:none;background:#000">${pcvM(HERO,'vs0')}</div><div class="sub2" style="font-size:12.5px">Official artwork. Wardrobe and headwear unlocks are coming to the Vault in a later season.</div></div></div>
      <div class="card"><div class="row"><div class="lbl">Patron status</div><div class="sp"></div><span class="tag" style="color:var(--gold2);border-color:var(--gold)">${patronTier()}</span></div><div class="sub2" style="margin-top:6px;font-size:12.5px">${P.patron?`You have given ${fmt(P.patron)} $TMF to other players.`:'Send $TMF to another player in the Top 5 app to become a patron.'}</div></div>
@@ -2349,7 +2397,7 @@ function buildVault(root){
     paintAll();paintChairs(root);
     $('#rst',root).onclick=()=>{if(confirm('Reset all progress?')){localStorage.removeItem(KEY);location.reload()}};
   };
-  draw();return{destroy(){}};
+  draw();if(pmOn())API.j('/api/mybest').then(d=>{if(d&&d.best>(P.top||0)&&document.body.contains(root)){P.top=d.best;saveP();draw()}}).catch(()=>{});return{destroy(){}};
 }
 
 /* =====================================================================

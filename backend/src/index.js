@@ -430,6 +430,18 @@ async function msgAuth(env, req) {
   if (await limited(env, 'RL_RUN', 'msg:' + sess.sub)) return { err: tooMany(env, req) };
   return { me: sess.sub };
 }
+/* every player who has signed in (not just the ones with a score), for the text app's list */
+async function handlePlayers(env, req) {
+  const a = await msgAuth(env, req); if (a.err) return a.err;
+  const rows = (await env.DB.prepare(`SELECT p.address id, p.name, ${picSql(req)} pic, (SELECT ${TOTAL} FROM scores s WHERE s.address=p.address AND s.week=?1) total FROM players p WHERE p.address<>?2 AND p.address<>?3 AND NOT EXISTS (SELECT 1 FROM bans b WHERE b.address=p.address) ORDER BY (total IS NULL), total DESC, p.updated_at DESC LIMIT 5000`).bind(weekNow(), HYPE, a.me).all()).results || [];
+  return json(env, req, { players: rows.map((r) => ({ id: r.id, name: r.name, picture: r.pic, total: r.total || 0 })) });
+}
+/* the player's own best single run ever (earned by running only, boosts and $TMF not included): used for the long-run badges */
+async function handleMyBest(env, req) {
+  const a = await msgAuth(env, req); if (a.err) return a.err;
+  const r = await env.DB.prepare('SELECT MAX(run_best) b FROM scores WHERE address=?1').bind(a.me).first();
+  return json(env, req, { best: (r && r.b) || 0 });
+}
 async function handleMsgThreads(env, req) {
   const a = await msgAuth(env, req); if (a.err) return a.err;
   const me = a.me;
@@ -697,7 +709,7 @@ async function handleAdmin(env, req, url) {
       q('SELECT COUNT(*) c FROM visitors WHERE last_seen>?1', Date.now() - 24 * 3600 * 1000).first(),
       top(SCORE), top('coins_total'),
       q("SELECT r.id, r.address a, p.name n, p.x_handle x, r.score, r.coins, r.last_tick ticks, r.flags, r.ended_at t FROM runs r LEFT JOIN players p ON p.address=r.address WHERE r.status='held' ORDER BY r.ended_at DESC LIMIT 50").all(),
-      q(`SELECT p.address a, p.name n, p.glyph_name g, ${picSql(req)} pic, p.x_handle x, (p.x_id IS NOT NULL) xv, p.updated_at t, (SELECT 1 FROM bans b WHERE b.address=p.address) banned FROM players p WHERE p.address<>'${HYPE}' ORDER BY p.updated_at DESC LIMIT 1000`).all(),
+      q(`SELECT p.address a, p.name n, p.glyph_name g, ${picSql(req)} pic, p.x_handle x, (p.x_id IS NOT NULL) xv, p.updated_at t, (SELECT 1 FROM bans b WHERE b.address=p.address) banned FROM players p WHERE p.address<>'${HYPE}' ORDER BY p.updated_at DESC LIMIT 5000`).all(),
       q('SELECT COUNT(*) c FROM bans').first(),
       q('SELECT t.ts, t.amount, t.boost, t.sender sa, t.recipient ra, ps.name sn, pr.name rn FROM transfers t LEFT JOIN players ps ON ps.address=t.sender LEFT JOIN players pr ON pr.address=t.recipient ORDER BY t.id DESC LIMIT 50').all(),
       q('SELECT m.id, m.ts, m.body, m.sender sa, m.recipient ra, ps.name sn, pr.name rn FROM messages m LEFT JOIN players ps ON ps.address=m.sender LEFT JOIN players pr ON pr.address=m.recipient ORDER BY m.id DESC LIMIT 100').all(),
@@ -796,6 +808,8 @@ export default {
       if (url.pathname === '/api/avatar' && req.method === 'POST') return handleAvatarPost(env, req);
       if (url.pathname.startsWith('/api/avatar/') && req.method === 'GET') return handleAvatarGet(env, req, url);
       if (url.pathname === '/api/top9' && req.method === 'GET') return handleTop9(env, req);
+      if (url.pathname === '/api/players' && req.method === 'GET') return handlePlayers(env, req);
+      if (url.pathname === '/api/mybest' && req.method === 'GET') return handleMyBest(env, req);
       if (url.pathname === '/api/send/status' && req.method === 'GET') return handleSendStatus(env, req);
       if (url.pathname === '/api/transfer' && req.method === 'POST') return handleTransfer(env, req);
       if (url.pathname === '/api/x/start' && req.method === 'GET') { if (await limited(env, 'RL_AUTH', clientIp(req))) return tooMany(env, req); return handleXStart(env, req, url); }

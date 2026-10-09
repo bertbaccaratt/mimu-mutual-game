@@ -502,7 +502,8 @@ function start(){
   buildDigits(0);showCount(0);
   campTick();greet();paintSnd();
   refresh();paintLive();pollLive(true);
-  clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},15000);
+  clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)refresh()},10000);
+  if(!window._visBound){window._visBound=1;document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});addEventListener('focus',()=>refresh())}   /* a tab that was in the background catches up the moment it is looked at */
 }
 function logout(bad){
   try{sessionStorage.removeItem('mimu-admin')}catch(e){}

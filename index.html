@@ -28,7 +28,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,500;1,6..72,700&display=swap" rel="stylesheet">
+<script>try{if(localStorage.getItem('mimu_nda')==='1')document.documentElement.className+=' nda-ok'}catch(e){}</script>
 <style>
+.nda-ok #nda{display:none!important}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 :root{
   --bg:#130d0f;--bg2:#1a1214;--panel:#211719;--panel2:#2b1f21;--line:#3b2b2e;--line2:#4a3639;
@@ -2985,7 +2987,8 @@ function setVolStep(n,quiet){
 /* ---- cinematic NDA gate: sign it, then the iris opens on the desk ---- */
 (function(){
   const el=document.getElementById('nda');if(!el)return;
-  /* shown on every visit and every refresh, by design */
+  /* signed once: remembered in this browser, so returning visitors go straight to the desk */
+  try{if(localStorage.getItem('mimu_nda')==='1'){el.remove();return}}catch(e){}
   const $1=s=>el.querySelector(s),doc=$1('#ndaDoc'),pad=$1('#ndaPad'),cv=pad.querySelector('canvas'),ctx=cv.getContext('2d'),go=$1('#ndaGo'),chk=$1('#ndaChk'),typed=$1('#ndaTyped');
   $1('#ndaNo').textContent=String(Math.floor(1000+Math.random()*8999));
   $1('#ndaDate').textContent=new Date().toLocaleDateString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',year:'numeric'}).toUpperCase();
@@ -3011,7 +3014,7 @@ function setVolStep(n,quiet){
     if(go.disabled)return;go.disabled=true;
     if(useTyped){fit();pad.style.display='';const n=typed.value.trim();ctx.font='700 44px Caveat, cursive';ctx.fillStyle='#1b2f8c';ctx.fillText(n,6,56)}
     try{await document.fonts.ready}catch(e){}
-    doc.classList.add('signed');
+    doc.classList.add('signed');try{localStorage.setItem('mimu_nda','1')}catch(e){}
     setTimeout(()=>{try{ac();tone(70,0,.3,.22,'sine',32);tone(900,0,.05,.08,'square');tone(1600,.06,.04,.05,'square')}catch(e){}doc.classList.add('shake');$1('#ndaFlash').classList.add('on')},330);
     setTimeout(()=>{doc.classList.remove('shake');doc.classList.add('leave');try{tone(300,0,.9,.05,'sawtooth',1100);setTimeout(()=>{tone(784,0,.3,.05,'triangle');tone(1047,.1,.5,.05,'triangle');tone(1568,.22,.7,.04,'sine')},900)}catch(e){}},1750);
     setTimeout(()=>{el.classList.add('out');document.body.classList.add('enter')},2250);

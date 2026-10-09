@@ -706,8 +706,16 @@ async function handleAdmin(env, req, url) {
   }
   if (path === 'live' && req.method === 'GET') {                       // runs happening right now (a ping in the last 25 seconds), newest first
     const since = Date.now() - 25000;
-    const rows = (await env.DB.prepare("SELECT r.id, p.name n, r.started_at st, COALESCE(r.last_beat, r.started_at) lb, COALESCE(r.live_score,0) sc, COALESCE(r.live_dist,0) d, COALESCE(r.live_coins,0) c FROM runs r LEFT JOIN players p ON p.address=r.address WHERE r.status='open' AND COALESCE(r.last_beat, r.started_at)>?1 ORDER BY lb DESC").bind(since).all()).results || [];
-    return out({ now: Date.now(), count: rows.length, runs: rows.slice(0, 3) });
+    const week = weekNow();
+    const rows = (await env.DB.prepare(`SELECT r.id, r.address a, p.name n, p.x_handle x, ${picSql(req)} pic, r.started_at st, COALESCE(r.last_beat, r.started_at) lb, COALESCE(r.live_score,0) sc, COALESCE(r.live_dist,0) d, COALESCE(r.live_coins,0) c, r.last_tick tk FROM runs r LEFT JOIN players p ON p.address=r.address WHERE r.status='open' AND COALESCE(r.last_beat, r.started_at)>?1 ORDER BY COALESCE(r.live_score,0) DESC, lb DESC`).bind(since).all()).results || [];
+    const nine = rows.slice(0, 9);
+    for (const r of nine) {                                            // where each live player stands on this week's leaderboard
+      const s = await env.DB.prepare(`SELECT run_best, coins_total, runs, ${TOTAL} AS total FROM scores WHERE address=?1 AND week=?2`).bind(r.a, week).first();
+      r.best = s ? s.run_best : 0; r.tmf = s ? s.coins_total : 0; r.runs = s ? s.runs : 0; r.total = s ? s.total : 0;
+      r.rank = s && s.total > 0 ? await rankOf(env, week, TOTAL, s.total) : null;
+      r.a = r.a.slice(0, 6) + '…' + r.a.slice(-4);
+    }
+    return out({ now: Date.now(), count: rows.length, runs: nine });
   }
   if (path === 'dashboard' && req.method === 'GET') {
     const week = weekNow(), q = (sql, ...a) => env.DB.prepare(sql).bind(...a);

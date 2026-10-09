@@ -110,11 +110,18 @@ td.n{width:48px;white-space:nowrap;color:var(--gold);font:700 15px var(--mono)}t
 /* live runs */
 .live3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--gap);padding:20px}
 @media(max-width:560px){.live3{grid-template-columns:minmax(0,1fr)}}
-.lsq{aspect-ratio:1/.82;border-radius:18px;border:3px solid var(--red);background:radial-gradient(circle at 50% 0,#2a0c0c,#140808);box-shadow:0 0 22px rgba(255,77,77,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px;text-align:center;overflow:hidden;position:relative;transition:border-color .3s,background .3s,box-shadow .3s}
+.lsq{min-height:196px;border-radius:18px;border:3px solid var(--red);background:radial-gradient(circle at 50% 0,#2a0c0c,#140808);box-shadow:0 0 22px rgba(255,77,77,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px;text-align:center;overflow:hidden;position:relative;transition:border-color .3s,background .3s,box-shadow .3s}
 .lsq.on{border-color:var(--green);background:radial-gradient(circle at 50% 0,#0e3a1d,#07140b);box-shadow:0 0 30px rgba(47,211,107,.5)}
 .lsq .runner{font-size:22px;animation:bob 1s ease-in-out infinite}
 @keyframes bob{50%{transform:translateX(5px) translateY(-2px)}}
 .lsq .nm{font:600 12.5px var(--mono);color:#fff;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lsq .rk{position:absolute;left:10px;top:9px;font:700 11px var(--mono);letter-spacing:.06em;padding:3px 8px;border-radius:99px;background:#0b2a16;color:#7dffa8;border:1px solid #1f8f4a}
+.lsq .rk.r1{background:#3a2a00;color:#ffd466;border-color:#ffc233;box-shadow:0 0 14px rgba(255,194,51,.5)}.lsq .rk.r2{background:#262a33;color:#dfe5f0;border-color:#9aa6b6}.lsq .rk.r3{background:#35200f;color:#f3b27a;border-color:#cd7f32}
+.lsq .bd{position:absolute;right:10px;top:9px;font:600 10.5px var(--mono);color:#9fd3ff}
+.lsq.top1{border-color:var(--gold);box-shadow:0 0 34px rgba(255,194,51,.55)}
+.lsq .row2{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 10px;font:500 10.5px var(--mono);color:#a7c9b4}
+.lsq .row2 b{color:#e6fff0;font-weight:600}
+.lsq .pic{width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid #1f8f4a;background:#0b2a16}
 .lsq .sc{font:700 clamp(30px,4.6vw,50px)/1 var(--cond);color:#7dffa8;font-variant-numeric:tabular-nums;text-shadow:0 0 22px rgba(47,211,107,.6)}
 .lsq small{font:500 10.5px var(--mono);color:#a7c9b4;letter-spacing:.06em}
 .lsq em{font:600 12px var(--mono);color:#7dffa8;font-style:normal;letter-spacing:.1em}
@@ -196,7 +203,7 @@ td.n{width:48px;white-space:nowrap;color:var(--gold);font:700 15px var(--mono)}t
     </div>
   </section>
 
-  <section class="sec a-green"><h2>🏃 Live Chair Runs <small id="livecount">happening now</small></h2><div class="live3" id="live3"></div></section>
+  <section class="sec a-green"><h2>🏃 Live Chair Runs <small id="livecount">happening now · top 9 by live score</small></h2><div class="live3" id="live3"></div></section>
 
   <div class="row2">
     <section class="mailbox" aria-label="Send email to all phones">
@@ -381,13 +388,19 @@ let LIVE_RUNS=[],LIVE_INIT=false;const LIVE_SEEN=new Set();
 function paintLive(){
   const box=$('#live3');if(!box)return;
   const now=Date.now(),mmss=ms=>{const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
-  box.innerHTML=[0,1,2].map(i=>{const r=LIVE_RUNS[i];return r?`<div class="lsq on"><span class="pulse"></span><div class="runner">🏃</div><div class="nm">${esc(r.n||'player')}</div><div class="sc">${nf(r.sc)}</div><small>${nf(r.d)} m &middot; ${nf(r.c)} $TMF</small><em data-st="${r.st}">${mmss(now-r.st)}</em></div>`:'<div class="lsq"><i class="spin"></i></div>'}).join('');
+  box.innerHTML=[0,1,2,3,4,5,6,7,8].map(i=>{const r=LIVE_RUNS[i];if(!r)return'<div class="lsq"><i class="spin"></i></div>';
+    const pic=r.pic&&/^https:\/\//.test(r.pic)?`<img class="pic" src="${esc(r.pic)}" alt="" referrerpolicy="no-referrer" loading="lazy">`:'<div class="runner">🏃</div>';
+    const age=Math.max(0,Math.round((now-r.lb)/1000));
+    return`<div class="lsq on ${i===0?'top1':''}"><span class="rk r${i+1}">${i===0?'👑 ':''}LIVE #${i+1}</span><span class="bd">${r.rank?'board #'+r.rank:'not ranked yet'}</span>${pic}<div class="nm">${esc(r.n||'player')}</div><div class="sc">${nf(r.sc)}</div>
+      <div class="row2"><span><b>${nf(r.d)}</b> m</span><span><b>${nf(r.c)}</b> $TMF</span><span>time <b data-st="${r.st}">${mmss(now-r.st)}</b></span></div>
+      <div class="row2"><span>week best <b>${nf(r.best)}</b></span><span>runs <b>${nf(r.runs)}</b></span><span>total <b>${nf(r.total)}</b></span></div>
+      <small>${esc(r.a)}${r.x?' &middot; @'+esc(r.x):''} &middot; ping ${age}s ago</small></div>`}).join('');
 }
 async function pollLive(force){
   if($('#app').hidden||(!force&&document.hidden))return;
-  try{const d=await call('live');LIVE_RUNS=d.runs||[];LIVE_RUNS.forEach(r=>{if(!LIVE_SEEN.has(r.id)){if(LIVE_SEEN.size||LIVE_INIT){toast('🏃 '+(r.n||'A player')+' just started a run');ding(660,990)}LIVE_SEEN.add(r.id)}});LIVE_INIT=true;$('#livecount').textContent=d.count?d.count+' running now':'waiting for runs';paintLive()}catch(e){}
+  try{const d=await call('live');LIVE_RUNS=d.runs||[];LIVE_RUNS.forEach(r=>{if(!LIVE_SEEN.has(r.id)){if(LIVE_SEEN.size||LIVE_INIT){toast('🏃 '+(r.n||'A player')+' just started a run');ding(660,990)}LIVE_SEEN.add(r.id)}});LIVE_INIT=true;$('#livecount').textContent=d.count?d.count+' running now'+(d.count>9?' · showing the top 9 by live score':''):'waiting for runs';paintLive()}catch(e){}
 }
-setInterval(()=>{document.querySelectorAll('#live3 em[data-st]').forEach(el=>{const s=Math.max(0,Math.floor((Date.now()-Number(el.dataset.st))/1000));el.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')})},1000);
+setInterval(()=>{document.querySelectorAll('#live3 [data-st]').forEach(el=>{const s=Math.max(0,Math.floor((Date.now()-Number(el.dataset.st))/1000));el.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')})},1000);
 setInterval(pollLive,4000);
 
 /* ---------- Mimu Mail composer ---------- */

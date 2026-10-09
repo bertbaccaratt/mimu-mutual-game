@@ -1665,7 +1665,13 @@ const API={
     const h={'Content-Type':'application/json'};if(API.token)h.Authorization='Bearer '+API.token;
     const r=await fetch(GAME_CONFIG.api.replace(/\/$/,'')+path,Object.assign({headers:h},opt));
     const b=await r.json().catch(()=>({}));
-    if(!r.ok){const e=new Error(b.error||('http '+r.status));e.status=r.status;e.body=b;throw e}
+    if(!r.ok){
+      if(r.status===401&&API.token&&!/^/api/(nonce|auth)/.test(path)){          /* the server no longer accepts this session: sign out cleanly */
+        API.token=null;GATE.ok=false;clearSess();
+        try{syncLocks();stopPMPoll();toast('🔒 <span>You were signed out. Tap <b>Mutual Mimu</b> to sign in again.</span>',5200)}catch(x){}
+      }
+      const e=new Error(b.error||('http '+r.status));e.status=r.status;e.body=b;throw e
+    }
     return b;
   },
   /* proves the visitor owns the wallet (one signature, no transaction) and returns the server's holdings verdict */
@@ -3106,7 +3112,7 @@ function setVolStep(n,quiet){
   });
   const st=document.createElement('style');st.textContent='.prop [role=button]:focus-visible,.card-hit:focus-visible{outline:2px solid #f0d28a;outline-offset:3px}';document.head.appendChild(st);
 })();
-P=loadP()||defaultP();if(restoreSess()){try{syncLocks();startPMPoll()}catch(e){}}
+P=loadP()||defaultP();if(restoreSess()){try{syncLocks();startPMPoll();API.j('/api/mybest').catch(()=>{})}catch(e){}}   /* a quick check that the remembered session is still accepted */
 if(API.on())refreshBoards().then(()=>{const h=document.getElementById('home');if(!curApp&&P.mimu&&h&&h.innerHTML)buildHome()});muted=!!P.mute;setVolStep(P.vol==null?7:P.vol,true);if(P.mimu)ensureRivals();tick();buildLock();
 </script>
 </body>

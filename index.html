@@ -1380,17 +1380,18 @@ function buildMsgs(root){
   };
   window._pmList=()=>{if(inList)paintPM()};
   const pmThread=(addr,name,pic)=>{
-    inList=false;let last=0,blocked=false;
+    inList=false;let last=0,blocked=false,loaded=false;
     root.innerHTML=`<div class="sc"><div class="sysh"><button class="bk" id="mb">&lsaquo; Messages</button><div class="ttl" style="margin-right:0">${escH(name)}</div><button class="pmx" id="pmblk">Block</button></div>
       <div class="thr" id="pmthr"></div><div id="pmbot"></div></div>`;
     const thr=$('#pmthr',root),bot=$('#pmbot',root),blk=$('#pmblk',root);
     const bubble=m=>{const d=document.createElement('div');d.className='bub'+(m.mine?' me':'');d.title=new Date(m.ts).toLocaleString();d.textContent=m.body;return d};
-    const add=arr=>{if(!arr.length)return;const atEnd=thr.scrollHeight-thr.scrollTop-thr.clientHeight<80;arr.forEach(m=>{thr.appendChild(bubble(m));last=Math.max(last,m.id)});if(atEnd||last===arr[arr.length-1].id)thr.scrollTop=thr.scrollHeight};
+    const add=arr=>{if(!arr.length)return;const hi=thr.querySelector(".dt");if(hi)hi.remove();const atEnd=thr.scrollHeight-thr.scrollTop-thr.clientHeight<80;arr.forEach(m=>{thr.appendChild(bubble(m));last=Math.max(last,m.id)});if(atEnd||last===arr[arr.length-1].id)thr.scrollTop=thr.scrollHeight};
     const drawBot=()=>{
+      const keep=$('#pmt',root)?$('#pmt',root).value:'';            /* never lose what is being typed */
       blk.textContent=blocked?'Unblock':'Block';
       bot.innerHTML=blocked?'<div class="pmblocked">You blocked this player. Unblock to text them again.</div>':`<div class="pmdon">Want to help ${escH(name)}? <button id="pmdn">Donate $TMF in Top 5</button></div><div class="pmerr" id="pmerr"></div><div class="pmin"><input id="pmt" maxlength="280" placeholder="Text message" autocomplete="off"><button id="pms">Send</button></div>`;
       if(blocked)return;
-      const inp=$('#pmt',root),btn=$('#pms',root),er=$('#pmerr',root);
+      const inp=$('#pmt',root),btn=$('#pms',root),er=$('#pmerr',root);inp.value=keep;
       $('#pmdn',root).onclick=()=>{goHome();setTimeout(()=>openApp('top5'),700)};
       const send=async()=>{
         const body=inp.value.trim();if(!body)return;
@@ -1405,15 +1406,16 @@ function buildMsgs(root){
     const load=async()=>{
       try{
         const d=await API.j('/api/messages/thread?with='+encodeURIComponent(addr)+'&after='+last);
-        if(last===0){thr.innerHTML='';blocked=d.blocked;drawBot()}
+        if(!loaded){loaded=true;thr.innerHTML='';if(blocked!==d.blocked){blocked=d.blocked;drawBot()}}
         add(d.messages.filter(m=>m.id>last));
-        if(last===0&&!d.messages.length)thr.innerHTML=`<div class="dt">Say hi to ${escH(name)}</div>`;
+        if(last===0&&!d.messages.length&&!thr.querySelector('.dt'))thr.innerHTML=`<div class="dt">Say hi to ${escH(name)}</div>`;
+        else if(last>0){const h=thr.querySelector('.dt');if(h)h.remove()}
         if(d.messages.some(m=>!m.mine))pmPoll();
-      }catch(e){if(last===0)thr.innerHTML='<div class="dt">Could not load this chat. Try again in a moment.</div>'}
+      }catch(e){if(!loaded&&!thr.querySelector('.dt'))thr.innerHTML='<div class="dt">Could not load this chat. Try again in a moment.</div>'}
     };
     blk.onclick=async()=>{
       if(!blocked&&!confirm('Block '+name+'? They will not be able to text you.'))return;
-      try{const r=await API.j('/api/messages/block',{method:'POST',body:JSON.stringify({user:addr,block:!blocked})});blocked=r.blocked;drawBot();if(blocked)thr.innerHTML='';else{last=0;load()}}catch(e){}
+      try{const r=await API.j('/api/messages/block',{method:'POST',body:JSON.stringify({user:addr,block:!blocked})});blocked=r.blocked;drawBot();if(blocked)thr.innerHTML='';else{last=0;loaded=false;load()}}catch(e){}
     };
     drawBot();load();
     thrTimer=setInterval(()=>{if(document.body.contains(root)&&!blocked)load()},4000);

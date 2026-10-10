@@ -185,7 +185,7 @@ async function handleAuth(env, req) {
   const origin = req.headers.get('Origin') || '';
   if (!allowedOrigins(env).includes(origin)) return json(env, req, { error: 'this site is not allowed to sign in' }, 403);
   const cw = campaignWindow(env);
-  if (!cw.open) return json(env, req, { error: cw.state === 'early' ? 'The campaign has not opened yet. Sign-in opens when the countdown ends, Sat Oct 10 at 6:00 PM PST.' : 'The campaign has ended. Thanks for playing!', closed: true, state: cw.state, opensAt: cw.from }, 403);
+  if (!cw.open) return json(env, req, { error: cw.state === 'early' ? 'The campaign has not opened yet. Sign-in opens when the countdown ends, Sat Oct 10 at 6:00 PM PT.' : 'The campaign has ended. Thanks for playing!', closed: true, state: cw.state, opensAt: cw.from }, 403);
   const domain = new URL(origin).host;                             // the signed message is bound to the site that asked
   let b; try { b = await req.json(); } catch { return json(env, req, { error: 'bad json' }, 400); }
   const { address, nonce, issuedAt, signature } = b || {};
@@ -275,7 +275,7 @@ async function handleRunStart(env, req) {
   /* Chair Run opens when the campaign countdown ends (Sat Oct 10 2026, 6:00 PM Pacific). CHAIR_RUN_OPEN = "1" forces it open (staging), "0" forces it closed. Runs already in progress can still finish and count. */
   const opensAt = Number(env.CHAIR_RUN_OPENS_AT) || Date.UTC(2026, 9, 11, 1, 0, 0), closesAt = Number(env.CHAIR_RUN_CLOSES_AT) || Date.UTC(2026, 9, 13, 13, 0, 0);
   const nowMs = Date.now();
-  if (env.CHAIR_RUN_OPEN === '0' || (env.CHAIR_RUN_OPEN !== '1' && nowMs < opensAt)) return json(env, req, { error: 'Chair Run opens when the campaign countdown ends, Sat Oct 10 at 6:00 PM PST. Your scores and login are saved.', closed: true, opensAt }, 403);
+  if (env.CHAIR_RUN_OPEN === '0' || (env.CHAIR_RUN_OPEN !== '1' && nowMs < opensAt)) return json(env, req, { error: 'Chair Run opens when the campaign countdown ends, Sat Oct 10 at 6:00 PM PT. Your scores and login are saved.', closed: true, opensAt }, 403);
   if (env.CHAIR_RUN_OPEN !== '1' && nowMs >= closesAt) return json(env, req, { error: 'Gaming has stopped. The 24-hour donation window is next. Your scores and login are saved.', closed: true, closesAt }, 403);
   let b = {}; try { b = await req.json(); } catch { /* optional body */ }
   if (Number(b.sv) !== Sim.VERSION) return json(env, req, { error: 'The game was updated. Reload the page to play.', refresh: true }, 409);   // a stale page would play by old rules
@@ -590,7 +590,7 @@ async function handleTransfer(env, req) {
   if (await limited(env, 'RL_RUN', sess.sub)) return tooMany(env, req);
   if (await isBanned(env, sess.sub)) return json(env, req, { error: 'blocked' }, 403);
   const dw = donateWindow(env);
-  if (!dw.open) return json(env, req, { error: dw.state === 'early' ? 'Donations are not open yet. They open when the alarm goes off, Tue Oct 13 at 6:00 AM PST, for 24 hours.' : 'The 24-hour donation window has closed.', donate: { open: false, state: dw.state, from: dw.from, until: dw.until } }, 403);
+  if (!dw.open) return json(env, req, { error: dw.state === 'early' ? 'Donations are not open yet. They open when the alarm goes off, Tue Oct 13 at 6:00 AM PT, for 24 hours.' : 'The 24-hour donation window has closed.', donate: { open: false, state: dw.state, from: dw.from, until: dw.until } }, 403);
   let b = {}; try { b = await req.json(); } catch { return json(env, req, { error: 'bad json' }, 400); }
   const to = String(b.to || '').toLowerCase(), all = b.all === true;
   let amount = Number(b.amount);

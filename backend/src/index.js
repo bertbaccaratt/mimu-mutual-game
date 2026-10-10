@@ -259,22 +259,9 @@ async function recordPlay(env, address, S) {
       .bind(address, S.tick | 0, hops, Math.max(0, Math.floor(S.coins)), Math.floor(S.dist), S.mxChain | 0).run();
   } catch (e) { console.error('play stats', String(e && e.message || e)); }
 }
-/* A run whose tab closed or whose last piece never arrived: score it as far as the server verified it (never lose earned progress). */
-async function salvageOpenRuns(env, address, now) {
-  try {
-    const rows = (await env.DB.prepare("SELECT * FROM runs WHERE address=?1 AND status='open' AND snapshot IS NOT NULL AND last_tick>=120").bind(address).all()).results || [];
-    for (const run of rows) {
-      const sim = Sim.create(run.seed, { wallet: run.wallet }); sim.restore(run.snapshot);
-      const S = sim.S, stats = run.stats ? JSON.parse(run.stats) : newStats();
-      const score = Math.max(0, Math.floor(S.score)), coins = Math.max(0, Math.floor(S.coins)), dist = Math.floor(S.dist);
-      const flags = judge(stats, S, S.tick, Number(env.BOT_MIN) || 40);
-      if (flags.length) { await env.DB.prepare("UPDATE runs SET status='held', snapshot=NULL, stats=?1, flags=?2, score=?3, coins=?4, dist=?5, ended_at=?6 WHERE id=?7").bind(JSON.stringify(stats), JSON.stringify(flags), score, coins, dist, now, run.id).run(); await recordPlay(env, address, S); continue; }
-      await env.DB.prepare("UPDATE runs SET status='done', snapshot=NULL, stats=NULL, score=?1, coins=?2, dist=?3, ended_at=?4 WHERE id=?5").bind(score, coins, dist, now, run.id).run();
-      if (score > 0) await applyScore(env, address, weekNow(), score, coins, now);
-      await recordPlay(env, address, S);
-    }
-  } catch (e) { console.error('salvage failed', String(e && e.message || e)); }
-}
+/* Contest rule: a run counts ONLY when it ends (benched or Quit) and its final piece reaches the server. A run that is interrupted for any reason
+   (dead phone, closed tab, refresh, lost connection) is never scored: it is marked 'abandoned' when that player starts their next run, and the
+   player starts over. Their earlier finished runs are unaffected. (Salvaging interrupted runs was removed on purpose.) */
 
 async function handleRunStart(env, req) {
   const sess = await readToken(env, req);
@@ -296,8 +283,7 @@ async function handleRunStart(env, req) {
   const wallet = Math.max(0, Math.min(10000000, Math.floor(Number(b.wallet) || 0)));
   const now = Date.now();
   await env.DB.prepare('DELETE FROM runs WHERE started_at<?1 AND status NOT IN (\'held\')').bind(now - 24 * 3600 * 1000).run();
-  await salvageOpenRuns(env, sess.sub, now);                       // an interrupted run keeps the progress the server already verified
-  await env.DB.prepare("UPDATE runs SET status='abandoned', snapshot=NULL WHERE address=?1 AND status='open'").bind(sess.sub).run();   // one live run per player
+  await env.DB.prepare("UPDATE runs SET status='abandoned', snapshot=NULL WHERE address=?1 AND status='open'").bind(sess.sub).run();   // one live run per player; an interrupted run is thrown away, never scored
   const id = hex(16), seed = crypto.getRandomValues(new Uint32Array(1))[0] || 1;
   await env.DB.prepare("INSERT INTO runs(id,address,seed,wallet,started_at,last_tick,seq,snapshot,status) VALUES(?1,?2,?3,?4,?5,0,0,NULL,'open')")
     .bind(id, sess.sub, seed, wallet, now).run();

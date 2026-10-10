@@ -267,6 +267,7 @@ async function handleRunStart(env, req) {
   if (env.CHAIR_RUN_OPEN === '0' || (env.CHAIR_RUN_OPEN !== '1' && nowMs < opensAt)) return json(env, req, { error: 'Chair Run opens when the campaign countdown ends, Sat Oct 10 at 6:00 PM PST. Your scores and login are saved.', closed: true, opensAt }, 403);
   if (env.CHAIR_RUN_OPEN !== '1' && nowMs >= closesAt) return json(env, req, { error: 'Gaming has stopped. The 24-hour donation window is next. Your scores and login are saved.', closed: true, closesAt }, 403);
   let b = {}; try { b = await req.json(); } catch { /* optional body */ }
+  if (Number(b.sv) !== Sim.VERSION) return json(env, req, { error: 'The game was updated. Reload the page to play.', refresh: true }, 409);   // a stale page would play by old rules
   if (!(await humanOk(env, b.cf, clientIp(req)))) return json(env, req, { error: 'human check failed' }, 403);
   const wallet = Math.max(0, Math.min(10000000, Math.floor(Number(b.wallet) || 0)));
   const now = Date.now();

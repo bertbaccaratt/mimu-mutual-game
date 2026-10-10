@@ -54,7 +54,7 @@ const tokA = la.b.token, tokB = lb.b.token;
   ok('signature for another domain is rejected', r.s === 401, String(r.s));
 }
 
-const st = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX' }) }, tokA);
+const st = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX', sv: Sim.VERSION }) }, tokA);
 ok('run start gives a server seed', st.s === 200 && /^[0-9a-f]{32}$/.test(st.b.runId) && Number.isInteger(st.b.seed), JSON.stringify(st.b));
 const { runId, seed } = st.b;
 const t0 = Date.now();
@@ -96,7 +96,7 @@ const again = await call('/api/run/chunk', { method: 'POST', body: JSON.stringif
 ok('a finished run is closed', again.s === 409, String(again.s));
 
 // forged inputs can't buy a better score: B starts a run and submits inputs that do nothing
-const stB = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ cf: 'XXXX.DUMMY.TOKEN.XXXX' }) }, tokB);
+const stB = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ cf: 'XXXX.DUMMY.TOKEN.XXXX', sv: Sim.VERSION }) }, tokB);
 const f = await call('/api/run/chunk', { method: 'POST', body: JSON.stringify({ runId: stB.b.runId, seq: 0, to: 300, inputs: [], final: true }) }, tokB);
 ok('empty/idle run scores what the replay says (tiny)', f.s === 200 && f.b.score < 400, JSON.stringify(f.b));
 const board = await call('/api/leaderboard?kind=run', {}, tokA);
@@ -108,14 +108,14 @@ const old = await call('/api/score', { method: 'POST', body: JSON.stringify({ ki
 ok('direct score submission no longer exists', old.s === 404, String(old.s));
 
 // human check: starting a run without a Turnstile token is refused
-const nocf = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0 }) }, tokA);
+const nocf = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, sv: Sim.VERSION }) }, tokA);
 ok('run start without human-check token is refused', nocf.s === 403, String(nocf.s));
 
 // bot check: a metronome player is verified but held out of the leaderboard, and the admin can release it
 {
   const c = privateKeyToAccount(generatePrivateKey());
   const lc = await login(c, 'Metronome'); const tokC = lc.b.token;
-  const sc = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX' }) }, tokC);
+  const sc = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX', sv: 2 }) }, tokC);
   const tc0 = Date.now();
   const pl = bot(sc.b.seed, sc.b.wallet, 3600, true), T = pl.sim.S.tick;
   await sleep(Math.max(0, T / 60 * 1000 - (Date.now() - tc0) - 3000));   // no faster than real time

@@ -134,7 +134,9 @@
       if (S.dead || S.wait) return false;
       const dt = DT;
       S.tick++; S.time += dt;
-      const target = Math.min(23, 11 + S.dist / 230) * (S.slow > 0 ? .62 : 1);
+      /* the first 3 minutes ramp exactly as before (11 + 1 per 230 m, up to 23). After that the top speed steps up +0.5 every 3 minutes, to a ceiling of 30 at minute 42, so long runs keep tightening. */
+      const stairs = Math.min(7, .5 * Math.floor(S.tick / 10800));
+      const target = (Math.min(23, 11 + S.dist / 230) + stairs) * (S.slow > 0 ? .62 : 1);
       S.speed += (target - S.speed) * Math.min(1, dt * 1.6); S.slow = Math.max(0, S.slow - dt);
       S.dist += S.speed * dt;
       S.px += (S.lane - S.px) * Math.min(1, dt * 13); S.vx = S.lane - S.px;
@@ -216,5 +218,7 @@
     else if (code >= 0 && code <= 3) sim.act(ACT_NAME[code]);
   }
 
-  return { create, applyCode, ACT, DT, ASSETS, CHAIR_H };
+  /* bump this whenever the rules change: the server only accepts runs from a game page on the same version */
+  const VERSION = 2;
+  return { create, applyCode, ACT, DT, ASSETS, CHAIR_H, VERSION };
 });

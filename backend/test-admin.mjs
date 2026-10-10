@@ -26,14 +26,14 @@ const li = await call('/api/auth', { method: 'POST', body: JSON.stringify({ addr
 ok('sign in works', li.s === 200 && li.b.x === '');
 const tok = li.b.token;
 ok('sign in says an X handle is needed', li.b.needX === true);
-const pre = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX' }) }, tok);
+const pre = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX', sv: 2 }) }, tok);
 ok('cannot start a run before adding an X handle', pre.s === 403 && pre.b.needX === true, String(pre.s));
 ok('bad X handle refused', (await call('/api/x/handle', { method: 'POST', body: JSON.stringify({ x: 'not valid!!' }) }, tok)).s === 400);
 ok('X handle needs sign-in', (await call('/api/x/handle', { method: 'POST', body: JSON.stringify({ x: 'abc' }) })).s === 401);
 const hnd = 'T' + randomBytes(5).toString('hex');
 const sx = await call('/api/x/handle', { method: 'POST', body: JSON.stringify({ x: '@' + hnd }) }, tok);
 ok('X handle saved', sx.s === 200 && sx.b.x === hnd, JSON.stringify(sx.b));
-const post = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX' }) }, tok);
+const post = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX', sv: 2 }) }, tok);
 ok('runs work once a handle is on file', post.s === 200, String(post.s));
 {
   const b2 = privateKeyToAccount(generatePrivateKey());

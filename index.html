@@ -471,6 +471,16 @@ canvas.hero{display:block;image-rendering:auto;width:100%;height:100%}
 .rbtn svg{width:16px;height:16px;fill:var(--cream)}
 .ffq{pointer-events:auto;flex:none;width:34px;height:34px;margin-right:8px;border-radius:12px;background:rgba(20,12,14,.62);border:1px solid var(--gold);color:var(--gold2);font:700 17px var(--serif);display:grid;place-items:center;cursor:pointer}
 .ffq.pulse{animation:howp 1.3s ease-in-out infinite}
+.disco{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .35s}
+.disco.on{opacity:1}.disco.off{opacity:0;transition:opacity .6s}
+.disco .db{position:absolute;left:50%;top:-10%;width:150%;height:130%;margin-left:-75%;transform-origin:50% 0;mix-blend-mode:screen;opacity:.5;filter:blur(2px)}
+.disco .b1{background:conic-gradient(from 200deg at 50% 0,transparent 0 6%,rgba(255,40,90,.85) 8% 14%,transparent 16% 100%);animation:dsw 3.4s ease-in-out infinite alternate}
+.disco .b2{background:conic-gradient(from 165deg at 50% 0,transparent 0 6%,rgba(40,255,120,.8) 8% 14%,transparent 16% 100%);animation:dsw 2.7s ease-in-out infinite alternate-reverse}
+.disco .b3{background:conic-gradient(from 185deg at 50% 0,transparent 0 6%,rgba(60,120,255,.85) 8% 14%,transparent 16% 100%);animation:dsw 4.1s ease-in-out infinite alternate}
+.disco .dfl{position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,0,110,.22),rgba(0,255,170,.14) 50%,rgba(70,90,255,.26));animation:dhue 2.4s linear infinite;mix-blend-mode:screen}
+@keyframes dsw{from{transform:rotate(-26deg)}to{transform:rotate(26deg)}}
+@keyframes dhue{from{filter:hue-rotate(0deg)}to{filter:hue-rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.disco .db{animation:none}.disco .dfl{animation:none}}
 .rbtn.pulse{border-color:var(--gold);animation:howp 1.3s ease-in-out infinite}
 @keyframes howp{0%,100%{box-shadow:0 0 0 0 rgba(217,178,95,.55)}50%{box-shadow:0 0 0 9px rgba(217,178,95,0)}}
 .howov{position:absolute;inset:0;z-index:12;background:rgba(10,6,8,.78);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:54px 14px 40px;pointer-events:auto}
@@ -914,7 +924,7 @@ body.enter .footbar{animation-name:chromeInB}
   </div>
 </div>
 
-<script src="assets/sim.js?v=1"></script>
+<script src="assets/sim.js?v=2"></script>
 <script>
 'use strict';
 /* =====================================================================
@@ -2011,7 +2021,18 @@ function buildRunGame(root){
   function setTier(n){const T=TIERS[n%TIERS.length];for(let i=0;i<16;i++){const k=Math.pow(i/15,1.3)*.92;pal.cA[i]=mix(T[0],FOG,k);pal.cB[i]=mix(T[1],FOG,k);pal.gd[i]=mix(T[2],FOG,k)}}
   const MQ=['Chairs are scared','Hype spat his coffee','TMF Pass is nervous','The banners bow','Your Mimu is a menace','Hall monitor claps','Carpet is blushing','Ghosts salute you','The bell rings for you','Legendary hallway'];
   const MBADGE={1:'Million Mile',10:'Ten Million Club',20:'Twenty Mil Legend',50:'Fifty Mil Immortal',100:'Hundred Mil Myth'};
+  /* RGB disco party: 10 seconds of colored lights over the phone at every million, then it switches off */
+  let discoEl=null,discoT=null;
+  function disco(){
+    const sc=root.querySelector('.sc');if(!sc)return;
+    if(!discoEl||!discoEl.isConnected){discoEl=document.createElement('div');discoEl.className='disco';discoEl.innerHTML='<i class="db b1"></i><i class="db b2"></i><i class="db b3"></i><i class="dfl"></i>';sc.appendChild(discoEl)}
+    discoEl.classList.remove('off');void discoEl.offsetWidth;discoEl.classList.add('on');
+    clearTimeout(discoT);
+    discoT=setTimeout(()=>{if(discoEl){discoEl.classList.add('off');const e=discoEl;setTimeout(()=>{if(e.parentNode)e.remove()},600);discoEl=null}},10000);
+  }
+  function discoStop(){clearTimeout(discoT);if(discoEl){discoEl.remove();discoEl=null}}
   function milestone(m){
+    disco();
     if((P.top||0)<m*1e6){P.top=m*1e6;saveP()}
     if(m%10===0){setTier(m/10);msg('🌈 '+m+' MILLION · new runway!','big');confetti(36);sfx.win()}
     else{msg('🪑 '+m+' MILLION · '+MQ[(m-1)%MQ.length],'big');sfx.power();if(m%5===0)confetti(18)}
@@ -2099,10 +2120,11 @@ function buildRunGame(root){
   function startCount(){
     if(S.st!=='idle')return;hideCard();reset();S.st='count';let n=3;verified=false;runSession=null;
     const online=GATE.ok&&API.on();
-    const sessionP=(online&&API.token)?API.human().then(cf=>API.j('/api/run/start',{method:'POST',body:JSON.stringify({wallet:P.coins,cf})})).catch(()=>null):Promise.resolve(null);
+    const sessionP=(online&&API.token)?API.human().then(cf=>API.j('/api/run/start',{method:'POST',body:JSON.stringify({wallet:P.coins,cf,sv:MimuSim.VERSION})})).catch(e=>(e&&e.status===409&&e.body&&e.body.refresh)?{refresh:true}:null):Promise.resolve(null);
     const begin=async()=>{
       let r=null;try{r=await Promise.race([sessionP,sleep(10000).then(()=>null)])}catch(e){}
       if(!alive)return;
+      if(r&&r.refresh){try{toast('🔄 <span>The game was updated. Reloading so your run counts…</span>',2600)}catch(e){}S.st='idle';setTimeout(()=>location.reload(),1800);return}
       if(r&&r.runId){newRun(r.seed,r.wallet);runSession=r;verified=true;up={from:0,seq:0,busy:false}}
       else if(online)toast(API.token?'📡 <span>Couldn&rsquo;t reach the leaderboard. This run won&rsquo;t count.</span>':'🔒 <span>Your session ended. Reconnect Glyph in Chair Run so runs count.</span>',4200);
       S.st='run';acc=0;last=performance.now();setTimeout(()=>{hud.cn.innerHTML=''},700);beatStart();
@@ -2142,7 +2164,7 @@ function buildRunGame(root){
     up.busy=false;
   }
   function gameOver(quit){
-    if(S.st==='over')return;S.st='over';beatStop();
+    if(S.st==='over')return;S.st='over';beatStop();discoStop();
     const score=Math.floor(S.score),prevBest=P.best;if(score>P.best)P.best=score;if(score>(P.top||0))P.top=score;
     const dist=S.deadDist!==undefined?S.deadDist:S.dist;
     P.runs++;P.dist+=dist;P.coins+=S.coins;P.totalCoins+=S.coins;S.cleared.forEach((n,i)=>P.cleared[i]+=n);

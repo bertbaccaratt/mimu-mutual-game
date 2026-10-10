@@ -2,7 +2,9 @@
 // so swapping between them on the desk keeps the body exactly in place.
 const path = require('path');
 const sharp = require(path.join(__dirname, '..', 'backend', 'node_modules', 'sharp'));
-const [OFF, ON, OUT_OFF, OUT_ON, PREVIEW] = process.argv.slice(2);
+const argv = process.argv.slice(2);
+const OFF = argv[0], OUT_OFF = argv[1], PREVIEW = argv[2], EXTRA = [];   // extra photos: src,out pairs after the preview path
+for (let k = 3; k + 1 < argv.length; k += 2) EXTRA.push({ src: argv[k], out: argv[k + 1] });
 
 async function cutout(src) {
   const { data, info } = await sharp(src).removeAlpha().raw().toBuffer({ resolveWithObject: true });
@@ -85,35 +87,37 @@ function trimBottom(buf, N, W, cut) {   // the contact shadow below the body is 
   for (let i = 0; i < N; i++) { const y = (i / W) | 0; if (y > cut) buf[i * 4 + 3] = 0; else if (y > cut - 4) buf[i * 4 + 3] = Math.min(buf[i * 4 + 3], Math.round(255 * (cut - y) / 4)); }
 }
 (async () => {
-  const a = await cutout(OFF), b = await cutout(ON);
-  const A = darkBox(a), Bx = darkBox(b);
-  const s = ((A.w / Bx.w) + (A.h / Bx.h)) / 2;
-  console.log('off box', JSON.stringify(A), 'on box', JSON.stringify(Bx), 'scale', s.toFixed(4));
-  const bw = Math.round(b.W * s), bh = Math.round(b.H * s);
-  const bScaled = await sharp(b.out, { raw: { width: b.W, height: b.H, channels: 4 } }).resize({ width: bw, height: bh, kernel: 'lanczos3' }).png().toBuffer();
-  const offX = Math.round((A.minX + A.maxX) / 2 - ((Bx.minX + Bx.maxX) / 2) * s);
-  const offY = Math.round((A.minY + A.maxY) / 2 - ((Bx.minY + Bx.maxY) / 2) * s);
+  const a = await cutout(OFF);
+  const A = darkBox(a);
   const canvas = { create: { width: a.W, height: a.H, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } };
-  const cropL = Math.max(0, -offX), cropT = Math.max(0, -offY);
-  const cropW = Math.min(bw - cropL, a.W - Math.max(0, offX)), cropH = Math.min(bh - cropT, a.H - Math.max(0, offY));
-  const cropped = await sharp(bScaled).extract({ left: cropL, top: cropT, width: cropW, height: cropH }).png().toBuffer();
-  const bFinal = await sharp(canvas).composite([{ input: cropped, left: Math.max(0, offX), top: Math.max(0, offY) }]).raw().toBuffer();
-  trimBottom(a.out, a.N, a.W, A.maxY);       // cut the floor shadow at the same height of the body in both photos
-  trimBottom(bFinal, a.N, a.W, A.maxY);
-  const union = (buf) => { let x0 = a.W, y0 = a.H, x1 = 0, y1 = 0; for (let i = 0; i < a.N; i++) if (buf[i * 4 + 3] > 40) { const x = i % a.W, y = (i / a.W) | 0; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } return { x0, y0, x1, y1 }; };
-  const ua = union(a.out), ub = union(bFinal);
-  const pad = 8, x0 = Math.max(0, Math.min(ua.x0, ub.x0) - pad), y0 = Math.max(0, Math.min(ua.y0, ub.y0) - pad), x1 = Math.min(a.W, Math.max(ua.x1, ub.x1) + pad), y1 = Math.min(a.H, Math.max(ua.y1, ub.y1) + pad);
+  const layers = [{ out: OUT_OFF, buf: a.out }];
+  for (const ex of EXTRA) {
+    const b = await cutout(ex.src), Bx = darkBox(b);
+    const s = ((A.w / Bx.w) + (A.h / Bx.h)) / 2;
+    const bw = Math.round(b.W * s), bh = Math.round(b.H * s);
+    const bScaled = await sharp(b.out, { raw: { width: b.W, height: b.H, channels: 4 } }).resize({ width: bw, height: bh, kernel: 'lanczos3' }).png().toBuffer();
+    const offX = Math.round((A.minX + A.maxX) / 2 - ((Bx.minX + Bx.maxX) / 2) * s), offY = Math.round((A.minY + A.maxY) / 2 - ((Bx.minY + Bx.maxY) / 2) * s);
+    const cropL = Math.max(0, -offX), cropT = Math.max(0, -offY);
+    const cropW = Math.min(bw - cropL, a.W - Math.max(0, offX)), cropH = Math.min(bh - cropT, a.H - Math.max(0, offY));
+    const cropped = await sharp(bScaled).extract({ left: cropL, top: cropT, width: cropW, height: cropH }).png().toBuffer();
+    const reg = await sharp(canvas).composite([{ input: cropped, left: Math.max(0, offX), top: Math.max(0, offY) }]).raw().toBuffer();
+    console.log(path.basename(ex.out), 'scale', s.toFixed(4), 'shift', offX, offY);
+    layers.push({ out: ex.out, buf: reg });
+  }
+  for (const L of layers) trimBottom(L.buf, a.N, a.W, A.maxY);      // same floor-shadow cut at the body's bottom in every photo
+  let x0 = a.W, y0 = a.H, x1 = 0, y1 = 0;
+  for (const L of layers) for (let i = 0; i < a.N; i++) if (L.buf[i * 4 + 3] > 40) { const x = i % a.W, y = (i / a.W) | 0; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  const pad = 8; x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(a.W, x1 + pad); y1 = Math.min(a.H, y1 + pad);
   const box = { left: x0, top: y0, width: x1 - x0, height: y1 - y0 };
-  const save = async (buf, out) => sharp(buf, { raw: { width: a.W, height: a.H, channels: 4 } }).extract(box).resize({ width: 400 }).webp({ quality: 92, alphaQuality: 100 }).toFile(out);
-  await save(a.out, OUT_OFF); await save(bFinal, OUT_ON);
-  const m = await sharp(OUT_OFF).metadata(), m2 = await sharp(OUT_ON).metadata();
-  console.log('box', JSON.stringify(box), 'off', m.width + 'x' + m.height, 'on', m2.width + 'x' + m2.height, 'shift', offX, offY);
+  const flat = [];
+  for (const L of layers) {
+    await sharp(L.buf, { raw: { width: a.W, height: a.H, channels: 4 } }).extract(box).resize({ width: 400 }).webp({ quality: 92, alphaQuality: 100 }).toFile(L.out);
+    const m = await sharp(L.out).metadata(); console.log(path.basename(L.out), m.width + 'x' + m.height);
+    flat.push(await sharp(L.out).flatten({ background: '#6b4a2b' }).png().toBuffer());
+  }
   if (PREVIEW) {
-    const g1 = await sharp(OUT_OFF).flatten({ background: '#6b4a2b' }).png().toBuffer();
-    const g2 = await sharp(OUT_ON).flatten({ background: '#6b4a2b' }).png().toBuffer();
-    const onHalf = await sharp(OUT_ON).composite([{ input: Buffer.from([0, 0, 0, 128]), raw: { width: 1, height: 1, channels: 4 }, tile: true, blend: 'dest-in' }]).png().toBuffer();
-    const blend = await sharp(g1).composite([{ input: onHalf }]).png().toBuffer();
-    const row = await sharp({ create: { width: m.width * 3, height: m.height, channels: 3, background: '#000' } }).composite([{ input: g1, left: 0, top: 0 }, { input: g2, left: m.width, top: 0 }, { input: blend, left: m.width * 2, top: 0 }]).png().toBuffer();
+    const m = await sharp(layers[0].out).metadata();
+    const row = await sharp({ create: { width: m.width * layers.length, height: m.height, channels: 3, background: '#000' } }).composite(flat.map((b, k) => ({ input: b, left: k * m.width, top: 0 }))).png().toBuffer();
     await sharp(row).toFile(PREVIEW);
   }
 })();

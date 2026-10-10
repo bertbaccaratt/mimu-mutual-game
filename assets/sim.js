@@ -50,7 +50,7 @@
       dist: 0, speed: 11, lane: 0, px: 0, vx: 0, py: 0, vy: 0, slide: 0, lives: 3, shield: 0, magnet: 0, mult: 0,
       coins: 0, score: 0, inv: 0, time: 0, obj: [], pend: [], spawnZ: 55, gateZ: 650, cleared: [0, 0, 0, 0, 0, 0, 0, 0],
       slow: 0, combo: 0, cid: 0, weather: 0, chain: 0, ct: 0, mxChain: 0, revived: false, nextMs: 250, cm: 1, buf: 0,
-      tick: 0, dead: false, wait: null, walletPaid: 0, orbNext: 2500000, orbT: 0,
+      tick: 0, dead: false, wait: null, walletPaid: 0, rc: 30, orbNext: 2500000, orbT: 0,
     };
     let ev = [];
     const emit = (t, a, b) => { ev.push(b === undefined ? (a === undefined ? { t } : { t, ...a }) : { t, a, b }); };
@@ -110,13 +110,14 @@
       if (S.shield > 0) { S.shield = 0; S.inv = 1.2; emit('shield'); return; }
       S.lives--; S.inv = 1.5; S.slow = 1.1; S.combo = 0; breakChain(); emit('hit');
       if (S.lives <= 0) {
-        if (!S.revived && S.coins + wallet >= 30) { S.wait = 'revive'; emit('offer'); }
+        const rc = 30 + 10 * Math.floor(Math.max(0, S.score) / 1e6);   // Second Wind price: 30 $TMF, +10 for every million points scored
+        if (!S.revived && S.coins + wallet >= rc) { S.rc = rc; S.wait = 'revive'; emit('offer', { cost: rc }); }
         else { S.dead = true; emit('dead'); }
       } else emit('msg', S.lives === 1 ? '⚠ Last chance' : '💥 Stumble', 'bad');
     }
     function revive() {
       if (S.wait !== 'revive') return false;
-      const a = Math.min(30, S.coins); S.coins -= a; S.walletPaid = 30 - a;
+      const cost = S.rc || 30, a = Math.min(cost, S.coins); S.coins -= a; S.walletPaid = cost - a;   // run coins first, the wallet tops up
       S.revived = true; S.lives = 1; S.inv = 2.6; S.slow = .8; S.wait = null;
       S.obj = S.obj.filter((o) => o.t === 'gate' || o.z - S.dist > D0 + 22);
       emit('revived'); return true;
@@ -222,6 +223,6 @@
   }
 
   /* bump this whenever the rules change: the server only accepts runs from a game page on the same version */
-  const VERSION = 3;
+  const VERSION = 4;
   return { create, applyCode, ACT, DT, ASSETS, CHAIR_H, VERSION };
 });

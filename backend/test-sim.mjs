@@ -82,3 +82,28 @@ ok('different seed -> different score', d.score !== A.score);
 let allSame = true;
 for (let s = 1; s <= 25; s++) { const p = play(s * 7919, 6000, 50); const r = replay(s * 7919, p.inputs, p.sim.S.tick, 50); if (r.S.score !== p.sim.S.score) { allSame = false; console.log('diverged on seed', s * 7919); } }
 ok('25 more seeds replay identically', allSame);
+
+// Second Wind price: 30 $TMF, +10 for every million points scored; run coins pay first, the wallet tops up
+{
+  const at = (score, coins, wallet) => {
+    const sim = Sim.create(99, { wallet }), S = sim.S;
+    S.lives = 1; S.score = score; S.coins = coins;
+    S.obj.push({ t: 'chair', x: S.px, z: S.dist + 4.3, y: 0, h: 1, type: 0, id: 99999 });
+    sim.step();
+    return { sim, S };
+  };
+  let r = at(0, 30, 0);
+  ok('price is 30 at the start', r.S.wait === 'revive' && r.S.rc === 30, 'rc ' + r.S.rc);
+  r.sim.revive(); ok('paying 30 from run coins', r.S.coins === 0 && r.S.walletPaid === 0 && r.S.lives === 1);
+  r = at(12.5e6, 500, 0);
+  ok('price is 150 at 12.5M points', r.S.wait === 'revive' && r.S.rc === 150, 'rc ' + r.S.rc);
+  r.sim.revive(); ok('150 comes out of run coins', r.S.coins === 350 && r.S.walletPaid === 0);
+  r = at(30e6, 100, 0);
+  ok('at 30M with 100 coins and no wallet it cannot be afforded (run ends)', r.S.dead === true && r.S.wait === null);
+  r = at(30e6, 100, 300);
+  ok('price is 330 at 30M, the wallet tops up', r.S.wait === 'revive' && r.S.rc === 330, 'rc ' + r.S.rc);
+  const snap = r.sim.snapshot(), sim2 = Sim.create(99, { wallet: 300 }); sim2.restore(snap);
+  ok('the offered price survives snapshot/restore', sim2.S.rc === 330 && sim2.S.wait === 'revive');
+  sim2.revive(); ok('paid 100 from run coins and 230 from the wallet', sim2.S.coins === 0 && sim2.S.walletPaid === 230);
+  ok('rules version is 4', Sim.VERSION === 4, String(Sim.VERSION));
+}

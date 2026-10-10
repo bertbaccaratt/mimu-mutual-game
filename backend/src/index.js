@@ -764,7 +764,7 @@ async function handleAdmin(env, req, url) {
               const S = sim.S, ob = [];
               for (const o of S.obj) {
                 if (o.dead) continue; const dz = o.z - S.dist; if (dz < -3 || dz > 70) continue;
-                const c = o.t === 'chair' ? 'c' : o.t === 'banner' ? 'b' : o.t === 'coin' ? 'o' : o.t === 'pick' ? (o.k === 'magnet' ? 'm' : o.k === 'shield' ? 's' : 'x') : o.t === 'gate' ? 'g' : null;
+                const c = o.t === 'chair' ? 'c' : o.t === 'banner' ? 'b' : o.t === 'coin' ? 'o' : o.t === 'pick' ? (o.k === 'magnet' ? 'm' : o.k === 'shield' ? 's' : o.k === 'orb' ? 'r' : 'x') : o.t === 'gate' ? 'g' : null;
                 if (c) ob.push([c, o.x, dz, o.type | 0]);
               }
               ob.sort((a, b) => a[2] - b[2]);

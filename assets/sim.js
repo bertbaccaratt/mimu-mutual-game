@@ -50,7 +50,7 @@
       dist: 0, speed: 11, lane: 0, px: 0, vx: 0, py: 0, vy: 0, slide: 0, lives: 3, shield: 0, magnet: 0, mult: 0,
       coins: 0, score: 0, inv: 0, time: 0, obj: [], pend: [], spawnZ: 55, gateZ: 650, cleared: [0, 0, 0, 0, 0, 0, 0, 0],
       slow: 0, combo: 0, cid: 0, weather: 0, chain: 0, ct: 0, mxChain: 0, revived: false, nextMs: 250, cm: 1, buf: 0,
-      tick: 0, dead: false, wait: null, walletPaid: 0,
+      tick: 0, dead: false, wait: null, walletPaid: 0, orbNext: 2500000, orbT: 0,
     };
     let ev = [];
     const emit = (t, a, b) => { ev.push(b === undefined ? (a === undefined ? { t } : { t, ...a }) : { t, a, b }); };
@@ -136,7 +136,9 @@
       S.tick++; S.time += dt;
       /* the first 3 minutes ramp exactly as before (11 + 1 per 230 m, up to 23). After that the top speed steps up +0.5 every 3 minutes, to a ceiling of 30 at minute 42, so long runs keep tightening. */
       const stairs = Math.min(7, .5 * Math.floor(S.tick / 10800));
-      const target = (Math.min(23, 11 + S.dist / 230) + stairs) * (S.slow > 0 ? .62 : 1);
+      /* the red orb (every 2.5 million points): catch it and the top speed is 0.5 lower for 3 minutes, then it comes back by itself to wherever the ramp has got to */
+      if (S.orbT > 0) { S.orbT -= dt; if (S.orbT <= 0) { S.orbT = 0; emit('orbend'); } }
+      const target = (Math.min(23, 11 + S.dist / 230) + stairs - (S.orbT > 0 ? .5 : 0)) * (S.slow > 0 ? .62 : 1);
       S.speed += (target - S.speed) * Math.min(1, dt * 1.6); S.slow = Math.max(0, S.slow - dt);
       S.dist += S.speed * dt;
       S.px += (S.lane - S.px) * Math.min(1, dt * 13); S.vx = S.lane - S.px;
@@ -145,6 +147,7 @@
       if (S.slide > 0) S.slide -= dt; S.inv = Math.max(0, S.inv - dt);
       if (S.magnet > 0) S.magnet -= dt; if (S.mult > 0) S.mult -= dt;
       while (S.spawnZ < S.dist + FAR) pattern();
+      if (S.score >= S.orbNext) { S.orbNext += 2500000; const o = mk('pick', rp([-1, 0, 1]), S.dist + FAR - 6); o.k = 'orb'; emit('orbseen'); }
       if (S.gateZ < S.dist + FAR) spawnGate();
       const mult = S.mult > 0 ? 2 : 1;
       for (const o of S.obj) {
@@ -161,7 +164,7 @@
         } else if (o.t === 'pick') {
           if (dz < D0 + .6 && dz > D0 - .6 && inx < .7) {
             o.dead = true;
-            if (o.k === 'magnet') S.magnet = 9; else if (o.k === 'shield') S.shield = 1; else S.mult = 10;
+            if (o.k === 'magnet') S.magnet = 9; else if (o.k === 'shield') S.shield = 1; else if (o.k === 'orb') S.orbT = 180; else S.mult = 10;
             emit('pick', { k: o.k, x: o.x, z: o.z });
           }
         } else if (o.t === 'chair' || o.t === 'banner') {
@@ -219,6 +222,6 @@
   }
 
   /* bump this whenever the rules change: the server only accepts runs from a game page on the same version */
-  const VERSION = 2;
+  const VERSION = 3;
   return { create, applyCode, ACT, DT, ASSETS, CHAIR_H, VERSION };
 });

@@ -445,7 +445,7 @@ setInterval(pollLive,2000);
       else if(t==='b'){const w=.95*s,p=proj(x,2.6,dz);c.fillStyle='#8b2e35';c.fillRect(p[0]-w/2,p[1],w,1.5*s);c.strokeStyle='#d9b25f';c.lineWidth=Math.max(1,s*.05);c.strokeRect(p[0]-w/2,p[1],w,1.5*s)}
       else if(t==='o'){const p=proj(x,.6,dz),r=Math.max(1.5,.22*s);c.fillStyle='#f0c64a';c.beginPath();c.arc(p[0],p[1],r,0,6.3);c.fill();c.strokeStyle='#8a6a14';c.lineWidth=1;c.stroke()}
       else if(t==='g'){const p1=proj(-3,3.4,dz),p2=proj(3,3.4,dz),p3=proj(-3,0,dz);c.fillStyle='rgba(155,123,255,.35)';c.fillRect(p1[0],p1[1],p2[0]-p1[0],(p3[1]-p1[1]));c.strokeStyle='#b99bff';c.lineWidth=Math.max(1.5,s*.06);c.strokeRect(p1[0],p1[1],p2[0]-p1[0],(p3[1]-p1[1]))}
-      else{const p=proj(x,.9,dz);c.font=Math.max(10,.9*s)+'px "Segoe UI Emoji","Apple Color Emoji",sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(t==='m'?'\ud83d\udd14':t==='s'?'\ud83d\udcbc':'\u2728',p[0],p[1])}
+      else{const p=proj(x,.9,dz);c.font=Math.max(10,.9*s)+'px "Segoe UI Emoji","Apple Color Emoji",sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(t==='m'?'\ud83d\udd14':t==='s'?'\ud83d\udcbc':t==='r'?'\ud83d\udd34':'\u2728',p[0],p[1])}
     }
     c.globalAlpha=1;
     /* the runner */

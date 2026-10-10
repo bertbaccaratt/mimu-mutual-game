@@ -51,7 +51,7 @@ ok('X start refuses a site that is not allowed', (await call('/api/x/start?o=' +
 const A = privateKeyToAccount(generatePrivateKey()), B = privateKeyToAccount(generatePrivateKey());
 const la = await login(A, 'GlyphAlice'); const tokA = la.b.token;
 ok('sign in reports X is needed', la.s === 200 && la.b.needX === true && la.b.x === '', JSON.stringify({ needX: la.b.needX, x: la.b.x }));
-const early = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX', sv: 2 }) }, tokA);
+const early = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX', sv: 3 }) }, tokA);
 ok('cannot start a run before connecting X', early.s === 403 && early.b.needX === true, String(early.s));
 
 const x1 = await xConnect(111);
@@ -62,7 +62,7 @@ ok('the message is sent only to our own site', /,"http:\/\/localhost:8765"\)/.te
 
 const link = await call('/api/x/link', { method: 'POST', body: JSON.stringify({ proof: x1.msg.proof }) }, tokA);
 ok('X account links to the wallet', link.s === 200 && link.b.x === 'MimuAlice', JSON.stringify(link.b));
-const start = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX', sv: 2 }) }, tokA);
+const start = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX', sv: 3 }) }, tokA);
 ok('runs work after connecting X', start.s === 200, String(start.s));
 const la2 = await login(A, 'GlyphAlice');
 ok('next sign-in knows the X handle', la2.b.x === 'MimuAlice' && la2.b.needX === false);

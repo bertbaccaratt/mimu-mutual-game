@@ -17,7 +17,7 @@ const tok = li.b.token;
 await call('/api/x/handle', { method: 'POST', body: JSON.stringify({ x: 'Lv' + a.address.slice(2, 12) }) }, tok);
 const before = (await live()).b;
 ok('live endpoint needs the admin password', (await call('/api/admin/live')).s === 403);
-const st = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX', sv: 2 }) }, tok);
+const st = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX', sv: 3 }) }, tok);
 ok('run started', st.s === 200);
 const runId = st.b.runId;
 const l1 = (await live()).b;

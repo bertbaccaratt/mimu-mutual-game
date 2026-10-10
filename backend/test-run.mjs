@@ -115,7 +115,7 @@ ok('run start without human-check token is refused', nocf.s === 403, String(nocf
 {
   const c = privateKeyToAccount(generatePrivateKey());
   const lc = await login(c, 'Metronome'); const tokC = lc.b.token;
-  const sc = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX', sv: 2 }) }, tokC);
+  const sc = await call('/api/run/start', { method: 'POST', body: JSON.stringify({ wallet: 0, cf: 'XXXX.DUMMY.TOKEN.XXXX', sv: 3 }) }, tokC);
   const tc0 = Date.now();
   const pl = bot(sc.b.seed, sc.b.wallet, 3600, true), T = pl.sim.S.tick;
   await sleep(Math.max(0, T / 60 * 1000 - (Date.now() - tc0) - 3000));   // no faster than real time

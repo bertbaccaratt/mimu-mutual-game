@@ -8,7 +8,7 @@ preview_urls = false
 [[ratelimits]]
 name = "RL_AUTH"          # sign-in: nonce + auth, per IP
 namespace_id = "2001"
-simple = { limit = 10, period = 60 }
+simple = { limit = 60, period = 60 }   # same as production, so the long test suite is not throttled
 
 [[ratelimits]]
 name = "RL_RUN"           # starting runs and uploading run chunks, per player

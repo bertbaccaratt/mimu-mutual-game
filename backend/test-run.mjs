@@ -134,7 +134,7 @@ ok('run start without human-check token is refused', nocf.s === 403, String(nocf
     const rel = await A('/api/admin/release', { runId: sc.b.runId });
     ok('admin can release it', rel.s === 200);
     const bd2 = await call('/api/leaderboard?kind=run', {}, tokC);
-    ok('released run appears', bd2.b.rows.some((x) => x.name === 'Metronome'));
+    ok('released run appears', bd2.b.rows.some((x) => x.v === r.b.score), 'score ' + r.b.score);
     const ban = await A('/api/admin/ban', { address: c.address, reason: 'test' });
     ok('admin can ban', ban.s === 200);
     const again2 = await login(c, 'Metronome');

@@ -9,3 +9,5 @@ node_modules/
 .prof/
 
 backend/_*.mjs
+backend/_*.sh
+backend/_*.json

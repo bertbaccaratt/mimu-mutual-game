@@ -26,7 +26,7 @@ database_name = "mimu-mutual"
 database_id = "b326ca8d-30b0-4551-ac4a-9cf647a222e9"
 
 [vars]
-ALLOWED_ORIGINS = "https://mutualmimu.fun,https://www.mutualmimu.fun,http://localhost:8765"
+ALLOWED_ORIGINS = "https://mutualmimu.fun,https://www.mutualmimu.fun"   # production only: local test pages use the staging API
 
 # Holdings rules. Format "chainId:0xContract" (ERC-721) or "chainId:0xContract:tokenId" (ERC-1155).
 # Leave empty until the contracts are known: an empty rule is simply not enforced.

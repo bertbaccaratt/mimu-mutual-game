@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://challenges.cloudflare.com https://www.youtube.com https://s.ytimg.com https://platform.twitter.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' data: blob:; connect-src 'self' https: wss:; frame-src https:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://challenges.cloudflare.com https://www.youtube.com https://s.ytimg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' data: blob:; connect-src 'self' https: wss:; frame-src https:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <script>if(window.top!==window.self){try{window.top.location=window.self.location}catch(e){document.documentElement.innerHTML=''}}</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
@@ -191,6 +191,7 @@ body.native .topbar,body.native .footbar{display:none}
 .gd-steps b{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(180deg,#e5483f,#a3231c);color:#fff;font:700 13px var(--sans)}
 .gd-steps span{font:400 14px/1.5 var(--serif)}
 .gd-steps em,.guide-modal em{color:var(--gold2);font-style:normal;font-weight:600}
+.gd-list{margin:8px 0 12px;padding-left:18px;display:grid;gap:7px}.gd-list li{font:400 13.5px/1.55 var(--sans);color:var(--cream)}.gd-list li b{color:#fff}
 .gd-keys{display:grid;gap:6px;margin:8px 0 10px}
 .gd-keys>div{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .gd-keys span{flex:1;min-width:180px;font:400 13.5px var(--serif);color:var(--muted)}
@@ -872,56 +873,84 @@ body.enter .footbar{animation-name:chromeInB}
   <div class="tos-panel" role="dialog" aria-modal="true" aria-labelledby="guideT">
     <div class="tos-head"><div><small class="gd-red">Start here</small><h2 id="guideT">How this site works</h2></div><button class="tos-x" data-guide-close aria-label="Close">✕</button></div>
     <div class="tos-body">
-      <p style="margin-top:14px">This is <b>Chair Run × Mutual Mimu</b>, a game by <b>MIMU ON APE</b> built for the <b>TMF Pass Mimu giveaway</b>. It is independent and is not affiliated with THE MUTUAL FUN project. The whole site is a desk. The <b>phone in the middle is the game</b>: everything you play lives on that screen. The props around it are part of the fun too.</p>
+      <p style="margin-top:14px">This is <b>Chair Run × Mutual Mimu</b>, a game by <b>MIMU ON APE</b> built for the <b>TMF Pass Mimu giveaway</b>. It is independent and is not affiliated with THE MUTUAL FUN project. The whole site is a desk. The <b>phone in the middle is the game</b>: everything you play lives on that screen, and the props around it are part of the fun too. This page explains every part of it.</p>
 
       <h3>Get playing in 30 seconds</h3>
       <div class="gd-steps">
-        <div><b>1</b><span>Swipe up or tap the phone's lock screen (or press <em>Play now</em> in the top bar).</span></div>
+        <div><b>1</b><span>Sign the NDA once (you will only see it the first time on this browser), then swipe up or tap the phone&rsquo;s lock screen, or press <em>Play now</em> in the top bar.</span></div>
         <div><b>2</b><span>First time only: meet your Mimu and enter the building.</span></div>
         <div><b>3</b><span>Tap <em>Chair Run</em> and connect your <em>Glyph</em> (you need a Mimu On Ape to run). Then type your username, which must be your X handle, and add a profile picture if you like.</span></div>
-        <div><b>4</b><span>Press <em>Run</em>. Run, hop, grab $TMF, repeat. The closing bell rings every 4 hours 20 minutes, and the <em>Alarm</em> app shows the campaign schedule.</span></div>
+        <div><b>4</b><span>Press <em>Run</em>. Run, hop, grab $TMF, repeat. Tap the <b>?</b> in the top corner of Chair Run any time before a run for every rule.</span></div>
       </div>
 
-      <h3>Chair Run: how to play</h3>
-      <p>Your Mimu sprints down a grand hall. Dodge, hop and slide to keep your three lives.</p>
-      <div class="gd-keys">
-        <div><kbd>← →</kbd> or <kbd>A D</kbd><span>change lane (swipe left or right on a phone)</span></div>
-        <div><kbd>↑</kbd> <kbd>W</kbd> <kbd>Space</kbd><span>jump a chair (swipe up or tap)</span></div>
-        <div><kbd>↓</kbd> or <kbd>S</kbd><span>slide under banners (swipe down)</span></div>
-        <div><kbd>No pause</kbd><span>Chair Run cannot be paused. A run keeps going until you are benched.</span></div>
-      </div>
-      <p><b>Connecting:</b> Chair Run is where you connect your Glyph. After you connect and pass the wallet checks, <em>Mutual Mimu</em> and texting other players unlock. Your username (your X handle) and picture show up on the Leaderboards, the Top 5 app and your texts. You need a Mimu On Ape to play, and wallets that already hold a TMF Pass or a Dengs can&rsquo;t play.</p>
-      <p><b>$TMF coins</b> are your score fuel. Every coin and clean chair hop builds a <b>chain</b> that multiplies your score up to x5, but four seconds without a gain breaks it. <b>Power-ups</b> show up on the floor: a <b>Bell</b> 🔔 coin magnet, a <b>Briefcase</b> 💼 shield and a <b>Star</b> ✨ gilded x2 (double points for 10 seconds). Hit a milestone every 250m for a bonus. The game also gets faster as you go, with a red orb every 2.5 million points that eases the pace for 3 minutes. Tap the <b>?</b> inside Chair Run for every rule in detail. Lose your last life and you can pay 30 $TMF for a <b>Second Wind</b> to try again. It works <b>one time per run</b>.</p>
-      <p><b>Ballot Gates</b> appear down the hall. Pick a lane to vote on an asset. About 110m later the closing bell pays a dividend or takes a drawdown from your run's $TMF. Risky picks swing harder.</p>
-      <p><b>Daily quests</b> (three a day) and a daily streak give you bonus season points. Each run also earns season points toward your Badges meter.</p>
+      <h3>What you need, and staying signed in</h3>
+      <p>You need a <b>Mimu On Ape</b> in the wallet you connect. Wallets that already hold a <b>TMF Pass</b> or a <b>Dengs</b> can&rsquo;t play. Connecting only asks for a free signature that proves you own the wallet. It sends no transaction and can&rsquo;t move anything. Once you are in, you stay signed in on this browser for up to <b>12 hours</b>, even if you refresh. After that, or if you press <em>Disconnect Glyph</em> in Settings, you sign in again. Your username (your X handle) and picture appear on the leaderboards, in the Top 5 app and in your texts.</p>
 
       <h3>Campaign schedule (Los Angeles time, PST)</h3>
       <div class="gd-steps">
-        <div><b>1</b><span><b>Campaign opens</b>: Sat Oct 10, 6:00 PM. Start gaming.</span></div>
-        <div><b>2</b><span><b>Gaming stops</b>: Tue Oct 13, 6:00 AM. No more Chair Runs and no more acquiring points.</span></div>
-        <div><b>3</b><span><b>24-hour donation window</b>: Tue 6:00 AM to Wed 6:00 AM. Players can donate their $TMF to the top 5 in the Top 5 app.</span></div>
+        <div><b>1</b><span><b>Campaign opens</b>: Sat Oct 10, 6:00 PM. The countdown on the phone&rsquo;s home screen hits zero and <b>Chair Run opens by itself</b>. Before that it stays greyed out and can&rsquo;t be tapped, while the other apps are already open.</span></div>
+        <div><b>2</b><span><b>Gaming stops</b>: Tue Oct 13, 6:00 AM. Chair Run closes again by itself and no new runs can start. A run you already have going can finish and count.</span></div>
+        <div><b>3</b><span><b>24-hour donation window</b>: Tue 6:00 AM to Wed 6:00 AM. This is the only time $TMF can be given to other players, in the Top 5 app. Giving is locked at all other times.</span></div>
         <div><b>4</b><span><b>Campaign closes</b>: Wed Oct 14, 6:00 AM. The end.</span></div>
       </div>
-      <p style="font-size:12.5px;color:var(--dim)">The schedule can change. The countdown on the phone&rsquo;s home screen and in the Alarm app is live.</p>
+      <p style="font-size:12.5px;color:var(--dim)">The schedule can change. The countdown on the home screen and the Alarm app are live and always show the real times.</p>
+
+      <h3>Chair Run: how to play</h3>
+      <p>Your Mimu sprints down a grand hall. Dodge, hop and slide to keep your three lives. A run lasts until you are benched, and there is <b>no pause button</b>.</p>
+      <div class="gd-keys">
+        <div><kbd>← →</kbd> or <kbd>A D</kbd><span>change lane (swipe left or right on a phone)</span></div>
+        <div><kbd>↑</kbd> <kbd>W</kbd> <kbd>Space</kbd><span>jump a chair (swipe up or tap)</span></div>
+        <div><kbd>↓</kbd> or <kbd>S</kbd><span>slide under banners (swipe down). In mid air it drops you fast.</span></div>
+      </div>
+      <ul class="gd-list">
+        <li><b>Lives:</b> you have 3 hearts. A chair hurts unless you jump high enough, a banner hurts unless you slide under it. A hit costs a life, slows you for about a second, gives 1.5 seconds of protection and breaks your chain.</li>
+        <li><b>$TMF coins:</b> each coin is 10 points x your chain and adds to your $TMF. The $TMF you collect in a run lands in your wallet when the run ends and counts toward your leaderboard total.</li>
+        <li><b>Chain and the x5 multiplier:</b> every coin adds 1 to your chain and every chair hop adds 3. Every 10 raises your multiplier by 1, up to <b>x5 at a chain of 40</b>. Four seconds without a gain, or a hit, breaks the chain. The multiplier applies to coins, hops, distance points and milestone bonuses.</li>
+        <li><b>Score:</b> coins (10 points), chair hops (15 points), distance (points every second based on your speed) and a bonus every 250 m, all multiplied by your chain. Closing Bell results also move your score by 10 points per $TMF.</li>
+        <li><b>Power-ups:</b> about 1 in 9 obstacle patterns carries one. The <b>Star</b> ✨ doubles your points and coins for 10 seconds (it stacks with the chain, up to x10). The <b>Briefcase</b> 💼 blocks your next hit. The <b>Bell</b> 🔔 is a coin magnet for 9 seconds.</li>
+        <li><b>Second Wind:</b> lose your last life and you get 5 seconds to pay <b>30 $TMF to keep running</b>. You keep your score and chain. It works <b>one time per run</b>, and if your run coins are short your wallet tops it up.</li>
+      </ul>
+
+      <h3>Ballot Gates and the Closing Bell: investing during a run</h3>
+      <p>A purple gate appears down the hall every 900 m, the first at 650 m. It has three lane panels, each with an asset symbol (like BILLS, GOLD, CHAIN or MEME) and five risk dots. <b>You vote by running through a panel</b>, so steer into your lane first. The sign above the gate shows the market mood (Risk-on, Risk-off or Choppy). Safe assets pay small and steady, hard assets lean against fear, growth assets swing more and degen assets can pay or cost a lot. About <b>110 m later the Closing Bell rings</b> and pays a dividend or takes a drawdown from the $TMF you are carrying: (20 + your $TMF) x the asset&rsquo;s return x 9. A bigger stack swings harder in both directions, and it can never take more than you hold. Coin lines in front of each lane let you collect before you commit.</p>
+
+      <h3>How the game gets harder, and how it eases</h3>
+      <ul class="gd-list">
+        <li><b>Speed:</b> you start at 11 and gain 1 for every 230 m, up to 23 at about 2,760 m. After the first 3 minutes the top speed climbs again, <b>+0.5 every 3 minutes</b>, up to a ceiling of 30 at minute 42.</li>
+        <li><b>Obstacles:</b> rolling chairs from 420 m, walls of 3 chairs from 525 m, double banners from 1,225 m, and taller chairs and tighter gaps up to 3,500 m, where the mix reaches its hardest.</li>
+        <li><b>Red orb:</b> at <b>2.5M, 5M, 7.5M, 10M</b> and every 2.5 million after, a glowing red orb appears. Catch it and your top speed is 0.5 lower for 3 minutes, then it returns on its own. A red chip at the top counts it down.</li>
+        <li><b>Surprises:</b> every 1 million points shows a message and a 10 second RGB disco party over the phone. Every 10 million the carpet changes color. Messages at the top explain every event, with a detail line under each.</li>
+      </ul>
+
+      <h3>Quests, season points and badges</h3>
+      <p><b>Daily quests</b> (three a day) and a daily streak give bonus season points. Each run earns season points (your score divided by 5, plus 2 per $TMF, plus quests) that fill the meter in the <b>Badges</b> app toward your next Season Badge. The Badges app also holds <b>168 achievements</b> in 16 colored groups, a level, your stats, the chair gallery (jump 25 of each of the 8 chair types) and the long-run badges at 1M, 10M, 20M, 50M and 100M. They are just for fun and never change the leaderboard.</p>
+
+      <h3>Leaderboards, the Top 5 and giving $TMF</h3>
+      <ul class="gd-list">
+        <li><b>Fair scores:</b> your browser only sends the moves you made. The server replays them with the same rules and works out the score itself, so scores can&rsquo;t be made up. Runs that look like a bot are held for review.</li>
+        <li><b>Weekly boards:</b> they reset every Friday at 1:00 PM Pacific. A Chair Run board ranks your best single run and a $TMF board ranks what you found. This week runs until Fri Oct 16, after the campaign has closed.</li>
+        <li><b>Top 5 app:</b> every player ranked by total score (best run + $TMF found), with the top 5 in gold frames. The top 5 can&rsquo;t give $TMF. Everyone else can give all their $TMF to one top 5 player (+2 points on their score for every $TMF), or send an amount to any player who has at least 1 $TMF. <b>Giving only works during the 24-hour donation window.</b> Ranks change live, so whether you can give changes with them. Gifts are final.</li>
+      </ul>
+
+      <h3>Mutual Mimu: the boardroom</h3>
+      <p>Mutual Mimu is a round-based room that unlocks once you connect your Glyph. Every <b>4 hours 20 minutes</b> a closing bell rings and settles the round. Read the weather forecast, vote on one of four proposals, stake some of your wallet&rsquo;s $TMF (up to 3x leverage), and optionally court a voting bloc to follow you. The room&rsquo;s biggest total wins, and your stake rides the result. You can never lose more than your stake, and every bell gives season points. Tap the <b>?</b> in the app for every rule. Your Mutual Mimu wallet lives on your own phone and is separate from the leaderboard totals.</p>
 
       <h3>Every app on the phone</h3>
       <div class="gd-grid">
-        <div><b>Chair Run</b><span>The runner. Beat your best score every day. This is where you connect your Glyph.</span></div>
-        <div><b>Mutual Mimu</b><span>The boardroom: stake $TMF, vote and join the lobby. A closing bell rings every 4h 20m and settles the round. It stays greyed out until you connect your Glyph in Chair Run.</span></div>
-        <div><b>Leaderboards</b><span>Weekly boards for the best run and for $TMF found. Every score is checked by the server, which replays your run, so everyone is ranked fairly. Boards reset weekly.</span></div>
-        <div><b>X and OpenSea</b><span>Two apps on the home screen show the Mimu On Ape pages on X and on OpenSea as phone-view pictures. Each has an Open button that takes you to the real page.</span></div>
-        <div><b>Long-run badges</b><span>Reach 1M, 10M, 20M, 50M or 100M in a single Chair Run for a special badge. Every 1M pops a surprise and every 10M the runway changes color. These are just for fun and do not affect the leaderboard.</span></div>
-        <div><b>Badges</b><span>Your season meter, badges, chair gallery (jump 25 of each to unlock), patron status and career stats.</span></div>
-        <div><b>Top 5</b><span>Every player ranked by total score (Chair Run points + $TMF found), with the top 5 in gold frames. The top 5 cannot send $TMF. Anyone outside the top 5 can give all their $TMF to one top 5 player to help them (+2 points for every $TMF), or send $TMF to any player who has registered at least 1 $TMF point. Ranks change live, so whether you can give changes with them.</span></div>
-        <div><b>Alarm</b><span>The campaign countdown and schedule, in Los Angeles time. The icon lights up and wiggles when gaming stops.</span></div>
-        <div><b>Messages</b><span>A few welcome texts, plus (after you connect your Glyph) texting with other players on the leaderboard. You can block anyone.</span></div>
-        <div><b>Phone, Camera, Settings</b><span>Dial a number (you will get the classic wrong-number message), snap a photo and browse the gallery, or flip sound on and off and disconnect Glyph. </span></div>
-        <div><b>X</b><span>The Mimu On Ape profile on X, shown right inside the phone.</span></div>
-        <div><b>Mimu Mail</b><span>Your inbox. Emails from the Mimu On Ape team (with a subject, a message and sometimes a photo) arrive here for every phone signed in with Glyph. It starts empty. Only the team can send mail, and you can&rsquo;t reply.</span></div>
+        <div><b>Chair Run</b><span>The runner. Open from the countdown until gaming stops. This is where you connect your Glyph.</span></div>
+        <div><b>Mutual Mimu</b><span>The boardroom: stake $TMF, vote and join the lobby. It stays greyed out until you connect your Glyph.</span></div>
+        <div><b>Leaderboards</b><span>Weekly boards for the best run and for $TMF found, checked by the server so everyone is ranked fairly.</span></div>
+        <div><b>Badges</b><span>Your level, 168 achievements, stats, season meter, season badges, chair gallery and patron status.</span></div>
+        <div><b>Top 5</b><span>Everyone ranked by total score, the top 5 in gold, and the place to give $TMF during the donation window.</span></div>
+        <div><b>Alarm</b><span>The campaign countdowns and schedule in Los Angeles time. It rings when gaming stops.</span></div>
+        <div><b>Messages</b><span>A few welcome texts, plus texting with any player who has signed in (280 characters). You can block anyone, and the Mimu On Ape team may text you too.</span></div>
+        <div><b>Mimu Mail</b><span>Your inbox. Emails from the team (a subject, a message and sometimes a photo) arrive here for every phone signed in with Glyph. You can&rsquo;t reply.</span></div>
+        <div><b>X and OpenSea</b><span>Phone-view pictures of the Mimu On Ape pages on X and on OpenSea, each with a button that opens the real page.</span></div>
+        <div><b>Phone, Camera, Settings</b><span>Dial a number (you will get the classic wrong-number message), snap a photo and browse the gallery, or change sound and disconnect Glyph.</span></div>
       </div>
 
       <h3>Getting around</h3>
-      <p>The top bar launches any app on the phone in one click. On the phone, the <em>back</em> button at the bottom (or <kbd>Esc</kbd>) takes you home. On a real phone the game fills your whole screen. Your progress saves in your browser automatically.</p>
+      <p>The top bar launches any app on the phone in one click. On the phone, the <em>back</em> button at the bottom (or <kbd>Esc</kbd> outside Chair Run) takes you home. Your handle, Mimu, achievements and progress save in your browser automatically, so clearing your browser data clears them.</p>
 
       <h3>Secrets on the desk</h3>
       <div class="gd-grid">
@@ -934,7 +963,7 @@ body.enter .footbar{animation-name:chromeInB}
       </div>
 
       <h3>Rewards, honestly</h3>
-      <p>Season badges are in-game cosmetics. Playing may, by chance and at the discretion of the Mimu On Ape team, lead to a TMF Pass in the giveaway, or it may not, and it probably will not. Nothing is guaranteed and no real money or assets are involved. Keep climbing, keep beating your best. Full details are in the Terms of Service.</p>
+      <p>Season badges and achievements are in-game cosmetics. Playing may, by chance and at the discretion of the Mimu On Ape team, lead to a TMF Pass in the giveaway, or it may not, and it probably will not. Nothing is guaranteed and no real money or assets are involved. Keep climbing, keep beating your best. Full details are in the Terms of Service.</p>
     </div>
     <div class="tos-foot"><span>© 2026 MIMU ON APE</span><button class="btn gold" data-guide-close>Let’s play</button></div>
   </div>
@@ -948,13 +977,13 @@ body.enter .footbar{animation-name:chromeInB}
       <h3>1 · Acceptance</h3><p>By opening or playing Chair Run × Mutual Mimu (the “Game”) you agree to these Terms. If you do not agree, please do not use the Game.</p>
       <h3>2 · Who we are</h3><p>The Game is published by MIMU ON APE and built by Bert Baccaratt (together, “we”, “us”). It is an entertainment product and a community campaign. The Game is independent: it is not affiliated with, endorsed by or sponsored by THE MUTUAL FUN project, and it exists for the TMF Pass Mimu giveaway.</p>
       <h3>3 · Eligibility</h3><p>You must be old enough to enter a binding agreement where you live, and at least 18 to be considered for any reward. Where the law restricts promotions or digital-asset rewards in your region, you may not be eligible.</p>
-      <h3>4 · Campaign schedule</h3><p>The campaign is scheduled to open on Saturday, October 10, 2026 at 6:00 PM, gaming stops on Tuesday, October 13 at 6:00 AM (no more Chair Runs and no more acquiring points), a 24-hour window follows in which players can donate $TMF to the top 5, and the campaign closes on Wednesday, October 14 at 6:00 AM. All times are Los Angeles time (PST). We may change, pause, extend or end the schedule at any time.</p>
+      <h3>4 · Campaign schedule</h3><p>The campaign is scheduled to open on Saturday, October 10, 2026 at 6:00 PM, gaming stops on Tuesday, October 13 at 6:00 AM (no new Chair Runs can start, and a run already in progress may finish and count), a 24-hour window follows in which players can donate $TMF to the top 5, and the campaign closes on Wednesday, October 14 at 6:00 AM. Chair Run opens automatically when the campaign countdown ends. All times are Los Angeles time (PST). We may change, pause, extend or end the schedule at any time.</p>
       <h3>5 · The giveaway, leaderboards and recognition</h3><p>The Game exists for the TMF Pass Mimu giveaway. Playing may, subject to chance and our discretion, lead to a TMF Pass, or it may not, and it probably will not. The Game has leaderboards that reset each week, and you are welcome to keep playing to beat your own best score. Top players may be considered for recognition, which could include a TMF Pass or another item, but nothing is promised. No TMF Passes have been allocated to the Game at this time. Whether any recognition is given, who is considered, how many items exist and when are decided solely by MIMU ON APE, and may change or end at any time. Leaderboard results may be reviewed and adjusted to remove cheating or errors. A score, rank or badge does not entitle anyone to a reward.</p>
-      <h3>6 · In-game currency, points and giving</h3><p>“$TMF” coins and “Season Points” shown inside the Game are virtual items for gameplay only. They have no cash value, cannot be sold or redeemed, and are not the $TMF token or any other digital asset. Your total score is your Chair Run points plus your $TMF found, and the Top 5 app ranks every player by it. The top 5 players of the week cannot give $TMF to anyone. Anyone outside the top 5 can give all their $TMF to one top 5 player, which also adds 2 points to that player&rsquo;s score for every $TMF, or send $TMF to any player who has registered at least 1 $TMF point. Ranks change as players play and give, so whether you can give can change at any time. Gifts are virtual and final, and the Top 5 app is the only way to give coins away.</p>
-      <h3>7 · Fair play</h3><p>Every leaderboard score is checked by our server, which replays your run from the moves you made. Runs that can&rsquo;t be verified, or that come from bots, scripts, automated input, edited code or exploits, don&rsquo;t count and may be removed along with the account&rsquo;s results. Do not use multiple identities to gain an advantage, and do not interfere with the Game or other players. Chair Run runs on your device, so keep your connection open until the &ldquo;run complete&rdquo; screen finishes ranking you. Some runs are held for review before they count. We may remove scores, texts, pictures or players, or restrict access, where we reasonably suspect misuse.</p>
+      <h3>6 · In-game currency, points and giving</h3><p>“$TMF” coins and “Season Points” shown inside the Game are virtual items for gameplay only. They have no cash value, cannot be sold or redeemed, and are not the $TMF token or any other digital asset. Your total score is your Chair Run points plus your $TMF found, and the Top 5 app ranks every player by it. The top 5 players of the week cannot give $TMF to anyone. Anyone outside the top 5 can give all their $TMF to one top 5 player, which also adds 2 points to that player&rsquo;s score for every $TMF, or send $TMF to any player who has registered at least 1 $TMF point. Ranks change as players play and give, so whether you can give can change at any time. Giving is only available during the 24-hour donation window described above. Gifts are virtual and final, and the Top 5 app is the only way to give coins away. Your Mutual Mimu wallet is kept on your own device and is separate from the totals on our servers.</p>
+      <h3>7 · Fair play</h3><p>Every leaderboard score is checked by our server, which replays your run from the moves you made. Runs that can&rsquo;t be verified, or that come from bots, scripts, automated input, edited code or exploits, don&rsquo;t count and may be removed along with the account&rsquo;s results. Do not use multiple identities to gain an advantage, and do not interfere with the Game or other players. Chair Run runs on your device and cannot be paused, so keep your connection open until the &ldquo;run complete&rdquo; screen finishes ranking you. If the game was updated, the page reloads before a run starts so that your run counts. Some runs are held for review before they count. We may remove scores, texts, pictures or players, or restrict access, where we reasonably suspect misuse.</p>
       <h3>8 · Glyph, usernames and pictures</h3><p>Chair Run asks you to connect a Glyph wallet. We read your Glyph name, profile picture and wallet address, and we check which NFTs that wallet holds: you need a Mimu On Ape to play, and wallets holding a TMF Pass or a Dengs can&rsquo;t play. You then choose a username, which must be your X handle. You type it yourself and we do not verify it, only one wallet can use a given username, and we may change or remove usernames that impersonate someone else. Your username is shown publicly as your name on the leaderboards, in the Top 5 app and in texts, together with your scores and your profile picture. You may upload a profile picture, which is shown publicly too; do not upload anything unlawful, offensive or that is not yours, and we may remove it. Connecting only asks for a signature that proves you own the wallet. It costs nothing, sends no transaction and can&rsquo;t move your assets. Disconnect any time in Settings.</p>
-      <h3>9 · Mail, texts and conduct</h3><p>Emails from the team arrive in Mimu Mail on every phone signed in with Glyph; players cannot send mail. After you connect your Glyph you can text other players on the leaderboard. Texts are stored on our servers, can be read by the team, and may be deleted. Keep it friendly: no harassment, threats, hate or spam. You can block any player, and we may remove players who harass others.</p>
-      <h3>10 · Your data and third-party services</h3><p>On our servers we store your wallet address, Glyph name, username, profile picture, scores, $TMF gifts and texts, plus an anonymous browser ID and the time of your visits so we can count visitors. Our servers do not store your IP address or your location. Your handle, chosen Mimu, settings and progress also save in your own browser. We do not collect wallet keys, seed phrases or payment details through the Game and will never ask for them. The site is hosted on GitHub Pages and the leaderboard service runs on Cloudflare, which also provides the human check used before a run starts. Fonts load from Google Fonts, wallet connection uses Glyph, if you dial a wrong number in the phone app a short recording plays through YouTube&rsquo;s embedded player, and the X app in the phone shows the Mimu On Ape profile inside the phone. Each of these providers has its own privacy policy and may process your IP address to deliver its service.</p>
+      <h3>9 · Mail, texts and conduct</h3><p>Emails from the team arrive in Mimu Mail on every phone signed in with Glyph; players cannot send mail. After you connect your Glyph you can text other players who have signed in, and the team may text you too. Texts are stored on our servers, can be read by the team, and may be deleted. Keep it friendly: no harassment, threats, hate or spam. You can block any player, and we may remove players who harass others.</p>
+      <h3>10 · Your data and third-party services</h3><p>On our servers we store your wallet address, Glyph name, username, profile picture, scores, $TMF gifts and texts, plus an anonymous browser ID and the time of your visits so we can count visitors. Our servers do not store your IP address or your location. Your handle, chosen Mimu, settings, achievements and progress also save in your own browser, together with a sign-in session that lasts up to 12 hours. We do not collect wallet keys, seed phrases or payment details through the Game and will never ask for them. The site is hosted on GitHub Pages and the leaderboard service runs on Cloudflare, which also provides the human check used before a run starts. Fonts load from Google Fonts, wallet connection uses Glyph, if you dial a wrong number in the phone app a short recording plays through YouTube&rsquo;s embedded player, and the X app in the phone shows the Mimu On Ape profile inside the phone. Each of these providers has its own privacy policy and may process your IP address to deliver its service.</p>
       <h3>11 · Not financial advice</h3><p>Mutual Mimu is a simulation. It does not involve real money, real investments or real markets, and nothing in it is investment, legal or tax advice. Past in-game results say nothing about real-world performance.</p>
       <h3>12 · Intellectual property</h3><p>The MIMU ON APE name, characters and artwork belong to MIMU ON APE and its respective creators and rights holders. THEMUTUAL.FUN names, marks and chair artwork belong to their respective owners. The Game’s design and code belong to their authors. You may play the Game for personal, non-commercial use but may not copy or redistribute it without permission.</p>
       <h3>13 · Third-party links</h3><p>The Game links to third-party sites, including OpenSea, themutual.fun and X. We do not control them and are not responsible for their content or practices.</p>
@@ -1709,7 +1738,7 @@ const API={
       if(!ok||!window.turnstile)return res(null);
       const box=document.createElement('div');box.style.cssText='position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden';document.body.appendChild(box);
       let done=false;const fin=v=>{if(done)return;done=true;try{window.turnstile.remove(id)}catch(e){}box.remove();res(v)};
-      let id;try{id=window.turnstile.render(box,{sitekey:key,size:'invisible',callback:t=>fin(t),'error-callback':()=>fin(null),'timeout-callback':()=>fin(null)})}catch(e){return fin(null)}
+      let id;try{id=window.turnstile.render(box,{sitekey:key,size:'invisible',retry:'never','refresh-expired':'never',callback:t=>fin(t),'error-callback':()=>fin(null),'timeout-callback':()=>fin(null)})}catch(e){return fin(null)}
       setTimeout(()=>fin(null),9000);
     }));
   },  async j(path,opt){
@@ -2509,7 +2538,7 @@ function passCeremony(p){
   ov.innerHTML=`<div class="lbl" style="color:var(--gold);text-align:center">Season One · badge #${p.n}</div><div class="h2" style="font-size:32px;text-align:center;margin:8px 0 4px">Season badge <em>unlocked</em></div>
   <div class="sub2" style="text-align:center">Every run counts. The desk prints a badge as you climb.</div><div class="printer"></div>
   <div class="tkw"><div class="tk"><div class="ticket" style="margin:0"><div class="sh"></div><div class="row"><div><div class="tt">Season Badge</div><div class="lbl" style="color:var(--cream);margin-top:6px">Badge no. ${String(p.n).padStart(3,'0')}</div></div><div class="sp"></div><div style="width:58px;height:58px;border-radius:14px;overflow:hidden;border:2px solid var(--gold)">${pcvM(p.mimu,'tk')}</div></div>
-   <div class="dash"></div><div class="row"><div class="lbl" style="color:var(--cream)">Holder</div><div class="sp"></div><b class="mono" style="color:var(--gold2)">${p.handle}</b></div></div></div></div>
+   <div class="dash"></div><div class="row"><div class="lbl" style="color:var(--cream)">Holder</div><div class="sp"></div><b class="mono" style="color:var(--gold2)">${escH(p.handle)}</b></div></div></div></div>
   <div class="sp"></div><div class="sub2" style="font-size:11.5px;text-align:center;margin-bottom:14px">A cosmetic in-game badge. Keep climbing the leaderboard: top players may be considered for recognition by the Mimu On Ape and TheMutual.fun teams, but nothing is guaranteed.</div><button class="btn gold" id="pc">Nice</button>`;
   paintAll();setTimeout(()=>{sfx.win();confetti(80)},1700);$('#pc',ov).onclick=()=>{ov.classList.remove('on');setTimeout(()=>ov.remove(),500)};
 }
@@ -2692,7 +2721,7 @@ const MBLOCS=[
   {id:'b1',name:'Fur Traders Guild',pref:[.9,.7,.8,.3,.05],mom:.1},
   {id:'b2',name:'Cape & Cowl Club',pref:[.05,.2,.3,.8,1.0],mom:1.1}];
 function ffNew(){
-  const f=P.ff||{week:1,round:0,vote:null,stake:0,lev:1,lobby:{},hist:[],assetLast:{},weather:0};
+  const f=Object.assign({week:1,round:0,vote:null,stake:0,lev:1,lobby:{},hist:[],assetLast:{},weather:0},P.ff||{});   /* tolerate older or partial saved state */
   f.weather=clamp((f.weather||0)*.55+gauss()*.55,-1,1);f.fconf=.55+Math.random()*.3;f.forecast=clamp(f.weather*f.fconf+gauss()*(1-f.fconf)*.8,-1,1);
   const by={};ASSETS.forEach(a=>(by[a.c]=by[a.c]||[]).push(a));
   f.opts=[rp(Math.random<.4?by.hard:by.safe),rp(by.bal),rp(by.growth),rp(by.degen)].map(a=>({sym:a.sym,ret:(a.mu+BETA[a.c]*f.weather*.035+a.sg*gauss())*3}));
@@ -2794,7 +2823,7 @@ async function friday(r){
     const fl=$('#fline',ov);if(!fl)return res();fl.setAttribute('d',d);$('#farea',ov).setAttribute('d',d+`L${X(n)} 150L0 150Z`);const cur=pts[n];$('#fdot',ov).setAttribute('cx',X(n));$('#fdot',ov).setAttribute('cy',Y(cur));$('#fret',ov).textContent=pct(cur,2);$('#fpl',ov).textContent=fmt(r.stake*cur*r.lev);if(n%3===0)sfx.tick();
     if(k<1)requestAnimationFrame(step);else res()};requestAnimationFrame(step)});
   $('#fret',ov).textContent=pct(r.o.ret,2);$('#fpl',ov).textContent=(r.pl>=0?'+':'')+fmt(r.pl);$('#fpl',ov).className='mono '+(r.pl>=0?'up':'down');
-  if(r.pl>0){sfx.win();confetti(36);$('#fchecks',ov).innerHTML=`<div class="check"><div><div class="w">Pay to the order of ${P.handle}</div><div class="m">The Mimu Fund · paid in ${r.a.sym} · Rd ${r.week}</div></div><div class="a">+${fmt(r.pl)}</div></div><div class="sub2" style="text-align:center;font-size:12px">+${r.pp} season points</div>`}
+  if(r.pl>0){sfx.win();confetti(36);$('#fchecks',ov).innerHTML=`<div class="check"><div><div class="w">Pay to the order of ${escH(P.handle)}</div><div class="m">The Mimu Fund · paid in ${r.a.sym} · Rd ${r.week}</div></div><div class="a">+${fmt(r.pl)}</div></div><div class="sub2" style="text-align:center;font-size:12px">+${r.pp} season points</div>`}
   else if(r.pl<0){sfx.fail();$('#fret',ov).classList.add('shake');$('#fchecks',ov).innerHTML=`<div class="card" style="text-align:center"><div class="h2" style="font-size:18px">The room lost ${fmt(-r.pl)} $TMF of your stake.</div><div class="sub2" style="margin-top:4px">+${r.pp} season points for showing up.</div></div>`}
   else $('#fchecks',ov).innerHTML=`<div class="card" style="text-align:center"><div class="h2" style="font-size:18px">${r.stake?'Flat round.':'You watched from the gallery.'}</div><div class="sub2" style="margin-top:4px">${r.stake?'':'Stake some $TMF before the next bell to have skin in the game.'}+${r.pp} season points.</div></div>`;
   const b=$('#fbtn',ov);b.style.opacity=1;b.textContent='Continue';b.className='btn '+(r.pl<0?'ghost':'gold');
@@ -2816,7 +2845,7 @@ function buildAlarm(root){
   const cell=(id,l)=>`<div><b id="${id}">00</b><i>${l}</i></div>`;
   const STEPS=[
     {k:'open',t:'Campaign opens',when:'Sat Oct 10 &middot; 6:00 PM PST',alt:'',d:'<b>Start gaming.</b> Chair Run and Mutual Mimu are open and every run earns $TMF and points.'},
-    {k:'stop',t:'Gaming stops',when:'Tue Oct 13 &middot; 6:00 AM PST',alt:'',d:'<b>No more Chair Runs and no more acquiring points.</b> Your score and $TMF total are final.'},
+    {k:'stop',t:'Gaming stops',when:'Tue Oct 13 &middot; 6:00 AM PST',alt:'',d:'<b>No new Chair Runs can start and no more points can be acquired.</b> A run already underway may finish. Your run scores are final.'},
     {k:'give',t:'24-hour donation window',when:'Tue 6:00 AM to Wed 6:00 AM PST',alt:'24 hours',d:'For 24 hours, players can <b>donate their $TMF to the top 5</b> in the Top 5 app.'},
     {k:'close',t:'Campaign closes',when:'Wed Oct 14 &middot; 6:00 AM PST',alt:'',d:'<b>The end.</b> The campaign is over and the final standings stand.'}];
   /* red-framed countdowns that sit between the squares: what is the next thing and how long until it */

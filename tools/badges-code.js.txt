@@ -1,0 +1,140 @@
+/* =====================================================================
+   BADGES: achievements, stats and levels. Just for fun, nothing here touches the leaderboard.
+   ===================================================================== */
+const ST_DEF=()=>({t:0,hits:0,blocks:0,star:0,case:0,bell:0,orb:0,gates:0,wins:0,bigDiv:0,degen:0,rev:0,mil250:0,mils:0,tier:0,chain:0,noHit:0,topSpeed:0,longest:0,coinsRun:0,distRun:0,night:0,quests:0,bestStreak:0,ffStaked:0,ffLev3:0,ffBlocs:0,ffMaxStake:0,ach:{},achInit:0});
+function ST(){if(!P.st)P.st=ST_DEF();else{const d=ST_DEF();for(const k in d)if(P.st[k]==null)P.st[k]=d[k]}return P.st}
+const MEDALS=[['Bronze','#cd7f32','#f6c999'],['Silver','#a9b3c2','#f4f7fc'],['Gold','#e6b231','#fff1b3'],['Platinum','#3bb8f0','#d9f3ff'],['Diamond','#9a7cff','#eee8ff'],['Mythic','#ff4f9d','#ffd6ea']];
+const ACH_CATS=[
+  {id:'run',n:'Runner',c:'#5aa0ff',i:'🏃'},{id:'score',n:'Score',c:'#f0c64a',i:'🏆'},{id:'endure',n:'Endurance',c:'#38c8ff',i:'⏱'},
+  {id:'coins',n:'$TMF coins',c:'#f0b84a',i:'🪙'},{id:'chain',n:'Chain',c:'#ff9a4a',i:'🔥'},{id:'hops',n:'Hops and chairs',c:'#5be08a',i:'🪑'},
+  {id:'power',n:'Power-ups',c:'#ff6fb5',i:'⚡'},{id:'orb',n:'Red orb',c:'#ff3b3b',i:'🔴'},{id:'gate',n:'Ballot Gate',c:'#9b7bff',i:'🗳'},
+  {id:'surv',n:'Survival',c:'#ff7b5a',i:'❤'},{id:'party',n:'Milestones and parties',c:'#ff7bd5',i:'🌈'},{id:'daily',n:'Daily play',c:'#35d0c0',i:'📅'},
+  {id:'season',n:'Season',c:'#d0d6e0',i:'🏅'},{id:'mm',n:'Mutual Mimu',c:'#b99bff',i:'🔔'},{id:'patron',n:'Patron',c:'#ffd166',i:'🤝'},{id:'fun',n:'Fun',c:'#a0f0ff',i:'✨'}];
+const durText=s=>{if(s>=3600){const h=s/3600;return(h%1?h.toFixed(1):h)+(h===1?' hour':' hours')}return Math.round(s/60)+' minutes'};
+const durShort=s=>{s=Math.floor(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h?h+'h '+m+'m':m+'m '+String(s%60).padStart(2,'0')+'s'};
+function achList(){
+  const A=[],ff=()=>(P.ff&&P.ff.hist)||[];
+  const L=(cat,icon,key,goals,names,val,desc)=>goals.forEach((g,i)=>A.push({id:cat+'.'+key+'.'+i,cat,icon,name:names[i],desc:desc(g),goal:g,val,tier:i,med:goals.length<=1?0:Math.min(5,Math.floor(i*6/goals.length))}));
+  const hopsTotal=()=>(P.cleared||[]).reduce((a,b)=>a+b,0);
+  L('run','🏃','runs',[1,10,50,150,500],['First Steps','Warmed Up','Regular','Hall Veteran','Chair Legend'],()=>P.runs||0,g=>'Finish '+fmt(g)+' Chair Run'+(g>1?'s':''));
+  L('run','🛣','dist',[1000,10000,50000,200000,1000000],['Around the Block','Ten K','Marathon Hall','Long Haul','Million Meter'],()=>P.dist||0,g=>'Run '+fmt(g)+' m in total');
+  L('run','📏','far',[1000,5000,15000,40000,100000],['Strong Start','Deep Hall','Far Corridor','Endless Hall','Edge of the Map'],()=>ST().distRun,g=>'Run '+fmt(g)+' m in a single run');
+  L('score','🏆','best',[10000,100000,500000,1000000,5000000,10000000,20000000,50000000,100000000],['Getting Going','Six Figures','Half a Million','Million Mile','Five Alive','Ten Million Club','Twenty Mil Legend','Fifty Mil Immortal','Hundred Mil Myth'],()=>Math.max(P.top||0,P.best||0),g=>'Score '+fmt(g)+' in a single run');
+  L('endure','⏱','long',[180,600,1800,3600,7200,10800],['Full Speed','Ten Minute Club','Half Hour','The Hour','Two Hour Titan','Three Hour Myth'],()=>ST().longest,g=>'Survive '+durText(g)+' in a single run');
+  L('endure','⌛','time',[3600,18000,86400,360000],['First Hour','Five Hours','A Full Day','Ten Days'],()=>ST().t,g=>'Play '+durText(g)+' in total');
+  L('endure','💨','spd',[22,25,28,29.5],['Full Speed','Past the Cap','Speed Stairs','Near the Ceiling'],()=>ST().topSpeed,g=>'Reach a speed of '+g+' (the climb starts at 11)');
+  L('coins','🪙','tot',[100,1000,10000,50000,250000,1000000],['Pocket Change','Coin Jar','Treasure Chest','Vault Door','Dragon Hoard','Mint Master'],()=>P.totalCoins||0,g=>'Collect '+fmt(g)+' $TMF in total');
+  L('coins','💰','run',[100,500,1000,5000,20000],['Handful','Big Haul','Overflowing','Jackpot Run','Gold Rush'],()=>ST().coinsRun,g=>'Carry '+fmt(g)+' $TMF in a single run');
+  L('chain','🔥','best',[10,20,30,40,100,250],['x2 Multiplier','x3 Multiplier','x4 Multiplier','x5 Multiplier','Century Chain','Unbreakable'],()=>ST().chain,g=>'Reach a chain of '+g+(g<=40?' (multiplier x'+(1+Math.floor(g/10))+')':''));
+  L('hops','🪑','hops',[25,100,500,2000,10000],['Hop Along','Hurdler','Chair Jumper','Hop Machine','Hop Legend'],hopsTotal,g=>'Hop '+fmt(g)+' chairs in total');
+  L('hops','🖼','gal',[1,3,5,8],['First Chair','Trio','Collector','Full Gallery'],()=>(P.cleared||[]).filter(n=>n>=25).length,g=>'Unlock '+g+' chair type'+(g>1?'s':'')+' in the gallery (25 hops each)');
+  L('power','✨','star',[1,25,100,500],['First Star','Star Gazer','Star Collector','Supernova'],()=>ST().star,g=>'Collect '+fmt(g)+' Star'+(g>1?'s':'')+' (x2 points and coins)');
+  L('power','💼','case',[1,25,100],['Briefcase Carrier','Insurance','Fort Knox'],()=>ST().case,g=>'Collect '+fmt(g)+' Briefcase'+(g>1?'s':'')+' (shield)');
+  L('power','🛡','blk',[1,10,50],['Close Call','Shielded','Bodyguard'],()=>ST().blocks,g=>'Block '+fmt(g)+' hit'+(g>1?'s':'')+' with a Briefcase');
+  L('power','🔔','bell',[1,25,100],['Bell Ringer','Magnet Mind','Coin Vacuum'],()=>ST().bell,g=>'Collect '+fmt(g)+' Bell'+(g>1?'s':'')+' (coin magnet)');
+  L('orb','🔴','orb',[1,3,10,25,50],['Red Orb Caught','Orb Hunter','Calm Collector','Orb Master','Keeper of Calm'],()=>ST().orb,g=>'Catch '+g+' red orb'+(g>1?'s':'')+' (one appears every 2.5 million points)');
+  L('gate','🗳','votes',[1,10,50,250,1000],['First Vote','Ballot Regular','Gate Crasher','Proxy Veteran','Market Maker'],()=>ST().gates,g=>'Vote at '+fmt(g)+' Ballot Gate'+(g>1?'s':''));
+  L('gate','📈','wins',[1,10,50,200],['In the Green','Dividend Hunter','Cash Cow','Wall Street Mimu'],()=>ST().wins,g=>'Earn a dividend at the Closing Bell '+fmt(g)+' time'+(g>1?'s':''));
+  L('gate','💵','div',[50,250,1000,5000],['Nice Payout','Big Dividend','Windfall','Jackpot Bell'],()=>ST().bigDiv,g=>'Win a single dividend of '+fmt(g)+' $TMF at a Closing Bell');
+  L('gate','🎲','degen',[1,10,50],['Degen Curious','Degen Hours','Full Degen'],()=>ST().degen,g=>'Vote for a degen asset '+fmt(g)+' time'+(g>1?'s':''));
+  L('surv','🩹','rev',[1,10,25,50],['Second Wind','Comeback Kid','Phoenix','Nine Lives'],()=>ST().rev,g=>'Use a Second Wind '+fmt(g)+' time'+(g>1?'s':'')+' (30 $TMF)');
+  L('surv','👻','clean',[500,2000,5000,15000],['Clean Start','Untouched','Ghost Runner','Teflon Mimu'],()=>ST().noHit,g=>'Run '+fmt(g)+' m in a row without taking a hit');
+  L('party','🌈','mils',[1,5,10,25,100],['First Million','Party Starter','Disco Fever','Dance Floor','Never-Ending Party'],()=>ST().mils,g=>'Pass '+fmt(g)+' million-point mark'+(g>1?'s':'')+' (each starts a disco party)');
+  L('party','🎨','tier',[1,2,5,10],['New Carpet','Color Change','Rainbow Road','Full Spectrum'],()=>ST().tier,g=>'Reach '+fmt(g*10)+' million in a run and change the carpet color');
+  L('party','📍','m250',[10,100,500,2500],['Milestone Maker','Century of Markers','Way Marker','Cartographer'],()=>ST().mil250,g=>'Pass '+fmt(g)+' of the 250 m milestones');
+  L('daily','📅','streak',[3,7,14,30],['Three in a Row','Week Warrior','Fortnight','Month of Chairs'],()=>Math.max(ST().bestStreak,P.streak||0),g=>'Play '+g+' days in a row');
+  L('daily','📋','quests',[3,15,50,150],['Quest Taker','Quest Regular','Quest Champion','Quest Legend'],()=>ST().quests,g=>'Finish '+fmt(g)+' daily quest'+(g>1?'s':''));
+  L('season','🏅','pass',[1,3,5,10],['First Badge','Triple Badge','Badge Collector','Badge Boss'],()=>(P.passes||[]).length,g=>'Earn '+g+' Season Badge'+(g>1?'s':''));
+  L('season','⭐','sp',[1000,10000,50000,200000],['Warm-up','Meter Climber','Season Veteran','SP Overlord'],()=>P.pp||0,g=>'Earn '+fmt(g)+' season points');
+  L('mm','🔔','rounds',[1,10,50,200],['First Bell','Regular Voter','Bell Veteran','Boardroom Lifer'],()=>ff().length,g=>'Play '+fmt(g)+' Mutual Mimu round'+(g>1?'s':''));
+  L('mm','✅','won',[1,10,50],['In Profit','Hot Streak','Boardroom Shark'],()=>ff().filter(h=>h.pl>0).length,g=>'Finish '+fmt(g)+' round'+(g>1?'s':'')+' in profit');
+  L('mm','📊','prof',[100,1000,10000],['Pocket Gains','Fund Manager','Whale'],()=>Math.max(0,ff().reduce((a,h)=>a+(h.pl||0),0)),g=>'Make '+fmt(g)+' $TMF in total profit');
+  L('mm','🎯','big',[100,1000,5000],['Nice Bell','Big Bell','Mega Bell'],()=>ff().reduce((a,h)=>Math.max(a,h.pl||0),0),g=>'Win '+fmt(g)+' $TMF in a single round');
+  L('mm','🤝','bloc',[1,10,50],['First Court','Bloc Buyer','Kingmaker'],()=>ST().ffBlocs,g=>'Court a voting bloc '+fmt(g)+' time'+(g>1?'s':''));
+  L('mm','⚡','lev',[1,10],['Triple Down','Leverage Lover'],()=>ST().ffLev3,g=>'Stake with 3x leverage '+fmt(g)+' time'+(g>1?'s':''));
+  L('mm','💰','staked',[1,10,50],['Skin in the Game','Regular Stakes','Heavy Hitter'],()=>ST().ffStaked,g=>'Put a stake on '+fmt(g)+' round'+(g>1?'s':''));
+  L('mm','🐋','stake',[100,500,2000],['Big Stake','High Roller','Whale Stake'],()=>ST().ffMaxStake,g=>'Stake '+fmt(g)+' $TMF in one round');
+  L('patron','🤝','gift',[1,100,500,2000,5000],['Supporter','Kind Heart','Patron','Benefactor','Chairman’s Friend'],()=>P.patron||0,g=>'Give '+fmt(g)+' $TMF to other players');
+  L('fun','🦉','night',[1,10],['Night Owl','Insomniac'],()=>ST().night,g=>'Finish '+g+' run'+(g>1?'s':'')+' between midnight and 5 AM');
+  L('fun','🔗','conn',[1],['Connected'],()=>(P.glyph&&P.glyph.address)?1:0,g=>'Connect your Glyph');
+  L('fun','𝕏','xh',[1],['Handle Set'],()=>(P.x&&P.x.handle)?1:0,g=>'Link your X handle');
+  return A;
+}
+/* record any newly unlocked achievements and tell the player; the first check after this update just records what was already earned */
+function achCheck(){
+  try{
+    const s=ST(),list=achList(),fresh=[];
+    list.forEach(a=>{if(a.val()>=a.goal&&!s.ach[a.id]){s.ach[a.id]=Date.now();fresh.push(a)}});
+    if(!fresh.length)return;
+    saveP();
+    if(!s.achInit){s.achInit=1;saveP();return}
+    const med=a=>MEDALS[a.med][0];
+    if(fresh.length<=2)fresh.forEach(a=>toast('🏅 <span><b>Achievement unlocked</b> · '+escH(a.name)+' <small>('+med(a)+')</small></span>',3600));
+    else toast('🏅 <span><b>'+fresh.length+' achievements unlocked</b> · open Badges to see them</span>',4200);
+  }catch(e){}
+}
+
+function buildVault(root){
+  const open={};let filter='all';
+  const draw=()=>keepScroll(root,drawBody);
+  const ring=(f,c,size=84)=>{const r=size/2-7,cc=2*Math.PI*r;return`<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#ffffff1c" stroke-width="7"/><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(cc*f).toFixed(1)} ${cc.toFixed(1)}" transform="rotate(-90 ${size/2} ${size/2})"/></svg>`};
+  const card=(a,cat)=>{
+    const v=Math.max(0,a.val()),done=v>=a.goal,f=Math.min(1,v/a.goal),m=MEDALS[a.med];
+    const vs=a.goal>=1000?fmt(Math.floor(Math.min(v,a.goal))):(Math.round(Math.min(v,a.goal)*10)/10);
+    return`<div class="ach ${done?'on':'lk'}" style="--cc:${cat.c};--m1:${m[1]};--m2:${m[2]}"><div class="acm"><span>${a.icon}</span>${done?'':'<i class="aclock">🔒</i>'}</div>
+      <div class="acb"><div class="act"><b>${escH(a.name)}</b><em>${m[0]}</em></div><div class="acd">${escH(a.desc)}</div>
+      <div class="acp"><div class="bar"><i style="width:${(f*100).toFixed(1)}%;background:${done?'linear-gradient(90deg,'+m[1]+','+m[2]+')':cat.c}"></i></div><small>${done?'✓ Unlocked':vs+' / '+fmt(a.goal)}</small></div></div></div>`};
+  const drawBody=()=>{
+    const m=passMeter(),next=P.passGoal-P.pp,s=ST(),list=achList();
+    const vals=list.map(a=>({a,v:a.val()}));
+    const done=vals.filter(x=>x.v>=x.a.goal),pts=done.reduce((n,x)=>n+10*(x.a.tier+1),0);
+    const LEVELS=[[0,'Rookie'],[100,'Hall Runner'],[300,'Chair Hopper'],[600,'Bell Ringer'],[1000,'Halls Veteran'],[1600,'Mimu Elite'],[2400,'Legend of the Halls'],[3500,'Chairman’s Pick']];
+    let li=0;LEVELS.forEach((l,i)=>{if(pts>=l[0])li=i});
+    const lo=LEVELS[li][0],hi=LEVELS[li+1]?LEVELS[li+1][0]:lo,lf=hi>lo?(pts-lo)/(hi-lo):1;
+    const nextUp=vals.filter(x=>x.v<x.a.goal).sort((p,q)=>q.v/q.a.goal-p.v/p.a.goal).slice(0,4);
+    const hopsTotal=(P.cleared||[]).reduce((a,b)=>a+b,0),ffh=(P.ff&&P.ff.hist)||[];
+    const stat=(c,i,v,l)=>`<div class="astat" style="--cc:${c}"><span>${i}</span><b>${v}</b><small>${l}</small></div>`;
+    const stats=[
+      stat('#5aa0ff','🏃',fmt(P.runs||0),'runs'),stat('#f0c64a','🏆',fmt(Math.max(P.top||0,P.best||0)),'best score'),
+      stat('#38c8ff','⏱',s.longest?durShort(s.longest):'0m','longest run'),stat('#5aa0ff','🛣',fmt(P.dist||0)+' m','distance'),
+      stat('#ff9a4a','🔥','x'+Math.min(5,1+Math.floor(s.chain/10))+' · '+s.chain,'best chain'),stat('#f0b84a','🪙',fmt(P.totalCoins||0),'$TMF found'),
+      stat('#5be08a','🪑',fmt(hopsTotal),'chairs hopped'),stat('#38c8ff','💨',(s.topSpeed||0).toFixed(1),'top speed'),
+      stat('#ff3b3b','🔴',fmt(s.orb),'red orbs'),stat('#ff7bd5','🌈',fmt(s.mils),'million marks'),
+      stat('#9b7bff','🗳',fmt(s.gates),'gate votes'),stat('#b99bff','🔔',fmt(ffh.length),'bell rounds'),
+      stat('#35d0c0','📅',fmt(Math.max(s.bestStreak,P.streak||0))+' d','best streak'),stat('#ff7b5a','👻',fmt(Math.floor(s.noHit))+' m','longest clean run'),
+      stat('#ffd166','🤝',fmt(P.patron||0),'$TMF given'),stat('#d0d6e0','🏅',fmt((P.passes||[]).length),'season badges')].join('');
+    const filt=(id,l)=>`<button class="afl ${filter===id?'on':''}" data-f="${id}">${l}</button>`;
+    const cats=ACH_CATS.map(c=>{
+      let items=vals.filter(x=>x.a.cat===c.id);
+      const total=items.length,got=items.filter(x=>x.v>=x.a.goal).length;
+      if(filter==='done')items=items.filter(x=>x.v>=x.a.goal);else if(filter==='todo')items=items.filter(x=>x.v<x.a.goal);
+      if(!items.length)return'';
+      const isOpen=open[c.id]!==undefined?open[c.id]:(filter!=='all');
+      return`<details class="acat" data-c="${c.id}" style="--cc:${c.c}" ${isOpen?'open':''}><summary><span class="aci">${c.i}</span><b>${c.n}</b><em>${got}/${total}</em><div class="acbar"><i style="width:${total?got/total*100:0}%"></i></div></summary><div class="alist">${items.map(x=>card(x.a,c)).join('')}</div></details>`}).join('');
+    root.innerHTML=`<div class="sc"><div class="ah"><h1>Badges</h1><div class="sp"></div><div class="pill"><span class="coin"></span>${fmt(P.coins)}</div></div><div class="scroll" style="padding-bottom:30px">
+     <div class="ahero"><div class="aring">${ring(done.length/list.length,'#f0c64a',92)}<div class="ainn"><b>${done.length}</b><small>of ${list.length}</small></div></div>
+       <div class="ahb"><div class="lbl" style="color:var(--gold)">Your level</div><div class="alvl">${LEVELS[li][1]}</div><div class="sub2" style="font-size:12px">${fmt(pts)} badge points${LEVELS[li+1]?' · '+fmt(hi-pts)+' to '+LEVELS[li+1][1]:' · top level'}</div>
+       <div class="bar" style="margin-top:8px"><i style="width:${Math.min(100,lf*100)}%;background:linear-gradient(90deg,#ff7bd5,#f0c64a,#5be08a,#5aa0ff)"></i></div></div></div>
+     <div class="card" style="border-color:rgba(240,198,74,.4)"><div class="lbl" style="margin-bottom:8px">Almost there</div>${nextUp.length?nextUp.map(x=>{const c=ACH_CATS.find(k=>k.id===x.a.cat);return card(x.a,c)}).join(''):'<div class="sub2">You have every badge. Legend.</div>'}</div>
+     <div class="lbl" style="margin:16px 4px 8px">Your stats</div><div class="astats">${stats}</div>
+     <div class="ticket"><div class="sh"></div><div class="row"><div><div class="tt">Season Badge</div><div class="lbl" style="color:var(--cream);margin-top:6px">Next badge · no.${String(P.passes.length+1).padStart(3,'0')}</div></div><div class="sp"></div><div style="width:58px;height:58px;border-radius:14px;overflow:hidden;border:2px solid var(--gold)">${pcvM(P.mimu,'vm')}</div></div>
+      <div class="dash"></div><div class="row"><div class="lbl" style="color:var(--cream)">Season meter</div><div class="sp"></div><b class="mono" style="color:var(--gold2)">${fmt(P.pp)} / ${fmt(P.passGoal)} SP</b></div>
+      <div class="bar" style="margin-top:9px;background:#0004"><i style="width:${m*100}%"></i></div><div class="lbl" style="color:var(--cream);margin-top:8px;opacity:.8">${fmt(next)} SP to the next badge · runs and bell votes both count</div></div>
+     <div class="card"><div class="lbl">Season badges unlocked</div>${P.passes.length?`<div class="row" style="flex-wrap:wrap;margin-top:10px">${P.passes.map(p=>`<span class="tag" style="color:var(--gold2);border-color:var(--gold)"><span class="pmini"></span>#${String(p.n).padStart(3,'0')}</span>`).join('')}</div>`:'<div class="sub2" style="margin-top:6px">None yet. Run a few halls.</div>'}</div>
+     <div class="row" style="margin:16px 4px 8px;gap:6px;flex-wrap:wrap"><div class="lbl" style="flex:1">All achievements</div>${filt('all','All')}${filt('todo','To do')}${filt('done','Unlocked')}</div>
+     <div class="acats">${cats||'<div class="card"><div class="sub2">Nothing here yet. Go run the halls.</div></div>'}</div>
+     <div class="card" style="margin-top:14px"><div class="row" style="margin-bottom:10px"><div class="lbl">Chair gallery</div><div class="sp"></div><div class="lbl">jump 25 to unlock</div></div><div class="chairs">${CHAIRS.map((c,i)=>{const n=P.cleared[i],u=n>=25;return`<div class="chr ${u?'un':''} ${n>0?'':'lk'}">${chairCv(i)}<small>${Math.min(n,25)}/25${u?' ✦':''}</small></div>`}).join('')}</div></div>
+     <div class="card"><div class="lbl" style="margin-bottom:10px">Your Mimu</div><div class="row" style="gap:14px"><div style="width:96px;height:96px;border-radius:18px;overflow:hidden;border:1.5px solid var(--gold);flex:none;background:#000">${pcvM(HERO,'vs0')}</div><div class="sub2" style="font-size:12.5px">Official artwork. Wardrobe and headwear unlocks are coming to the Vault in a later season.</div></div></div>
+     <div class="card"><div class="row"><div class="lbl">Patron status</div><div class="sp"></div><span class="tag" style="color:var(--gold2);border-color:var(--gold)">${patronTier()}</span></div><div class="sub2" style="margin-top:6px;font-size:12.5px">${P.patron?`You have given ${fmt(P.patron)} $TMF to other players.`:'Send $TMF to another player in the Top 5 app to become a patron.'}</div></div>
+     <div class="sub2" style="text-align:center;font-size:11.5px;margin:12px 0">Badges are just for fun. They do not change the leaderboard.</div>
+     <button class="btn ghost" id="rst" style="font-size:12px;opacity:.7">Reset progress</button></div></div>`;
+    paintAll();paintChairs(root);
+    $$('.afl',root).forEach(b=>b.onclick=()=>{filter=b.dataset.f;sfx.tap();draw()});
+    $$('details.acat',root).forEach(d=>d.addEventListener('toggle',()=>{open[d.dataset.c]=d.open}));
+    $('#rst',root).onclick=()=>{if(confirm('Reset all progress?')){localStorage.removeItem(KEY);location.reload()}};
+  };
+  achCheck();draw();
+  if(pmOn())API.j('/api/mybest').then(d=>{if(d&&d.best>(P.top||0)&&document.body.contains(root)){P.top=d.best;saveP();achCheck();draw()}}).catch(()=>{});
+  return{destroy(){}};
+}
+

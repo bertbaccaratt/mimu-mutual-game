@@ -175,9 +175,17 @@ async function handleNonce(env, req) {
   return json(env, req, { nonce, issuedAt });
 }
 
+/* The campaign is live from the countdown ending (Sat Oct 10 2026, 6:00 PM Pacific) until it closes (Wed Oct 14, 6:00 AM Pacific). Nobody can sign in outside it. CHAIR_RUN_OPEN = "1" (staging) skips the check. */
+function campaignWindow(env, now = Date.now()) {
+  const from = Number(env.CHAIR_RUN_OPENS_AT) || Date.UTC(2026, 9, 11, 1, 0, 0), until = Number(env.CAMPAIGN_CLOSES_AT) || Date.UTC(2026, 9, 14, 13, 0, 0);
+  if (env.CHAIR_RUN_OPEN === '1') return { from, until, open: true, state: 'open' };
+  return { from, until, open: now >= from && now < until, state: now < from ? 'early' : now >= until ? 'ended' : 'open' };
+}
 async function handleAuth(env, req) {
   const origin = req.headers.get('Origin') || '';
   if (!allowedOrigins(env).includes(origin)) return json(env, req, { error: 'this site is not allowed to sign in' }, 403);
+  const cw = campaignWindow(env);
+  if (!cw.open) return json(env, req, { error: cw.state === 'early' ? 'The campaign has not opened yet. Sign-in opens when the countdown ends, Sat Oct 10 at 6:00 PM PST.' : 'The campaign has ended. Thanks for playing!', closed: true, state: cw.state, opensAt: cw.from }, 403);
   const domain = new URL(origin).host;                             // the signed message is bound to the site that asked
   let b; try { b = await req.json(); } catch { return json(env, req, { error: 'bad json' }, 400); }
   const { address, nonce, issuedAt, signature } = b || {};
@@ -236,6 +244,21 @@ async function applyScore(env, address, week, score, coins, now) {
       ON CONFLICT(address,week) DO UPDATE SET run_best=MAX(run_best,?3), coins_total=coins_total+?4, runs=runs+1, updated_at=?5`).bind(address, week, score, coins, now).run();
 }
 
+/* lifetime play statistics per player, filled when a run is finished (verified or held) */
+let PLAY_TABLE = false;
+async function ensurePlayStats(env) {
+  if (PLAY_TABLE) return;
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS play_stats (address TEXT PRIMARY KEY, ticks INTEGER NOT NULL DEFAULT 0, runs INTEGER NOT NULL DEFAULT 0, hops INTEGER NOT NULL DEFAULT 0, coins INTEGER NOT NULL DEFAULT 0, dist INTEGER NOT NULL DEFAULT 0, best_chain INTEGER NOT NULL DEFAULT 0, longest INTEGER NOT NULL DEFAULT 0)').run();
+  PLAY_TABLE = true;
+}
+async function recordPlay(env, address, S) {
+  try {
+    await ensurePlayStats(env);
+    const hops = (S.cleared || []).reduce((a, b) => a + (b | 0), 0);
+    await env.DB.prepare('INSERT INTO play_stats(address,ticks,runs,hops,coins,dist,best_chain,longest) VALUES(?1,?2,1,?3,?4,?5,?6,?2) ON CONFLICT(address) DO UPDATE SET ticks=ticks+?2, runs=runs+1, hops=hops+?3, coins=coins+?4, dist=dist+?5, best_chain=MAX(best_chain,?6), longest=MAX(longest,?2)')
+      .bind(address, S.tick | 0, hops, Math.max(0, Math.floor(S.coins)), Math.floor(S.dist), S.mxChain | 0).run();
+  } catch (e) { console.error('play stats', String(e && e.message || e)); }
+}
 /* A run whose tab closed or whose last piece never arrived: score it as far as the server verified it (never lose earned progress). */
 async function salvageOpenRuns(env, address, now) {
   try {
@@ -245,9 +268,10 @@ async function salvageOpenRuns(env, address, now) {
       const S = sim.S, stats = run.stats ? JSON.parse(run.stats) : newStats();
       const score = Math.max(0, Math.floor(S.score)), coins = Math.max(0, Math.floor(S.coins)), dist = Math.floor(S.dist);
       const flags = judge(stats, S, S.tick, Number(env.BOT_MIN) || 40);
-      if (flags.length) { await env.DB.prepare("UPDATE runs SET status='held', snapshot=NULL, stats=?1, flags=?2, score=?3, coins=?4, dist=?5, ended_at=?6 WHERE id=?7").bind(JSON.stringify(stats), JSON.stringify(flags), score, coins, dist, now, run.id).run(); continue; }
+      if (flags.length) { await env.DB.prepare("UPDATE runs SET status='held', snapshot=NULL, stats=?1, flags=?2, score=?3, coins=?4, dist=?5, ended_at=?6 WHERE id=?7").bind(JSON.stringify(stats), JSON.stringify(flags), score, coins, dist, now, run.id).run(); await recordPlay(env, address, S); continue; }
       await env.DB.prepare("UPDATE runs SET status='done', snapshot=NULL, stats=NULL, score=?1, coins=?2, dist=?3, ended_at=?4 WHERE id=?5").bind(score, coins, dist, now, run.id).run();
       if (score > 0) await applyScore(env, address, weekNow(), score, coins, now);
+      await recordPlay(env, address, S);
     }
   } catch (e) { console.error('salvage failed', String(e && e.message || e)); }
 }
@@ -330,11 +354,13 @@ async function handleRunChunk(env, req) {
   if (flags.length) {
     await env.DB.prepare("UPDATE runs SET status='held', snapshot=NULL, stats=?1, flags=?2, score=?3, coins=?4, dist=?5, last_tick=?6, seq=?7, ended_at=?8 WHERE id=?9")
       .bind(JSON.stringify(stats), JSON.stringify(flags), score, coins, dist, S.tick, run.seq + 1, now, runId).run();
+    await recordPlay(env, sess.sub, S);
     return json(env, req, { ok: true, final: true, held: true, score, coins, dist });
   }
   await env.DB.prepare("UPDATE runs SET status='done', snapshot=NULL, stats=NULL, score=?1, coins=?2, dist=?3, last_tick=?4, seq=?5, ended_at=?6 WHERE id=?7")
     .bind(score, coins, dist, S.tick, run.seq + 1, now, runId).run();
   if (S.tick >= 120 && score > 0) await applyScore(env, sess.sub, week, score, coins, now);
+  await recordPlay(env, sess.sub, S);
   const mine = await env.DB.prepare(`SELECT ${SCORE} AS sc FROM scores WHERE address=?1 AND week=?2`).bind(sess.sub, week).first();
   return json(env, req, { ok: true, final: true, score, coins, dist, rank: mine ? await rankOf(env, week, SCORE, mine.sc) : null, best: mine ? mine.sc : 0 });
 }
@@ -399,7 +425,7 @@ function cleanState(st) {
   if (!st || typeof st !== 'object') return null;
   const num = (v, lo, hi) => Math.max(lo, Math.min(hi, Number(v) || 0));
   const ob = Array.isArray(st.ob) ? st.ob.slice(0, 48).filter((a) => Array.isArray(a)).map((a) => [String(a[0]).slice(0, 1), Math.round(num(a[1], -1.5, 1.5) * 100) / 100, Math.round(num(a[2], -5, 120) * 10) / 10, num(a[3], 0, 9) | 0]) : [];
-  return { l: Math.round(num(st.l, -1.5, 1.5) * 100) / 100, y: Math.round(num(st.y, 0, 8) * 100) / 100, s: st.s ? 1 : 0, v: Math.round(num(st.v, 0, 80) * 10) / 10, d: num(st.d, 0, 9999999) | 0, lv: num(st.lv, 0, 9) | 0, sh: st.sh ? 1 : 0, mg: num(st.mg, 0, 30) | 0, x2: num(st.x2, 0, 30) | 0, ch: num(st.ch, 0, 99999) | 0, cm: num(st.cm, 1, 9) | 0, ob };
+  return { l: Math.round(num(st.l, -1.5, 1.5) * 100) / 100, y: Math.round(num(st.y, 0, 8) * 100) / 100, s: st.s ? 1 : 0, v: Math.round(num(st.v, 0, 80) * 10) / 10, d: num(st.d, 0, 9999999) | 0, lv: num(st.lv, 0, 9) | 0, or: num(st.or, 0, 200) | 0, sh: st.sh ? 1 : 0, mg: num(st.mg, 0, 30) | 0, x2: num(st.x2, 0, 30) | 0, ch: num(st.ch, 0, 99999) | 0, cm: num(st.cm, 1, 9) | 0, ob };
 }
 async function handleRunBeat(env, req) {
   const sess = await readToken(env, req);
@@ -768,7 +794,7 @@ async function handleAdmin(env, req, url) {
                 if (c) ob.push([c, o.x, dz, o.type | 0]);
               }
               ob.sort((a, b) => a[2] - b[2]);
-              r.gfx = cleanState({ l: S.px, y: S.py, s: S.slide > 0, v: S.speed, d: S.dist, lv: S.lives, sh: S.shield > 0, mg: S.magnet > 0 ? Math.ceil(S.magnet) : 0, x2: S.mult > 0 ? Math.ceil(S.mult) : 0, ch: S.chain, cm: S.cm, ob });
+              r.gfx = cleanState({ l: S.px, y: S.py, s: S.slide > 0, v: S.speed, d: S.dist, lv: S.lives, sh: S.shield > 0, mg: S.magnet > 0 ? Math.ceil(S.magnet) : 0, x2: S.mult > 0 ? Math.ceil(S.mult) : 0, ch: S.chain, cm: S.cm, or: S.orbT > 0 ? Math.ceil(S.orbT) : 0, ob });
               r.sat = now - 16000;                                    // the verified state is on average about half a piece old
               r.est = 1;
             }
@@ -795,7 +821,25 @@ async function handleAdmin(env, req, url) {
       q('SELECT b.id, b.ts, b.subject, (b.ikey IS NOT NULL) img, (SELECT COUNT(*) FROM mail_reads r WHERE r.id=b.id) reads FROM broadcasts b ORDER BY b.id DESC LIMIT 20').all(),
       q('SELECT m.id, m.ts, m.body, pr.name rn FROM messages m LEFT JOIN players pr ON pr.address=m.recipient WHERE m.sender=?1 ORDER BY m.id DESC LIMIT 8', HYPE).all(),
     ]);
+    let facts = null, top5 = [];
+    try {
+      await ensurePlayStats(env);
+      const lead = (col) => q(`SELECT ps.address a, p.name n, ${picSql(req)} pic, ps.${col} v FROM play_stats ps JOIN players p ON p.address=ps.address WHERE ps.${col}>0 AND ps.address<>'${HYPE}' ORDER BY ps.${col} DESC LIMIT 1`).first();
+      const [tot2, mvp, hops, coinsL, longest, chain, gifts, gifter, msgs, reads, best] = await Promise.all([
+        q('SELECT COALESCE(SUM(ticks),0) ticks, COALESCE(SUM(runs),0) runs, COALESCE(SUM(hops),0) hops, COALESCE(SUM(coins),0) coins, COALESCE(SUM(dist),0) dist, COUNT(*) players FROM play_stats').first(),
+        lead('ticks'), lead('hops'), lead('coins'), lead('longest'), lead('best_chain'),
+        q('SELECT COUNT(*) n, COALESCE(SUM(amount),0) amt, COALESCE(MAX(amount),0) big, COALESCE(SUM(boost),0) boost FROM transfers').first(),
+        q(`SELECT t.sender a, p.name n, ${picSql(req)} pic, SUM(t.amount) v FROM transfers t JOIN players p ON p.address=t.sender GROUP BY t.sender ORDER BY v DESC LIMIT 1`).first(),
+        q('SELECT COUNT(*) c FROM messages').first(),
+        q('SELECT COUNT(*) c FROM mail_reads').first(),
+        q(`SELECT p.name n, ${picSql(req)} pic, s.run_best v FROM scores s JOIN players p ON p.address=s.address ORDER BY s.run_best DESC LIMIT 1`).first(),
+      ]);
+      facts = { ticks: tot2.ticks, runs: tot2.runs, hops: tot2.hops, coins: tot2.coins, dist: tot2.dist, runners: tot2.players, mvp, hopsLead: hops, coinsLead: coinsL, longest, chain, gifts, gifter, texts: msgs.c, mailReads: reads.c, best };
+      const t5 = await q(`SELECT s.address a, ${TOTAL} total, (s.run_best+s.boost) run, s.coins_total tmf, s.boost, p.name n, ${picSql(req)} pic FROM scores s JOIN players p ON p.address=s.address WHERE s.week=?1 AND ${TOTAL}>0 ORDER BY ${TOTAL} DESC, s.updated_at ASC LIMIT ${TOP_N}`, week).all();
+      top5 = t5.results || [];
+    } catch (e) { console.error('facts', String(e && e.message || e)); }
     return out({
+      facts, top5,
       week, visitors: vis.c, visits: tot.c, today: today.c, banned: banned.c,
       topRun: run.results || [], topNw: nw.results || [],
       held: (held.results || []).map((r) => ({ ...r, flags: JSON.parse(r.flags || '[]'), seconds: Math.round(r.ticks / 60) })),

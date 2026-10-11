@@ -607,7 +607,7 @@ canvas.hero{display:block;image-rendering:auto;width:100%;height:100%}
 .qst .q.d{opacity:.6}.qst .q.d span:first-child{text-decoration:line-through}
 .close{margin:-4px 0 12px;font:600 12.5px var(--sans);color:var(--gold2);text-align:center}
 #rmsg{position:absolute;left:0;right:0;top:118px;height:0;pointer-events:none}
-#rmsg div{padding:6px 14px 7px;border-radius:16px;background:rgba(18,10,12,.66);border:1px solid var(--gold);box-shadow:0 0 16px rgba(217,178,95,.32);animation:msg 3.6s var(--ease) forwards;position:absolute;left:50%;transform:translateX(-50%);width:max-content;max-width:300px;text-align:center;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#rmsg div{padding:5px 12px 6px;border-radius:14px;background:rgba(18,10,12,.56);border:1px solid var(--gold);box-shadow:0 0 16px rgba(217,178,95,.32);animation:msg 2.3s var(--ease) forwards;position:absolute;left:50%;transform:translateX(-50%);width:max-content;max-width:250px;text-align:center;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
 #rmsg div b{display:block;font:700 13px var(--sans);color:#fff3d6;letter-spacing:.01em}
 #rmsg div small{display:block;margin-top:1px;font:500 10.5px/1.35 var(--sans);color:#e2d3b0}
 #rmsg div.big b{font:italic 700 16px var(--serif)}
@@ -1298,7 +1298,12 @@ function counters(root=document){$$('[data-count]',root).forEach(el=>{const to=+
   const draw=v=>{el.textContent=fmt(v)};if(from===to||el._to===to){if(el._to!==to){draw(to);el._v=to;el._to=to}return}
   cancelAnimationFrame(el._raf);el._to=to;const t0=performance.now();const step=n=>{const k=clamp((n-t0)/900,0,1),e=1-Math.pow(1-k,4);el._v=from+(to-from)*e;draw(el._v);if(k<1)el._raf=requestAnimationFrame(step);else{el._v=to;draw(to)}};el._raf=requestAnimationFrame(step)})}
 const num=v=>`<span data-count="${v}">${fmt(v)}</span>`;
-let toastT;function toast(h,ms=2600){const t=$('#toast');t.innerHTML=h;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),ms)}
+let toastT;const _tq=[];
+function toast(h,ms=2600){
+  let live=false;try{live=!!(window._runLive&&window._runLive())}catch(e){}
+  if(live){if(_tq.length<8)_tq.push([h,ms]);return}                    /* a notification never covers a run in progress: it is shown right after the run ends */
+  const t=$('#toast');t.innerHTML=h;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),ms)}
+window._toastFlush=()=>{const q=_tq.splice(0);q.forEach((x,i)=>setTimeout(()=>toast(x[0],x[1]),i*2900))};
 let sheetOpen=false;
 function sheet(html){const L=$('#layer');L.innerHTML=`<div class="scrim" data-act="closesheet"></div><div class="sheet"><div class="grab"></div>${html}</div>`;requestAnimationFrame(()=>requestAnimationFrame(()=>L.classList.add('on')));sheetOpen=true;paintAll()}
 function closeSheet(){const L=$('#layer');L.classList.remove('on');sheetOpen=false;setTimeout(()=>{if(!sheetOpen)L.innerHTML=''},600)}
@@ -2177,8 +2182,13 @@ function buildRunGame(root){
   const freshSeed=()=>1+Math.floor(Math.random()*4294967294);
   let sim=MimuSim.create(freshSeed(),{wallet:0}),S=sim.S;Object.assign(S,{st:'idle',part:[],shake:0,bestShown:false,near:false,mile:0});
   let raf,last=performance.now(),msgN=0,acc=0,pv=null,inputs=[],runSession=null,verified=false,up={from:0,seq:0,busy:false},alive=true,lastChain=-1,lastCm=-1,pwSig='';
+  window._runLive=()=>alive&&S.st!=='idle'&&S.st!=='over';
   const hud={sc:$('#rsc',root),co:$('#rco',root),lv:$$('#rlv i',root),pw:$('#rpw',root),msg:$('#rmsg',root),card:$('#rcard',root),cn:$('#rcn',root),fl:$('#rfl',root)};
-  function msg(t,cls='',sub=''){const d=document.createElement('div');d.className=cls;const b=document.createElement('b');b.textContent=t;d.appendChild(b);if(sub){const s=document.createElement('small');s.textContent=sub;d.appendChild(s)}d.style.top=(msgN++%3)*50+'px';hud.msg.appendChild(d);setTimeout(()=>d.remove(),3700)}
+  function msg(t,cls='',sub=''){
+    const life=/\b(big|orb)\b/.test(cls)?2900:2300;                     /* short, so a notice never sits on the view of the run */
+    while(hud.msg.children.length>=2)hud.msg.firstChild.remove();       /* at most two at a time: the newest replaces the oldest */
+    const d=document.createElement('div');d.className=cls;d.style.animationDuration=life+'ms';const b=document.createElement('b');b.textContent=t;d.appendChild(b);if(sub){const s=document.createElement('small');s.textContent=sub;d.appendChild(s)}
+    d.style.top=(msgN++%2)*46+'px';hud.msg.appendChild(d);setTimeout(()=>d.remove(),life+80)}
   /* ---- chain / streak: every coin and clean chair hop builds it, 4s without a gain breaks it ---- */
   const cmbEl=$('#rcmb',root);
   function cmbUI(pop){cmbEl.classList.toggle('on',S.chain>=3);cmbEl.firstChild.innerHTML='x'+S.cm+' <em>'+S.chain+'</em>';cmbEl.querySelector('i').style.width=Math.max(0,S.ct/4*100)+'%';
@@ -2300,7 +2310,7 @@ function buildRunGame(root){
     up.busy=false;
   }
   function gameOver(quit){
-    if(S.st==='over')return;S.st='over';beatStop();discoStop();
+    if(S.st==='over')return;S.st='over';beatStop();discoStop();setTimeout(()=>{try{window._toastFlush&&window._toastFlush()}catch(e){}},1500);
     const score=Math.floor(S.score),prevBest=P.best;if(score>P.best)P.best=score;if(score>(P.top||0))P.top=score;
     const dist=S.deadDist!==undefined?S.deadDist:S.dist;
     P.runs++;P.dist+=dist;P.coins+=S.coins;P.totalCoins+=S.coins;S.cleared.forEach((n,i)=>P.cleared[i]+=n);
@@ -2594,7 +2604,7 @@ function buildRunGame(root){
     if(S.st==='run'){const t=fmt(Math.floor(S.score));if(hud.sc.textContent!==t)hud.sc.textContent=t;const cc=String(S.coins);if(hud.co.textContent!==cc)hud.co.textContent=cc}
   }
   reset();raf=requestAnimationFrame(frame);showStart();
-  return{destroy(){alive=false;beatStop();cancelAnimationFrame(raf);removeEventListener('keydown',key);document.removeEventListener('visibilitychange',vis)}};
+  return{destroy(){alive=false;window._runLive=null;setTimeout(()=>{try{window._toastFlush&&window._toastFlush()}catch(e){}},300);beatStop();cancelAnimationFrame(raf);removeEventListener('keydown',key);document.removeEventListener('visibilitychange',vis)}};
 }
 
 /* ---------------- TMF Pass ceremony (earned by playing, not minted) ---------------- */

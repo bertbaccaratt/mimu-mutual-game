@@ -239,9 +239,10 @@ async function humanOk(env, token, ip) {
   catch { return false; }
 }
 
+/* Every finished run ADDS its points to the player's weekly run total (run_best), and its $TMF to coins_total. best_run keeps the best single run. */
 async function applyScore(env, address, week, score, coins, now) {
-  await env.DB.prepare(`INSERT INTO scores(address,week,run_best,coins_total,runs,updated_at) VALUES(?1,?2,?3,?4,1,?5)
-      ON CONFLICT(address,week) DO UPDATE SET run_best=MAX(run_best,?3), coins_total=coins_total+?4, runs=runs+1, updated_at=?5`).bind(address, week, score, coins, now).run();
+  await env.DB.prepare(`INSERT INTO scores(address,week,run_best,best_run,coins_total,runs,updated_at) VALUES(?1,?2,?3,?3,?4,1,?5)
+      ON CONFLICT(address,week) DO UPDATE SET run_best=run_best+?3, best_run=MAX(best_run,?3), coins_total=coins_total+?4, runs=runs+1, updated_at=?5`).bind(address, week, score, coins, now).run();
 }
 
 /* lifetime play statistics per player, filled when a run is finished (verified or held) */
@@ -483,7 +484,7 @@ async function handlePlayers(env, req) {
 /* the player's own best single run ever (earned by running only, boosts and $TMF not included): used for the long-run badges */
 async function handleMyBest(env, req) {
   const a = await msgAuth(env, req); if (a.err) return a.err;
-  const r = await env.DB.prepare('SELECT MAX(run_best) b FROM scores WHERE address=?1').bind(a.me).first();
+  const r = await env.DB.prepare('SELECT MAX(best_run) b FROM scores WHERE address=?1').bind(a.me).first();
   return json(env, req, { best: (r && r.b) || 0 });
 }
 async function handleMsgThreads(env, req) {
@@ -553,7 +554,7 @@ async function handleMsgBlock(env, req) {
  *   - anyone outside the top 5 can send to any player who has registered at least 1 $TMF this week;
  *   - the amount comes out of the sender's "$TMF found" total and goes into the recipient's, in one all-or-nothing step. */
 const TOP_N = 5;
-const SCORE = '(run_best+boost)';                 // a player's Chair Run score = their best verified run + the boost they were given
+const SCORE = '(run_best+boost)';                 // a player's Chair Run score = the points of ALL their finished runs this week added together + the boost they were given
 const TOTAL = '(run_best+boost+coins_total)';      // a player's total main score = Chair Run score (incl. boost) + their $TMF found
 const BOOST_PER_TMF = 2;                          // each $TMF sent to a top-5 runner adds this many points to their score
 async function topNine(env, week) {
@@ -754,8 +755,8 @@ async function handleAdmin(env, req, url) {
     const rows = (await env.DB.prepare(`SELECT r.id, r.address a, p.name n, p.x_handle x, ${picSql(req)} pic, r.started_at st, COALESCE(r.last_beat, r.started_at) lb, COALESCE(r.live_score,0) sc, COALESCE(r.live_dist,0) d, COALESCE(r.live_coins,0) c, r.last_tick tk FROM runs r LEFT JOIN players p ON p.address=r.address WHERE r.status='open' AND COALESCE(r.last_beat, r.started_at)>?1 ORDER BY COALESCE(r.live_score,0) DESC, lb DESC`).bind(since).all()).results || [];
     const nine = rows.slice(0, 9);
     for (const r of nine) {                                            // where each live player stands on this week's leaderboard
-      const s = await env.DB.prepare(`SELECT run_best, coins_total, runs, ${TOTAL} AS total FROM scores WHERE address=?1 AND week=?2`).bind(r.a, week).first();
-      r.best = s ? s.run_best : 0; r.tmf = s ? s.coins_total : 0; r.runs = s ? s.runs : 0; r.total = s ? s.total : 0;
+      const s = await env.DB.prepare(`SELECT run_best, best_run, coins_total, runs, ${TOTAL} AS total FROM scores WHERE address=?1 AND week=?2`).bind(r.a, week).first();
+      r.best = s ? s.best_run : 0; r.runPts = s ? s.run_best : 0; r.tmf = s ? s.coins_total : 0; r.runs = s ? s.runs : 0; r.total = s ? s.total : 0;
       r.rank = s && s.total > 0 ? await rankOf(env, week, TOTAL, s.total) : null;
       r.a = r.a.slice(0, 6) + '…' + r.a.slice(-4);
     }
@@ -818,7 +819,7 @@ async function handleAdmin(env, req, url) {
         q(`SELECT t.sender a, p.name n, ${picSql(req)} pic, SUM(t.amount) v FROM transfers t JOIN players p ON p.address=t.sender GROUP BY t.sender ORDER BY v DESC LIMIT 1`).first(),
         q('SELECT COUNT(*) c FROM messages').first(),
         q('SELECT COUNT(*) c FROM mail_reads').first(),
-        q(`SELECT p.name n, ${picSql(req)} pic, s.run_best v FROM scores s JOIN players p ON p.address=s.address ORDER BY s.run_best DESC LIMIT 1`).first(),
+        q(`SELECT p.name n, ${picSql(req)} pic, s.best_run v FROM scores s JOIN players p ON p.address=s.address ORDER BY s.best_run DESC LIMIT 1`).first(),
       ]);
       facts = { ticks: tot2.ticks, runs: tot2.runs, hops: tot2.hops, coins: tot2.coins, dist: tot2.dist, runners: tot2.players, mvp, hopsLead: hops, coinsLead: coinsL, longest, chain, gifts, gifter, texts: msgs.c, mailReads: reads.c, best };
       const t5 = await q(`SELECT s.address a, ${TOTAL} total, (s.run_best+s.boost) run, s.coins_total tmf, s.boost, p.name n, ${picSql(req)} pic FROM scores s JOIN players p ON p.address=s.address WHERE s.week=?1 AND ${TOTAL}>0 ORDER BY ${TOTAL} DESC, s.updated_at ASC LIMIT ${TOP_N}`, week).all();

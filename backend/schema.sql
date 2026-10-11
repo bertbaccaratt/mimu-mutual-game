@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS players (
 CREATE TABLE IF NOT EXISTS scores (
   address     TEXT NOT NULL,
   week        INTEGER NOT NULL,        -- weeks since the game epoch (matches the front end)
-  run_best    INTEGER NOT NULL DEFAULT 0,
+  run_best    INTEGER NOT NULL DEFAULT 0,   -- run points: every finished run this week ADDED together
+  best_run    INTEGER NOT NULL DEFAULT 0,   -- the best single run this week (long-run badges)
   boost       INTEGER NOT NULL DEFAULT 0,   -- points added by $TMF given to a top-9 runner
   coins_total INTEGER NOT NULL DEFAULT 0,   -- $TMF collected in verified runs this week
   runs        INTEGER NOT NULL DEFAULT 0,

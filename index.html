@@ -606,13 +606,14 @@ canvas.hero{display:block;image-rendering:auto;width:100%;height:100%}
 .qst .q .bar{grid-column:1/3;height:4px}.qst .q .bar i{background:linear-gradient(90deg,#7b2a31,var(--gold))}
 .qst .q.d{opacity:.6}.qst .q.d span:first-child{text-decoration:line-through}
 .close{margin:-4px 0 12px;font:600 12.5px var(--sans);color:var(--gold2);text-align:center}
-#rmsg{position:absolute;left:0;right:0;top:118px;height:0;pointer-events:none}
-#rmsg div{padding:5px 12px 6px;border-radius:14px;background:rgba(18,10,12,.56);border:1px solid var(--gold);box-shadow:0 0 16px rgba(217,178,95,.32);animation:msg 2.3s var(--ease) forwards;position:absolute;left:50%;transform:translateX(-50%);width:max-content;max-width:250px;text-align:center;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
-#rmsg div b{display:block;font:700 13px var(--sans);color:#fff3d6;letter-spacing:.01em}
-#rmsg div small{display:block;margin-top:1px;font:500 10.5px/1.35 var(--sans);color:#e2d3b0}
-#rmsg div.big b{font:italic 700 16px var(--serif)}
-#rmsg div.bad{border-color:var(--down);box-shadow:0 0 16px rgba(224,103,95,.35)}#rmsg div.bad b{color:#ffb3ad}
-#rmsg div.orb{border-color:#ff4a4a;box-shadow:0 0 22px rgba(255,60,60,.55)}#rmsg div.orb b{color:#ffd0cc}
+#rmsg{position:absolute;left:0;right:0;top:112px;height:0;pointer-events:none}
+#rmsg div{padding:3px 9px 4px;border-radius:11px;background:rgba(18,10,12,.6);border:1px solid var(--gold);box-shadow:0 0 9px rgba(217,178,95,.3);animation:msg 1.4s var(--ease) forwards;position:absolute;left:50%;transform:translateX(-50%);width:max-content;max-width:190px;text-align:center;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+#rmsg div b{display:block;font:700 11px/1.25 var(--sans);color:#fff3d6;letter-spacing:.01em}
+#rmsg div small{display:block;margin-top:1px;font:500 9px/1.3 var(--sans);color:#e2d3b0}
+#rmsg div.big b{font:italic 700 12.5px/1.2 var(--serif)}
+#rmsg div.bad{border-color:var(--down);box-shadow:0 0 9px rgba(224,103,95,.4)}#rmsg div.bad b{color:#ffb3ad}
+#rmsg div.orb{border-color:#ff4a4a;box-shadow:0 0 12px rgba(255,60,60,.55)}#rmsg div.orb b{color:#ffd0cc}
+#rmsg div.pw{border-color:#5aa8ff;box-shadow:0 0 9px rgba(90,168,255,.45)}#rmsg div.pw b{color:#d4e8ff}
 .orbfx{position:absolute;left:50%;top:62%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:3px solid rgba(255,70,70,.95);box-shadow:0 0 30px rgba(255,40,40,.8),inset 0 0 20px rgba(255,80,80,.6);pointer-events:none;z-index:6;animation:orbring .95s ease-out forwards}
 @keyframes orbring{0%{transform:scale(.4);opacity:1}100%{transform:scale(9);opacity:0}}
 @keyframes msg{0%{opacity:0;transform:translate(-50%,24px) scale(.8)}12%{opacity:1;transform:translate(-50%,0) scale(1.05)}20%{transform:translate(-50%,0) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-34px)}}
@@ -2184,11 +2185,19 @@ function buildRunGame(root){
   let raf,last=performance.now(),msgN=0,acc=0,pv=null,inputs=[],runSession=null,verified=false,up={from:0,seq:0,busy:false},alive=true,lastChain=-1,lastCm=-1,pwSig='';
   window._runLive=()=>alive&&S.st!=='idle'&&S.st!=='over';
   const hud={sc:$('#rsc',root),co:$('#rco',root),lv:$$('#rlv i',root),pw:$('#rpw',root),msg:$('#rmsg',root),card:$('#rcard',root),cn:$('#rcn',root),fl:$('#rfl',root)};
+  const noticed=(()=>{try{return JSON.parse(localStorage.getItem('mimu_noticed')||'{}')||{}}catch(e){return{}}})();
   function msg(t,cls='',sub=''){
-    const life=/\b(big|orb)\b/.test(cls)?2900:2300;                     /* short, so a notice never sits on the view of the run */
-    while(hud.msg.children.length>=2)hud.msg.firstChild.remove();       /* at most two at a time: the newest replaces the oldest */
-    const d=document.createElement('div');d.className=cls;d.style.animationDuration=life+'ms';const b=document.createElement('b');b.textContent=t;d.appendChild(b);if(sub){const s=document.createElement('small');s.textContent=sub;d.appendChild(s)}
-    d.style.top=(msgN++%2)*46+'px';hud.msg.appendChild(d);setTimeout(()=>d.remove(),life+80)}
+    const last=hud.msg.lastChild;
+    if(last&&last.dataset.t===t&&performance.now()-Number(last.dataset.at)<1000)return;     /* the same notice again within a second: ignore */
+    while(hud.msg.children.length>=1)hud.msg.firstChild.remove();                              /* one at a time: the newest replaces the old */
+    const key=t.replace(/[0-9][0-9,.]*/g,'#');
+    let show=false;
+    if(sub){if(/\bkeep\b/.test(cls))show=true;else if(!noticed[key]){show=true;noticed[key]=1;try{localStorage.setItem('mimu_noticed',JSON.stringify(noticed))}catch(e){}}}   /* the explanation only the first time; the "?" guide has the rules */
+    const life=(/\b(big|orb)\b/.test(cls)?2000:/\bbad\b/.test(cls)?1800:1400)+(show&&!/\bkeep\b/.test(cls)?500:0);
+    const d=document.createElement('div');d.className=cls.replace(/\bkeep\b/,'').trim();d.dataset.t=t;d.dataset.at=String(performance.now());d.style.animationDuration=life+'ms';
+    const b=document.createElement('b');b.textContent=t;d.appendChild(b);
+    if(show){const s=document.createElement('small');s.textContent=sub;d.appendChild(s)}
+    d.style.top='0px';hud.msg.appendChild(d);setTimeout(()=>d.remove(),life+80)}
   /* ---- chain / streak: every coin and clean chair hop builds it, 4s without a gain breaks it ---- */
   const cmbEl=$('#rcmb',root);
   function cmbUI(pop){cmbEl.classList.toggle('on',S.chain>=3);cmbEl.firstChild.innerHTML='x'+S.cm+' <em>'+S.chain+'</em>';cmbEl.querySelector('i').style.width=Math.max(0,S.ct/4*100)+'%';
@@ -2377,15 +2386,15 @@ function buildRunGame(root){
             msg('🔴 Red orb caught','big orb','Top speed -0.5 for 3 minutes, then it eases back on its own');break}
           {const s=ST();if(e.k==='magnet')s.bell++;else if(e.k==='shield')s.case++;else s.star++}
           sfx.power();spark(sx,sy,14,'#fff');
-          if(e.k==='magnet')msg('🔔 Bell: coin magnet','','Coins fly to you for 9 seconds');
-          else if(e.k==='shield')msg('💼 Briefcase: shield','','Blocks your next hit, then it breaks');
-          else msg('✨ Star: gilded x2','','Double points and double coins for 10 seconds');
+          if(e.k==='magnet')msg('🔔 Magnet · 9s','pw','Coins fly to you for 9 seconds');
+          else if(e.k==='shield')msg('💼 Shield on','pw','Blocks your next hit, then it breaks');
+          else msg('✨ Double points · 10s','pw','Points and coins count x2 for 10 seconds');
           break}
-        case 'orbseen':msg('🔴 Red orb ahead','orb','Catch it for -0.5 top speed for 3 minutes');sfx.select();break;
-        case 'orbend':msg('Orb calm has ended','','Your top speed is back to the normal pace');break;
-        case 'hop':{const [px2,py2]=P3(S.px,.4,S.dist+D0);spark(px2,py2,8,'#fff3d0');if(e.nice)msg('✓ Clean hop','','+15 points x your chain');break}
+        case 'orbseen':msg('🔴 Red orb ahead','orb','Catch it to slow down and breathe');sfx.select();break;
+        case 'orbend':break;
+        case 'hop':{const [px2,py2]=P3(S.px,.4,S.dist+D0);spark(px2,py2,8,'#fff3d0');break}
         case 'vote':{const s=ST();s.gates++;const va=ASSETS.find(x=>x.sym===e.sym);if(va&&va.c==='degen')s.degen++}msg('🗳 Voted '+e.sym+' · bell in 110m','big','Payout = (20 + your $TMF) x the return. A bigger stack swings harder');sfx.select();break;
-        case 'bell':{sfx.bell();hud.co.textContent=S.coins;const d=e.d;{const s=ST();if(d>0){s.wins++;if(d>s.bigDiv)s.bigDiv=d}}msg(`🔔 Closing Bell · ${e.sym} ${pct(e.ret)}`,d>=0?'big':'big bad',d>=0?`+${d} $TMF dividend (and +${d*10} points)`:`${d} $TMF drawdown. It can never take more than you carry`);if(d>0)confetti(18);break}
+        case 'bell':{sfx.bell();hud.co.textContent=S.coins;const d=e.d;{const s=ST();if(d>0){s.wins++;if(d>s.bigDiv)s.bigDiv=d}}msg(`🔔 Closing Bell · ${e.sym} ${pct(e.ret)}`,d>=0?'big keep':'big bad keep',d>=0?`+${d} $TMF dividend (and +${d*10} points)`:`${d} $TMF drawdown. It can never take more than you carry`);if(d>0)confetti(18);break}
         case 'mile':{ST().mil250++;msg('📍 '+fmt(e.m)+'m · +'+fmt(e.b),'big','Milestone bonus: 50 x milestone number x your chain');sfx.win();const [mx,my]=P3(S.px,1.4,S.dist+D0);spark(mx,my,16,'#f0d28a');break}
         case 'shield':{ST().blocks++;S.shake=.5;sfx.power();msg('💼 Shield broke','','The hit was blocked. Grab another briefcase if you see one');const [sx,sy]=P3(S.px,1,S.dist+D0);spark(sx,sy,18,'#7ac8ff');break}
         case 'hit':{{const s=ST();s.hits++;const seg=S.dist-nh0;if(seg>s.noHit)s.noHit=seg;nh0=S.dist}S.shake=1;sfx.hit();try{navigator.vibrate&&navigator.vibrate(60)}catch(x){}hud.fl.classList.remove('go');void hud.fl.offsetWidth;hud.fl.classList.add('go');

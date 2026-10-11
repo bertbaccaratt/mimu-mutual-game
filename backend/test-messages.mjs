@@ -51,7 +51,7 @@ ok('B no longer sees A\'s texts, and the thread says blocked', afterBlock.b.bloc
 ok('B can unblock', (await call('/api/messages/block', { method: 'POST', body: JSON.stringify({ user: a, block: false }) }, tb)).b.blocked === false);
 ok('A can text B again', (await send(ta, b, 'back')).s === 200);
 // flood limit
-let last = 0; for (let i = 0; i < 14; i++) last = (await send(tc, a, 'spam ' + i)).s;
+let last = 0; for (let i = 0; i < 24; i++) last = (await send(tc, a, 'spam ' + i)).s;   // the limit is 20 texts a minute
 ok('flooding is slowed down', last === 429, String(last));
 if (process.env.ADMIN_TOKEN) {
   const dash = await call('/api/admin/dashboard', { headers: { 'X-Admin-Token': process.env.ADMIN_TOKEN } });

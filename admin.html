@@ -302,7 +302,7 @@ td.n{width:48px;white-space:nowrap;color:var(--gold);font:700 15px var(--mono)}t
 
   <div class="row2">
     <section class="sec a-teal"><h2>💸 $TMF sent between players <small>Top 5 app · latest 50</small></h2><div class="scroll" id="xfers" style="max-height:340px"></div></section>
-    <section class="sec a-pink"><h2>💬 Player texts <small>Messages app · latest 100</small></h2><div class="scroll" id="msgs" style="max-height:340px"></div></section>
+    <section class="sec a-pink"><h2>💬 Player texts <small>Messages app · latest 100</small></h2><div class="scroll" id="msgs" style="max-height:340px"></div><div id="msgprob"></div></section>
   </div>
 
   <section class="sec a-sky"><h2>👥 Players <small id="ucount">Glyph + username</small></h2><div class="scroll" id="users"></div></section>
@@ -498,6 +498,8 @@ function render(d){
   $('#xfers').innerHTML=(d.transfers||[]).length?'<table><thead><tr><th>When</th><th>From</th><th>To</th><th style="text-align:right">$TMF</th></tr></thead><tbody>'+d.transfers.map(x=>`<tr><td>${ago(x.ts)}</td><td>${esc(x.sn||short(x.sa))}<br>${wal(x.sa)}</td><td>${esc(x.rn||short(x.ra))}<br>${wal(x.ra)}</td><td class="r">${nf(x.amount)}</td></tr>`).join('')+'</tbody></table>':'<div class="empty"><i>💸</i>No $TMF has changed hands yet.</div>';
   // player texts
   $('#msgs').innerHTML=(d.messages||[]).length?'<table><thead><tr><th>When</th><th>From</th><th>To</th><th>Text</th><th></th></tr></thead><tbody>'+d.messages.map(m=>`<tr><td>${ago(m.ts)}</td><td>${esc(m.sn||short(m.sa))}</td><td>${esc(m.rn||short(m.ra))}</td><td style="max-width:260px">${esc(m.body)}</td><td><button class="btn no" data-dm="${m.id}">Delete</button></td></tr>`).join('')+'</tbody></table>':'<div class="empty"><i>💬</i>No texts yet. The halls are quiet.</div>';
+  // texts that could not be sent, with the reason (so a "it would not send" report can be traced)
+  {const mp=d.msgProblems||[],bx=$('#msgprob');if(bx)bx.innerHTML=mp.length?'<div style="padding:12px 20px 4px;letter-spacing:.12em;text-transform:uppercase;font-size:10px;color:var(--muted)">Texts that could not be sent · latest 15</div><div class="scroll" style="max-height:200px"><table><thead><tr><th>When</th><th>From</th><th>To</th><th>Why</th></tr></thead><tbody>'+mp.map(p=>`<tr><td>${ago(p.ts)}</td><td>${esc(p.sn||'?')}</td><td>${esc(p.rn||'?')}</td><td>${esc(p.reason||'')} <span style="color:var(--muted)">(${p.status})</span></td></tr>`).join('')+'</tbody></table></div>':''}
   // Hype: player list for the picker and the last texts sent as Hype
   paintHypeList();paintTop5(d);paintFacts(d);paintCool(d);
   $('#h-sent').innerHTML=(d.hypes||[]).length?'<div style="margin-bottom:4px;letter-spacing:.12em;text-transform:uppercase;font-size:10px">Sent as Hype</div>'+d.hypes.map(h=>`<div><b>${esc(h.rn||'player')}</b><span>${esc(h.body)}</span></div>`).join(''):'';

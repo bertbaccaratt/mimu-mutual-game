@@ -551,23 +551,37 @@ async function handleMsgThread(env, req, url) {
   if (msgs.some((m) => m.sender === other)) await env.DB.prepare('UPDATE messages SET read=1 WHERE recipient=?1 AND sender=?2 AND read=0').bind(me, other).run();
   return json(env, req, { with: other, name: who.n, picture: who.pic || '', blocked: iBlocked, messages: msgs.map((m) => ({ id: m.id, ts: m.ts, mine: m.sender === me, body: m.body })) });
 }
+/* A short, self-trimming log of texts that could not be sent, so a player's "it would not send" can be traced to a reason (shown in the admin page). */
+let MSGPROB_TABLE = false;
+async function msgFail(env, me, to, status, reason) {
+  try {
+    if (!MSGPROB_TABLE) { await env.DB.prepare('CREATE TABLE IF NOT EXISTS msg_problems (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, sender TEXT, recipient TEXT, status INTEGER, reason TEXT)').run(); MSGPROB_TABLE = true; }
+    await env.DB.prepare('INSERT INTO msg_problems(ts,sender,recipient,status,reason) VALUES(?1,?2,?3,?4,?5)').bind(Date.now(), me || null, to || null, status, String(reason).slice(0, 120)).run();
+    await env.DB.prepare('DELETE FROM msg_problems WHERE id < (SELECT MAX(id) - 300 FROM msg_problems)').run();
+  } catch (e) { console.error('msg problem log', String(e && e.message || e)); }
+}
 async function handleMsgSend(env, req) {
   const a = await msgAuth(env, req); if (a.err) return a.err;
   const me = a.me;
-  let b = {}; try { b = await req.json(); } catch { return json(env, req, { error: 'bad json' }, 400); }
+  let b = {}; try { b = await req.json(); } catch { await msgFail(env, me, null, 400, 'bad json'); return json(env, req, { error: 'bad json' }, 400); }
   const to = String(b.to || '').toLowerCase();
   const body = String(b.body || '').replace(/[\u0000-\u0008\u000b-\u001f\u007f​-‏‪-‮⁦-⁩]/g, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
-  if (!/^0x[0-9a-f]{40}$/.test(to) || !body) return json(env, req, { error: 'Type a message first.' }, 400);
-  if (body.length > MSG_MAX) return json(env, req, { error: 'Keep it under ' + MSG_MAX + ' characters.' }, 400);
-  if (to === me) return json(env, req, { error: 'You cannot text yourself.' }, 400);
-  if (await isBanned(env, me)) return json(env, req, { error: 'blocked' }, 403);
+  const fail = async (status, msg, why) => { await msgFail(env, me, to, status, why || msg); return json(env, req, { error: msg }, status); };
+  if (!/^0x[0-9a-f]{40}$/.test(to)) return fail(400, 'That player could not be found. Pick them from the list again.', 'bad recipient');
+  if (!body) return fail(400, 'Type a message first.', 'empty text');
+  if (body.length > MSG_MAX) return fail(400, 'Keep it under ' + MSG_MAX + ' characters.', 'too long');
+  if (to === me) return fail(400, 'You cannot text yourself.', 'self');
+  if (await isBanned(env, me)) return fail(403, 'blocked', 'sender banned');
   const rcpt = await env.DB.prepare('SELECT 1 x FROM players WHERE address=?1').bind(to).first();
-  if (!rcpt || await isBanned(env, to)) return json(env, req, { error: 'That player cannot get texts right now.' }, 404);
-  if (await env.DB.prepare('SELECT 1 x FROM blocks WHERE blocker=?1 AND blocked=?2').bind(to, me).first()) return json(env, req, { error: 'This player is not taking texts from you.' }, 403);
+  if (!rcpt || await isBanned(env, to)) return fail(404, 'That player cannot get texts right now.', rcpt ? 'recipient banned' : 'recipient not found');
+  if (await env.DB.prepare('SELECT 1 x FROM blocks WHERE blocker=?1 AND blocked=?2').bind(to, me).first()) return fail(403, 'This player is not taking texts from you.', 'blocked by recipient');
   const now = Date.now();
+  /* the same text to the same player a moment ago is the same text (a retry after a slow connection): answer with the first one, never twice */
+  const dup = await env.DB.prepare('SELECT id, ts FROM messages WHERE sender=?1 AND recipient=?2 AND body=?3 AND ts>?4 ORDER BY id DESC LIMIT 1').bind(me, to, body, now - 8000).first();
+  if (dup) return json(env, req, { ok: true, id: dup.id, ts: dup.ts, body, dup: true });
   const recent = await env.DB.prepare('SELECT COUNT(*) c FROM messages WHERE sender=?1 AND ts>?2').bind(me, now - 60 * 1000).first();
   const pair = await env.DB.prepare('SELECT COUNT(*) c FROM messages WHERE sender=?1 AND recipient=?2 AND ts>?3').bind(me, to, now - 10 * 60 * 1000).first();
-  if (recent.c >= 12 || pair.c >= 30) return json(env, req, { error: 'Slow down a little, then send again.' }, 429);
+  if (recent.c >= 20 || pair.c >= 60) return fail(429, 'Slow down a little, then send again.', recent.c >= 20 ? 'more than 20 texts in a minute' : 'more than 60 texts to one player in 10 minutes');
   const r = await env.DB.prepare('INSERT INTO messages(ts,sender,recipient,body,read) VALUES(?1,?2,?3,?4,0)').bind(now, me, to, body).run();
   return json(env, req, { ok: true, id: r.meta && r.meta.last_row_id, ts: now, body });
 }
@@ -841,6 +855,8 @@ async function handleAdmin(env, req, url) {
       q('SELECT b.id, b.ts, b.subject, (b.ikey IS NOT NULL) img, (SELECT COUNT(*) FROM mail_reads r WHERE r.id=b.id) reads FROM broadcasts b ORDER BY b.id DESC LIMIT 20').all(),
       q('SELECT m.id, m.ts, m.body, pr.name rn FROM messages m LEFT JOIN players pr ON pr.address=m.recipient WHERE m.sender=?1 ORDER BY m.id DESC LIMIT 8', HYPE).all(),
     ]);
+    let msgProblems = [];
+    try { msgProblems = ((await q('SELECT mp.id, mp.ts, mp.status, mp.reason, ps.name sn, pr.name rn FROM msg_problems mp LEFT JOIN players ps ON ps.address=mp.sender LEFT JOIN players pr ON pr.address=mp.recipient ORDER BY mp.id DESC LIMIT 15').all()).results || []); } catch { /* the table does not exist until the first problem */ }
     let facts = null, top5 = [];
     try {
       await ensurePlayStats(env);
@@ -869,7 +885,7 @@ async function handleAdmin(env, req, url) {
       week, visitors: vis.c, visits: tot.c, today: today.c, banned: banned.c,
       topRun: run.results || [], topNw: nw.results || [],
       held: (held.results || []).map((r) => ({ ...r, flags: JSON.parse(r.flags || '[]'), seconds: Math.round(r.ticks / 60) })),
-      users: users.results || [], transfers: transfers.results || [], messages: messages.results || [], mails: mails.results || [], hypes: hypes.results || [], players: users.results ? users.results.length : 0,
+      users: users.results || [], transfers: transfers.results || [], messages: messages.results || [], msgProblems, mails: mails.results || [], hypes: hypes.results || [], players: users.results ? users.results.length : 0,
     });
   }
   if (path === 'held' && req.method === 'GET') {

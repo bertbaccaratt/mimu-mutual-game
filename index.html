@@ -1526,7 +1526,7 @@ function buildMsgs(root){
   /* ---- live chats with other players ---- */
   let inList=true,q='',thrTimer=null;
   const me=()=>P.glyph&&P.glyph.address?P.glyph.address.toLowerCase():'';
-  const loadTop=()=>(PM.pl&&Date.now()-PM.plAt<15000)?Promise.resolve():API.j('/api/players').then(d=>{PM.pl=d;PM.plAt=Date.now()}).catch(()=>{});
+  const loadTop=()=>(PM.pl&&Date.now()-PM.plAt<15000)?Promise.resolve():API.j('/api/players',{timeout:15000}).then(d=>{PM.pl=d;PM.plAt=Date.now();PM.plErr=0}).catch(()=>{PM.plErr=1});
   const paintPM=()=>keepScroll(root,paintPM0);
   const paintPM0=()=>{
     const box=$('#pmbox',root);if(!box)return;
@@ -1535,8 +1535,9 @@ function buildMsgs(root){
     const rows=(PM.pl?PM.pl.players:[]).filter(r=>r.id!==me()&&(!q||String(r.name).toLowerCase().includes(q)));
     box.innerHTML=`<div class="pmh">Your chats</div>${th||'<div class="pmem">No chats yet. Pick a player below and say something.</div>'}
       <div class="pmh">All players${PM.pl?' &middot; '+PM.pl.players.length:''}</div><div class="pmsr"><input id="pmq" placeholder="search a player" value="${escH(q)}" autocomplete="off"></div>
-      <div class="pmlist">${rows.length?rows.slice(0,150).map(r=>`<button class="cv" data-pt="${escH(r.id)}" data-nm="${escH(r.name)}" data-pc="${escH(r.picture||'')}">${pAv(r.picture)}<div class="mid"><b>${escH(r.name)}</b><span>${r.total>0?fmt(r.total)+' points':'signed in'}</span></div><div class="tm">Text</div></button>`).join(''):`<div class="pmem">${PM.pl?'No players match.':'Loading players&hellip;'}</div>`}</div>`;
+      <div class="pmlist">${rows.length?rows.slice(0,300).map(r=>`<button class="cv" data-pt="${escH(r.id)}" data-nm="${escH(r.name)}" data-pc="${escH(r.picture||'')}">${pAv(r.picture)}<div class="mid"><b>${escH(r.name)}</b><span>${r.total>0?fmt(r.total)+' points':'signed in'}</span></div><div class="tm">Text</div></button>`).join(''):`<div class="pmem">${PM.pl?'No players match.':PM.plErr?'<button class="pmretry" id="pmretry" style="color:var(--gold2);text-decoration:underline">Could not load the players. Tap to try again.</button>':'Loading players&hellip;'}</div>`}</div>`;
     $$('[data-pt]',box).forEach(b=>b.onclick=()=>{ac();sfx.tap();pmThread(b.dataset.pt,b.dataset.nm,b.dataset.pc)});
+    {const rt=$('#pmretry',box);if(rt)rt.onclick=()=>{PM.plErr=0;PM.plAt=0;paintPM();loadTop().then(()=>{if(inList)paintPM()})}}
     const qi=$('#pmq',box);if(qi)qi.oninput=()=>{q=qi.value.trim().toLowerCase();const pos=qi.selectionStart;paintPM();const n=$('#pmq',root);if(n){n.focus();n.setSelectionRange(pos,pos)}};
   };
   window._pmList=()=>{if(inList)paintPM()};
@@ -1550,23 +1551,31 @@ function buildMsgs(root){
     const drawBot=()=>{
       const keep=$('#pmt',root)?$('#pmt',root).value:'';            /* never lose what is being typed */
       blk.textContent=blocked?'Unblock':'Block';
-      bot.innerHTML=blocked?'<div class="pmblocked">You blocked this player. Unblock to text them again.</div>':`<div class="pmdon">Want to help ${escH(name)}? <button id="pmdn">Donate $TMF in Top 5</button></div><div class="pmerr" id="pmerr"></div><div class="pmin"><input id="pmt" maxlength="280" placeholder="Text message" autocomplete="off"><button id="pms">Send</button></div>`;
+      bot.innerHTML=blocked?'<div class="pmblocked">You blocked this player. Unblock to text them again.</div>':`<div class="pmdon">Want to help ${escH(name)}? <button id="pmdn">Donate $TMF in Top 5</button></div><div class="pmerr" id="pmerr"></div><form class="pmin" id="pmf" action="javascript:void(0)" autocomplete="off"><input id="pmt" maxlength="280" placeholder="Text message" autocomplete="off" enterkeyhint="send"><button id="pms" type="submit">Send</button></form>`;
       if(blocked)return;
-      const inp=$('#pmt',root),btn=$('#pms',root),er=$('#pmerr',root);inp.value=keep;
+      const inp=$('#pmt',root),btn=$('#pms',root),er=$('#pmerr',root),form=$('#pmf',root);inp.value=keep;
       $('#pmdn',root).onclick=()=>{goHome();setTimeout(()=>openApp('top5'),700)};
       const send=async()=>{
-        const body=inp.value.trim();if(!body)return;
-        btn.disabled=true;er.textContent='';
-        try{const r=await API.j('/api/messages/send',{method:'POST',body:JSON.stringify({to:addr,body:r0(body)})});inp.value='';add([{id:r.id,ts:r.ts,mine:true,body:r.body}]);sfx.select()}
-        catch(e){er.textContent=(e&&e.message)||'Could not send. Try again.'}
-        btn.disabled=false;inp.focus();
+        const body=inp.value.trim();if(!body||btn.disabled)return;
+        btn.disabled=true;btn.textContent='…';er.textContent='';
+        try{
+          let r=null,lastErr=null;
+          for(let k=0;k<2&&!r;k++){                                  /* one quiet retry, only when the connection itself failed (the server ignores a repeat of the same text) */
+            try{r=await API.j('/api/messages/send',{method:'POST',body:JSON.stringify({to:addr,body}),timeout:15000})}
+            catch(e){lastErr=e;if(!e||!e.net)throw e;await new Promise(z=>setTimeout(z,900))}
+          }
+          if(!r)throw lastErr;
+          inp.value='';add([{id:r.id,ts:r.ts,mine:true,body:r.body}]);sfx.select();
+        }catch(e){
+          er.textContent=!e?'Could not send. Try again.':e.net?'Could not reach the server. Check your connection and tap Send again. Your text is still here.':e.status===401?'Your sign-in ended. Open Chair Run, connect Glyph again, then come back. Your text is still here.':e.status===429?'Slow down a little, then send again.':(e.message||'Could not send. Try again.');
+        }
+        btn.disabled=false;btn.textContent='Send';inp.focus();
       };
-      const r0=s=>s;
-      btn.onclick=send;inp.onkeydown=e=>{if(e.key==='Enter')send()};
+      form.onsubmit=e=>{e.preventDefault();send()};              /* the Send button and the phone keyboard's Go / Send key both land here */
     };
     const load=async()=>{
       try{
-        const d=await API.j('/api/messages/thread?with='+encodeURIComponent(addr)+'&after='+last);
+        const d=await API.j('/api/messages/thread?with='+encodeURIComponent(addr)+'&after='+last,{timeout:12000});
         if(!loaded){loaded=true;thr.innerHTML='';if(blocked!==d.blocked){blocked=d.blocked;drawBot()}}
         add(d.messages.filter(m=>m.id>last));
         if(last===0&&!d.messages.length&&!thr.querySelector('.dt'))thr.innerHTML=`<div class="dt">Say hi to ${escH(name)}</div>`;
@@ -1788,7 +1797,13 @@ const API={
     }));
   },  async j(path,opt){
     const h={'Content-Type':'application/json'};if(API.token)h.Authorization='Bearer '+API.token;
-    const r=await fetch(GAME_CONFIG.api.replace(/\/$/,'')+path,Object.assign({headers:h},opt));
+    const o=Object.assign({headers:h},opt);let tm=null;
+    if(o.timeout){const ctl=new AbortController();o.signal=ctl.signal;tm=setTimeout(()=>ctl.abort(),o.timeout)}   /* a request that hangs on a weak connection ends instead of freezing the screen */
+    delete o.timeout;
+    let r;
+    try{r=await fetch(GAME_CONFIG.api.replace(/\/$/,'')+path,o)}
+    catch(err){if(tm)clearTimeout(tm);const e=new Error(err&&err.name==='AbortError'?'The server took too long to answer.':'Could not reach the server.');e.net=true;throw e}
+    if(tm)clearTimeout(tm);
     const b=await r.json().catch(()=>({}));
     if(!r.ok){
       if(r.status===401&&API.token&&path!=='/api/nonce'&&path!=='/api/auth'){          /* the server no longer accepts this session: sign out cleanly */

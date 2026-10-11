@@ -547,7 +547,7 @@ setInterval(pollLive,2000);
     c.textBaseline='alphabetic';c.textAlign='left';c.fillStyle='rgba(0,0,0,.45)';c.fillRect(0,0,W,22);
     c.fillStyle='#ffe9c4';c.font='700 12px monospace';c.fillText('\u2764'.repeat(Math.max(0,st.lv))+(st.sh?'  \ud83d\udcbc':'')+(st.mg?'  \ud83d\udd14'+st.mg:'')+(st.x2?'  \u2728x2 '+st.x2:''),8,15);
     c.textAlign='right';c.fillStyle='#7dffa8';c.fillText((g.est?'approx · ':'')+'chain '+st.ch+'  x'+st.cm,W-8,15);
-    if(st.or){c.textAlign='left';c.fillStyle='#ff6a6a';c.fillText('\ud83d\udd34 -0.5 speed '+st.or+'s',8,H-8)}
+    if(st.or){c.textAlign='left';c.fillStyle='#ff6a6a';c.fillText('\ud83d\udd34 orb calm '+st.or+'s',8,H-8)}
   }
   let last=0;
   function loop(ts){

@@ -34,6 +34,7 @@
   function create(seed, opts) {
     opts = opts || {};
     const wallet = Math.max(0, Math.floor(opts.wallet || 0));
+    const rv = Number(opts.v) || VERSION;                          // the rules version this run plays by (a run keeps the rules it started with)
     let rs = (seed >>> 0) || 1;
     const rand = () => {                                            // mulberry32
       rs = (rs + 0x6D2B79F5) | 0;
@@ -137,9 +138,10 @@
       S.tick++; S.time += dt;
       /* the first 3 minutes ramp exactly as before (11 + 1 per 230 m, up to 23). After that the top speed steps up +0.5 every 3 minutes, to a ceiling of 30 at minute 42, so long runs keep tightening. */
       const stairs = Math.min(7, .5 * Math.floor(S.tick / 10800));
-      /* the red orb (every 2.5 million points): catch it and the top speed is 0.5 lower for 3 minutes, then it comes back by itself to wherever the ramp has got to */
+      /* the red orb (every 2.5 million points): catch it and the top speed drops for a while, then it eases back to wherever the ramp has got to.
+         rules v5: -5 for 60 seconds (about 20% slower). Runs that started on v4 keep -0.5 for 3 minutes. */
       if (S.orbT > 0) { S.orbT -= dt; if (S.orbT <= 0) { S.orbT = 0; emit('orbend'); } }
-      const target = (Math.min(23, 11 + S.dist / 230) + stairs - (S.orbT > 0 ? .5 : 0)) * (S.slow > 0 ? .62 : 1);
+      const target = (Math.min(23, 11 + S.dist / 230) + stairs - (S.orbT > 0 ? (rv >= 5 ? 5 : .5) : 0)) * (S.slow > 0 ? .62 : 1);
       S.speed += (target - S.speed) * Math.min(1, dt * 1.6); S.slow = Math.max(0, S.slow - dt);
       S.dist += S.speed * dt;
       S.px += (S.lane - S.px) * Math.min(1, dt * 13); S.vx = S.lane - S.px;
@@ -165,7 +167,7 @@
         } else if (o.t === 'pick') {
           if (dz < D0 + .6 && dz > D0 - .6 && inx < .7) {
             o.dead = true;
-            if (o.k === 'magnet') S.magnet = 9; else if (o.k === 'shield') S.shield = 1; else if (o.k === 'orb') S.orbT = 180; else S.mult = 10;
+            if (o.k === 'magnet') S.magnet = 9; else if (o.k === 'shield') S.shield = 1; else if (o.k === 'orb') S.orbT = rv >= 5 ? 60 : 180; else S.mult = 10;
             emit('pick', { k: o.k, x: o.x, z: o.z });
           }
         } else if (o.t === 'chair' || o.t === 'banner') {
@@ -223,6 +225,6 @@
   }
 
   /* bump this whenever the rules change: the server only accepts runs from a game page on the same version */
-  const VERSION = 4;
+  const VERSION = 5;
   return { create, applyCode, ACT, DT, ASSETS, CHAIR_H, VERSION };
 });

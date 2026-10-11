@@ -43,7 +43,8 @@ CREATE TABLE IF NOT EXISTS runs (
   last_beat  INTEGER,                       -- last live ping from the game while the run is in progress (display only)
   live_score INTEGER,
   live_dist  INTEGER,
-  live_coins INTEGER
+  live_coins INTEGER,
+  ver        INTEGER                          -- game rules version the run was started on (null = 4)
 );
 CREATE INDEX IF NOT EXISTS idx_runs_addr   ON runs (address, status);
 CREATE INDEX IF NOT EXISTS idx_runs_status ON runs (status, ended_at);

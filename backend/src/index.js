@@ -286,8 +286,8 @@ async function handleRunStart(env, req) {
   await env.DB.prepare('DELETE FROM runs WHERE started_at<?1 AND status NOT IN (\'held\')').bind(now - 24 * 3600 * 1000).run();
   await env.DB.prepare("UPDATE runs SET status='abandoned', snapshot=NULL WHERE address=?1 AND status='open'").bind(sess.sub).run();   // one live run per player; an interrupted run is thrown away, never scored
   const id = hex(16), seed = crypto.getRandomValues(new Uint32Array(1))[0] || 1;
-  await env.DB.prepare("INSERT INTO runs(id,address,seed,wallet,started_at,last_tick,seq,snapshot,status) VALUES(?1,?2,?3,?4,?5,0,0,NULL,'open')")
-    .bind(id, sess.sub, seed, wallet, now).run();
+  await env.DB.prepare("INSERT INTO runs(id,address,seed,wallet,started_at,last_tick,seq,snapshot,status,ver) VALUES(?1,?2,?3,?4,?5,0,0,NULL,'open',?6)")
+    .bind(id, sess.sub, seed, wallet, now, Sim.VERSION).run();
   return json(env, req, { runId: id, seed, wallet });
 }
 
@@ -315,7 +315,7 @@ async function handleRunChunk(env, req) {
     prev = it[0]; list.push(it);
   }
 
-  const sim = Sim.create(run.seed, { wallet: run.wallet });
+  const sim = Sim.create(run.seed, { wallet: run.wallet, v: run.ver || 4 });   // a run replays by the rules version it started on (older rows have no version: v4)
   if (run.snapshot) sim.restore(run.snapshot);
   const S = sim.S;
   const stats = run.stats ? JSON.parse(run.stats) : newStats();
@@ -771,9 +771,9 @@ async function handleAdmin(env, req, url) {
           const s = m[r.id];
           if (s && s.state && now - s.at < 8000) { try { r.gfx = JSON.parse(s.state); r.sat = s.at; continue; } catch { /* fall through */ } }
           try {                                                        // no fresh picture from the game: rebuild it from the last run state the server verified
-            const run = await env.DB.prepare('SELECT seed, wallet, snapshot FROM runs WHERE id=?1').bind(r.id).first();
+            const run = await env.DB.prepare('SELECT seed, wallet, ver, snapshot FROM runs WHERE id=?1').bind(r.id).first();
             if (run && run.snapshot) {
-              const sim = Sim.create(run.seed, { wallet: run.wallet }); sim.restore(run.snapshot);
+              const sim = Sim.create(run.seed, { wallet: run.wallet, v: run.ver || 4 }); sim.restore(run.snapshot);
               const S = sim.S, ob = [];
               for (const o of S.obj) {
                 if (o.dead) continue; const dz = o.z - S.dist; if (dz < -3 || dz > 70) continue;

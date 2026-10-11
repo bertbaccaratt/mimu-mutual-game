@@ -105,5 +105,27 @@ ok('25 more seeds replay identically', allSame);
   const snap = r.sim.snapshot(), sim2 = Sim.create(99, { wallet: 300 }); sim2.restore(snap);
   ok('the offered price survives snapshot/restore', sim2.S.rc === 330 && sim2.S.wait === 'revive');
   sim2.revive(); ok('paid 100 from run coins and 230 from the wallet', sim2.S.coins === 0 && sim2.S.walletPaid === 230);
-  ok('rules version is 4', Sim.VERSION === 4, String(Sim.VERSION));
+  ok('rules version is 5', Sim.VERSION === 5, String(Sim.VERSION));
+}
+
+// Red orb (rules v5): -5 top speed for 60 s; a run that started on v4 keeps -0.5 for 3 minutes
+{
+  const orb = (v) => {
+    const sim = Sim.create(31, { wallet: 0, v }), S = sim.S;
+    S.dist = 3000; S.speed = 23; S.lives = 99; S.inv = 1e9;
+    S.obj.push({ t: 'pick', k: 'orb', x: S.px, z: S.dist + 4.3, y: 0, id: 88888 });
+    sim.step();
+    const timer = S.orbT;
+    const at = (secs) => { for (let i = 0; i < secs * 60; i++) { S.inv = 1e9; S.obj = S.obj.filter((o) => o.t === 'coin'); sim.step(); } return S.speed; };
+    const s4 = at(4);
+    return { timer, s4, sim, S, at };
+  };
+  const n = orb(5), o = orb(4);
+  ok('v5 orb lasts 60 seconds', Math.round(n.timer) === 60, String(n.timer));
+  ok('v4 orb still lasts 3 minutes', Math.round(o.timer) === 180, String(o.timer));
+  ok('v5 orb slows the runner by about 5 within 4 seconds', n.s4 < 19.5 && n.s4 > 17, n.s4.toFixed(2));
+  ok('v4 orb only trims about 0.5', o.s4 > 22.3, o.s4.toFixed(2));
+  const s70 = n.at(60);
+  ok('v5 speed comes back after the calm ends', s70 > 22, s70.toFixed(2) + ' orbT ' + n.S.orbT);
+  ok('the default for new runs is the latest rules', Sim.create(1, {}).S.orbT === 0 && Sim.VERSION === 5);
 }

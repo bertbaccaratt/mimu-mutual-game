@@ -260,6 +260,38 @@ async function recordPlay(env, address, S) {
       .bind(address, S.tick | 0, hops, Math.max(0, Math.floor(S.coins)), Math.floor(S.dist), S.mxChain | 0).run();
   } catch (e) { console.error('play stats', String(e && e.message || e)); }
 }
+/* Endurance at the gates: every counted finished run adds the gates it passed (a gate every 900 m, the first at 650 m).
+   Kept per player in its own table so the records survive the 24 hour clean-up of old runs. The table creates itself and,
+   the first time, fills itself from the runs that are still on file. */
+const gatesOf = (dist) => (dist >= 650 ? Math.floor((dist - 650) / 900) + 1 : 0);
+let GATE_TABLE = false;
+async function ensureGateRecords(env) {
+  if (GATE_TABLE) return;
+  const had = await env.DB.prepare("SELECT 1 AS x FROM sqlite_master WHERE type='table' AND name='gate_records'").first();
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS gate_records (address TEXT PRIMARY KEY, gates INTEGER NOT NULL DEFAULT 0, runs INTEGER NOT NULL DEFAULT 0, dist INTEGER NOT NULL DEFAULT 0, best_gates INTEGER NOT NULL DEFAULT 0, best_dist INTEGER NOT NULL DEFAULT 0, best_ticks INTEGER NOT NULL DEFAULT 0, best_coins INTEGER NOT NULL DEFAULT 0)').run();
+  if (!had) {
+    try {
+      const G = '(CASE WHEN dist>=650 THEN (dist-650)/900+1 ELSE 0 END)';
+      await env.DB.prepare(`INSERT OR REPLACE INTO gate_records(address,gates,runs,dist,best_gates,best_dist,best_ticks,best_coins)
+        SELECT a.address, a.g, a.n, a.d, b.g, b.dist, b.ticks, b.coins FROM
+          (SELECT address, SUM(${G}) g, COUNT(*) n, SUM(dist) d FROM runs WHERE status IN ('done','released') GROUP BY address) a
+          JOIN (SELECT address, dist, last_tick ticks, coins, ${G} g, ROW_NUMBER() OVER (PARTITION BY address ORDER BY ${G} DESC, last_tick DESC) rn FROM runs WHERE status IN ('done','released')) b
+            ON b.address=a.address AND b.rn=1`).run();
+    } catch (e) { console.error('gate backfill', String(e && e.message || e)); }
+  }
+  GATE_TABLE = true;
+}
+async function recordGates(env, address, dist, ticks, coins) {
+  try {
+    await ensureGateRecords(env);
+    const g = gatesOf(dist | 0);
+    await env.DB.prepare(`INSERT INTO gate_records(address,gates,runs,dist,best_gates,best_dist,best_ticks,best_coins) VALUES(?1,?2,1,?3,?2,?3,?4,?5)
+      ON CONFLICT(address) DO UPDATE SET gates=gates+?2, runs=runs+1, dist=dist+?3,
+        best_dist=CASE WHEN ?2>best_gates THEN ?3 ELSE best_dist END, best_ticks=CASE WHEN ?2>best_gates THEN ?4 ELSE best_ticks END,
+        best_coins=CASE WHEN ?2>best_gates THEN ?5 ELSE best_coins END, best_gates=MAX(best_gates,?2)`)
+      .bind(address, g, dist | 0, ticks | 0, coins | 0).run();
+  } catch (e) { console.error('gate records', String(e && e.message || e)); }
+}
 /* Contest rule: a run counts ONLY when it ends (benched or Quit) and its final piece reaches the server. A run that is interrupted for any reason
    (dead phone, closed tab, refresh, lost connection) is never scored: it is marked 'abandoned' when that player starts their next run, and the
    player starts over. Their earlier finished runs are unaffected. (Salvaging interrupted runs was removed on purpose.) */
@@ -348,6 +380,7 @@ async function handleRunChunk(env, req) {
     .bind(score, coins, dist, S.tick, run.seq + 1, now, runId).run();
   if (S.tick >= 120 && score > 0) await applyScore(env, sess.sub, week, score, coins, now);
   await recordPlay(env, sess.sub, S);
+  await recordGates(env, sess.sub, dist, S.tick, coins);                 // endurance records (counted runs only)
   const mine = await env.DB.prepare(`SELECT ${SCORE} AS sc FROM scores WHERE address=?1 AND week=?2`).bind(sess.sub, week).first();
   return json(env, req, { ok: true, final: true, score, coins, dist, rank: mine ? await rankOf(env, week, SCORE, mine.sc) : null, best: mine ? mine.sc : 0 });
 }
@@ -822,6 +855,12 @@ async function handleAdmin(env, req, url) {
         q(`SELECT p.name n, ${picSql(req)} pic, s.best_run v FROM scores s JOIN players p ON p.address=s.address ORDER BY s.best_run DESC LIMIT 1`).first(),
       ]);
       facts = { ticks: tot2.ticks, runs: tot2.runs, hops: tot2.hops, coins: tot2.coins, dist: tot2.dist, runners: tot2.players, mvp, hopsLead: hops, coinsLead: coinsL, longest, chain, gifts, gifter, texts: msgs.c, mailReads: reads.c, best };
+      try {                                                              // Cool facts: endurance at the gates
+        await ensureGateRecords(env);
+        const gl = (col) => q(`SELECT p.name n, ${picSql(req)} pic, g.gates, g.runs, g.dist, g.best_gates, g.best_dist, g.best_ticks, g.best_coins FROM gate_records g JOIN players p ON p.address=g.address WHERE g.address<>'${HYPE}' AND g.${col}>0 ORDER BY g.${col} DESC, g.best_ticks DESC LIMIT 5`).all();
+        const [perRun, overall, mostRuns, tg] = await Promise.all([gl('best_gates'), gl('gates'), gl('runs'), q('SELECT COALESCE(SUM(gates),0) gates, COALESCE(SUM(runs),0) runs, COALESCE(SUM(dist),0) dist, COUNT(*) players FROM gate_records WHERE gates>0 OR runs>0').first()]);
+        facts.gates = { total: tg, perRun: perRun.results || [], overall: overall.results || [], mostRuns: mostRuns.results || [] };
+      } catch (e) { console.error('gate facts', String(e && e.message || e)); }
       const t5 = await q(`SELECT s.address a, ${TOTAL} total, (s.run_best+s.boost) run, s.coins_total tmf, s.boost, p.name n, ${picSql(req)} pic FROM scores s JOIN players p ON p.address=s.address WHERE s.week=?1 AND ${TOTAL}>0 ORDER BY ${TOTAL} DESC, s.updated_at ASC LIMIT ${TOP_N}`, week).all();
       top5 = t5.results || [];
     } catch (e) { console.error('facts', String(e && e.message || e)); }
@@ -843,6 +882,7 @@ async function handleAdmin(env, req, url) {
     if (await isBanned(env, run.address)) return out({ error: 'that wallet is banned' }, 409);
     await applyScore(env, run.address, weekNow(), run.score, run.coins, Date.now());
     await env.DB.prepare("UPDATE runs SET status='released' WHERE id=?1").bind(run.id).run();
+    await recordGates(env, run.address, run.dist || 0, run.last_tick || 0, run.coins || 0);   // a released run now counts for the gate records too
     return out({ ok: true, released: run.id, score: run.score });
   }
   if (path === 'reject' && req.method === 'POST') {

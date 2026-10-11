@@ -116,6 +116,20 @@ a{color:var(--gold);text-decoration:none}a:hover{text-decoration:underline}
 .fact.mvp .crown{position:absolute;right:14px;top:10px;font-size:26px}
 .fact.mvp b{font-size:34px}
 .lead{display:flex;align-items:center;gap:10px;margin-top:8px}.lead img{width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid var(--c);background:#111}
+/* cool facts: records */
+.cfh{margin:2px 20px 0;padding-top:16px;font:700 16px var(--cond);letter-spacing:.06em;text-transform:uppercase;color:#fff}
+.cfh small{display:block;margin-top:3px;font:500 11px var(--mono);letter-spacing:.04em;text-transform:none;color:var(--muted)}
+.cfh+.facts{padding-top:12px}
+.cgcard ol{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:9px}
+.cgcard li{display:grid;grid-template-columns:26px minmax(0,1fr) auto;align-items:center;gap:8px}
+.cgcard li em{font-style:normal;font-size:18px;text-align:center;color:var(--c)}
+.cgcard li div{min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:0 8px}
+.cgcard li div img{width:24px;height:24px;border-radius:50%;object-fit:cover;border:2px solid var(--c);background:#111}
+.cgcard li b{display:block;margin:0;font:700 15px var(--cond);color:#fff;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cgcard li small{flex-basis:100%;margin-top:2px;white-space:normal;overflow:visible}
+.cgcard li strong{font:700 22px var(--cond);color:#fff;font-variant-numeric:tabular-nums;text-align:right}
+.cgcard li strong i{display:block;font:600 9px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--c);font-style:normal}
+.cgempty{grid-column:1/-1;text-align:center;color:var(--muted);padding:22px}
 
 /* top 3 live runs: the full read-out */
 .lsq .hud3{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;margin-top:2px}
@@ -295,6 +309,11 @@ td.n{width:48px;white-space:nowrap;color:var(--gold);font:700 15px var(--mono)}t
 
   <section class="sec a-green"><h2>🎉 Fun facts <small>everyone, all together</small></h2><div class="facts" id="facts"></div></section>
 
+  <section class="sec a-amber"><h2>🏆 Cool facts <small>records from the halls</small></h2>
+    <div class="cfh">🏁 Endurance at the gates<small>A gate comes every 900 m, the first at 650 m. Finished, counted runs only. Each player is listed once, with their best.</small></div>
+    <div class="facts" id="cool-gates"></div>
+  </section>
+
   </main>
   <div class="foot">Made with chairs 🪑 · Mimu On Ape</div>
 </div>
@@ -395,6 +414,23 @@ function paintFacts(d){
     who('#ffd166','🤝','Top gifter',f.gifter,nf((f.gifter||{}).v)+' $TMF given')+
     who('#d0d6e0','⭐','Highest score',f.best,nf((f.best||{}).v)+' points');
 }
+/* ---------- cool facts: endurance at the gates ---------- */
+function paintCool(d){
+  const box=$('#cool-gates');if(!box)return;
+  const g=d.facts&&d.facts.gates;
+  if(!g||!g.total||!(g.total.gates>0)){box.innerHTML='<div class="cgempty">Gate records appear as people finish runs.</div>';return}
+  const medal=i=>['🥇','🥈','🥉'][i]||String(i+1);
+  const km=m=>(Math.round((m||0)/100)/10).toLocaleString('en-US')+' km';
+  const mins=t=>{const m=Math.round((t||0)/3600);return m>=120?(m/60).toFixed(1)+' hours':m+' min'};
+  const av=p=>p&&p.pic&&/^https:\/\//.test(p.pic)?`<img src="${esc(p.pic)}" alt="" referrerpolicy="no-referrer">`:'';
+  const card=(c,icon,title,rows,val,unit,sub)=>`<div class="fact cgcard" style="--c:${c}"><div class="fi">${icon}</div><span>${title}</span>${rows.length?'<ol>'+rows.slice(0,3).map((r,i)=>`<li><em>${medal(i)}</em><div>${av(r)}<b>${esc(r.n||'player')}</b><small>${sub(r)}</small></div><strong>${nf(val(r))}<i>${unit}</i></strong></li>`).join('')+'</ol>':'<small>no one yet</small>'}</div>`;
+  const t=g.total;
+  box.innerHTML=
+    `<div class="fact" style="--c:#ffb000"><div class="fi">🏁</div><b>${nf(t.gates)}</b><span>gates passed</span><small>${nf(t.players)} players · ${nf(t.runs)} runs · ${km(t.dist)}</small></div>`+
+    card('#5be08a','🔥','Most gates in one run',g.perRun||[],r=>r.best_gates,'gates',r=>km(r.best_dist)+' · '+mins(r.best_ticks)+' · '+nf(r.best_coins)+' $TMF')+
+    card('#4cc3ff','🛣','Most gates overall',g.overall||[],r=>r.gates,'gates',r=>nf(r.runs)+' runs · '+km(r.dist))+
+    card('#ff9a4a','🏃','Most runs finished',g.mostRuns||[],r=>r.runs,'runs',r=>nf(r.gates)+' gates · '+km(r.dist));
+}
 
 function campTick(){
   const el=$('#camp');if(!el)return;const now=Date.now();
@@ -463,7 +499,7 @@ function render(d){
   // player texts
   $('#msgs').innerHTML=(d.messages||[]).length?'<table><thead><tr><th>When</th><th>From</th><th>To</th><th>Text</th><th></th></tr></thead><tbody>'+d.messages.map(m=>`<tr><td>${ago(m.ts)}</td><td>${esc(m.sn||short(m.sa))}</td><td>${esc(m.rn||short(m.ra))}</td><td style="max-width:260px">${esc(m.body)}</td><td><button class="btn no" data-dm="${m.id}">Delete</button></td></tr>`).join('')+'</tbody></table>':'<div class="empty"><i>💬</i>No texts yet. The halls are quiet.</div>';
   // Hype: player list for the picker and the last texts sent as Hype
-  paintHypeList();paintTop5(d);paintFacts(d);
+  paintHypeList();paintTop5(d);paintFacts(d);paintCool(d);
   $('#h-sent').innerHTML=(d.hypes||[]).length?'<div style="margin-bottom:4px;letter-spacing:.12em;text-transform:uppercase;font-size:10px">Sent as Hype</div>'+d.hypes.map(h=>`<div><b>${esc(h.rn||'player')}</b><span>${esc(h.body)}</span></div>`).join(''):'';
   // sent emails
   $('#m-sent').innerHTML=(d.mails||[]).length?'<div style="margin-bottom:4px;letter-spacing:.12em;text-transform:uppercase;font-size:10px">Sent emails</div>'+d.mails.map(m=>`<div><b title="${esc(m.subject)}">${esc(m.subject)}${m.img?' &#128247;':''}</b><span>${ago(m.ts)} &middot; opened by ${nf(m.reads)}</span><button class="btn no" data-dmail="${m.id}">Delete</button></div>`).join(''):'';

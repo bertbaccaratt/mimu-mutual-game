@@ -51,7 +51,7 @@
       dist: 0, speed: 11, lane: 0, px: 0, vx: 0, py: 0, vy: 0, slide: 0, lives: 3, shield: 0, magnet: 0, mult: 0,
       coins: 0, score: 0, inv: 0, time: 0, obj: [], pend: [], spawnZ: 55, gateZ: 650, cleared: [0, 0, 0, 0, 0, 0, 0, 0],
       slow: 0, combo: 0, cid: 0, weather: 0, chain: 0, ct: 0, mxChain: 0, revived: false, nextMs: 250, cm: 1, buf: 0,
-      tick: 0, dead: false, wait: null, walletPaid: 0, rc: 30, orbNext: 2500000, orbT: 0,
+      tick: 0, dead: false, wait: null, walletPaid: 0, rc: 30, orbNext: 2500000, orbT: 0, blueN: 0, surgeT: 0,
     };
     let ev = [];
     const emit = (t, a, b) => { ev.push(b === undefined ? (a === undefined ? { t } : { t, ...a }) : { t, a, b }); };
@@ -141,7 +141,9 @@
       /* the red orb (every 2.5 million points): catch it and the top speed drops for a while, then it eases back to wherever the ramp has got to.
          rules v5: -5 for 60 seconds (about 20% slower). Runs that started on v4 keep -0.5 for 3 minutes. */
       if (S.orbT > 0) { S.orbT -= dt; if (S.orbT <= 0) { S.orbT = 0; emit('orbend'); } }
-      const target = (Math.min(23, 11 + S.dist / 230) + stairs - (S.orbT > 0 ? (rv >= 5 ? 5 : .5) : 0)) * (S.slow > 0 ? .62 : 1);
+      /* the blue orb (rules v6, only at 50 million and at 100 million points): the opposite of the red orb. Catch it and the top speed goes UP by 5 for 60 seconds, then eases back. */
+      if (S.surgeT > 0) { S.surgeT -= dt; if (S.surgeT <= 0) { S.surgeT = 0; emit('surgeend'); } }
+      const target = (Math.min(23, 11 + S.dist / 230) + stairs - (S.orbT > 0 ? (rv >= 5 ? 5 : .5) : 0) + (S.surgeT > 0 ? 5 : 0)) * (S.slow > 0 ? .62 : 1);
       S.speed += (target - S.speed) * Math.min(1, dt * 1.6); S.slow = Math.max(0, S.slow - dt);
       S.dist += S.speed * dt;
       S.px += (S.lane - S.px) * Math.min(1, dt * 13); S.vx = S.lane - S.px;
@@ -151,6 +153,7 @@
       if (S.magnet > 0) S.magnet -= dt; if (S.mult > 0) S.mult -= dt;
       while (S.spawnZ < S.dist + FAR) pattern();
       if (S.score >= S.orbNext) { S.orbNext += 2500000; const o = mk('pick', rp([-1, 0, 1]), S.dist + FAR - 6); o.k = 'orb'; emit('orbseen'); }
+      if (rv >= 6 && S.blueN < 2 && S.score >= (S.blueN ? 100000000 : 50000000)) { S.blueN++; const o = mk('pick', rp([-1, 0, 1]), S.dist + FAR - 9); o.k = 'blue'; emit('blueseen'); }
       if (S.gateZ < S.dist + FAR) spawnGate();
       const mult = S.mult > 0 ? 2 : 1;
       for (const o of S.obj) {
@@ -167,7 +170,7 @@
         } else if (o.t === 'pick') {
           if (dz < D0 + .6 && dz > D0 - .6 && inx < .7) {
             o.dead = true;
-            if (o.k === 'magnet') S.magnet = 9; else if (o.k === 'shield') S.shield = 1; else if (o.k === 'orb') S.orbT = rv >= 5 ? 60 : 180; else S.mult = 10;
+            if (o.k === 'magnet') S.magnet = 9; else if (o.k === 'shield') S.shield = 1; else if (o.k === 'orb') S.orbT = rv >= 5 ? 60 : 180; else if (o.k === 'blue') S.surgeT = 60; else S.mult = 10;
             emit('pick', { k: o.k, x: o.x, z: o.z });
           }
         } else if (o.t === 'chair' || o.t === 'banner') {
@@ -225,6 +228,6 @@
   }
 
   /* bump this whenever the rules change: the server only accepts runs from a game page on the same version */
-  const VERSION = 5;
+  const VERSION = 6;
   return { create, applyCode, ACT, DT, ASSETS, CHAIR_H, VERSION };
 });

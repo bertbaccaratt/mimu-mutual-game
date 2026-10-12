@@ -445,7 +445,7 @@ function cleanState(st) {
   if (!st || typeof st !== 'object') return null;
   const num = (v, lo, hi) => Math.max(lo, Math.min(hi, Number(v) || 0));
   const ob = Array.isArray(st.ob) ? st.ob.slice(0, 48).filter((a) => Array.isArray(a)).map((a) => [String(a[0]).slice(0, 1), Math.round(num(a[1], -1.5, 1.5) * 100) / 100, Math.round(num(a[2], -5, 120) * 10) / 10, num(a[3], 0, 9) | 0]) : [];
-  return { l: Math.round(num(st.l, -1.5, 1.5) * 100) / 100, y: Math.round(num(st.y, 0, 8) * 100) / 100, s: st.s ? 1 : 0, v: Math.round(num(st.v, 0, 80) * 10) / 10, d: num(st.d, 0, 9999999) | 0, lv: num(st.lv, 0, 9) | 0, or: num(st.or, 0, 200) | 0, sh: st.sh ? 1 : 0, mg: num(st.mg, 0, 30) | 0, x2: num(st.x2, 0, 30) | 0, ch: num(st.ch, 0, 99999) | 0, cm: num(st.cm, 1, 9) | 0, ob };
+  return { l: Math.round(num(st.l, -1.5, 1.5) * 100) / 100, y: Math.round(num(st.y, 0, 8) * 100) / 100, s: st.s ? 1 : 0, v: Math.round(num(st.v, 0, 80) * 10) / 10, d: Math.floor(num(st.d, 0, 9e9)), lv: num(st.lv, 0, 9) | 0, or: num(st.or, 0, 200) | 0, sh: st.sh ? 1 : 0, mg: num(st.mg, 0, 30) | 0, x2: num(st.x2, 0, 30) | 0, ch: num(st.ch, 0, 99999) | 0, cm: num(st.cm, 1, 9) | 0, ob };
 }
 async function handleRunBeat(env, req) {
   const sess = await readToken(env, req);
@@ -455,7 +455,7 @@ async function handleRunBeat(env, req) {
   if (typeof b.runId !== 'string' || !/^[0-9a-f]{32}$/.test(b.runId)) return json(env, req, { error: 'bad request' }, 400);
   const n = (v, max) => Math.max(0, Math.min(max, Math.floor(Number(v) || 0)));
   await env.DB.prepare("UPDATE runs SET last_beat=?1, live_score=?2, live_dist=?3, live_coins=?4 WHERE id=?5 AND address=?6 AND status='open'")
-    .bind(Date.now(), n(b.score, 99999999), n(b.dist, 9999999), n(b.coins, 9999999), b.runId, sess.sub).run();
+    .bind(Date.now(), n(b.score, 9e15), n(b.dist, 9e9), n(b.coins, 9999999), b.runId, sess.sub).run();
   let w = 0;
   try {                                                              // the live picture is best effort: it can never get in the way of the beat itself
     const st = cleanState(b.st);

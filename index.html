@@ -1033,7 +1033,10 @@ body.enter .footbar{animation-name:chromeInB}
    ===================================================================== */
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-const fmt=n=>Math.round(n).toLocaleString('en-US');
+const fmt=n=>{n=Math.round(n);const a=Math.abs(n);if(a<1e8)return n.toLocaleString('en-US');
+  // 100 million and up keeps climbing in short form: 125.4M ... 1B, 1.2B, 1.3B ... 1.5T
+  const u=a>=1e15?[1e15,'Qa']:a>=1e12?[1e12,'T']:a>=1e9?[1e9,'B']:[1e6,'M'];
+  const v=Math.floor(a/u[0]*10)/10;return(n<0?'-':'')+(v%1?v.toFixed(1):String(v))+u[1]};
 const pct=(x,d=1)=>(x>=0?'+':'')+(x*100).toFixed(d)+'%';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const gauss=()=>{let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};

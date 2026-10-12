@@ -333,17 +333,26 @@ async function handleRunChunk(env, req) {
   if (inputs.length > MAX_INPUTS) return json(env, req, { error: 'too many inputs' }, 400);
   const run = await env.DB.prepare('SELECT * FROM runs WHERE id=?1').bind(runId).first();
   if (!run || run.address !== sess.sub) return json(env, req, { error: 'unknown run' }, 404);
+  const maxTicks = Number(env.MAX_TICKS) || MAX_TICKS;                 // staging tests use a small cap
+  if (run.status === 'done' && run.last_tick >= maxTicks) {            // a run that went past the cap was closed there: any later piece just gets the same answer
+    const wk = weekNow(), m0 = await env.DB.prepare(`SELECT ${SCORE} AS sc FROM scores WHERE address=?1 AND week=?2`).bind(sess.sub, wk).first();
+    return json(env, req, { ok: true, final: true, capped: true, score: run.score, coins: run.coins, dist: run.dist, rank: m0 ? await rankOf(env, wk, SCORE, m0.sc) : null, best: m0 ? m0.sc : 0 });
+  }
   if (run.status !== 'open') return json(env, req, { error: 'run is closed' }, 409);
   if (seq !== run.seq) return json(env, req, { error: 'out of order' }, 409);
   const from = run.last_tick;
-  if (to < from || to - from > CHUNK_TICKS || to > MAX_TICKS) return json(env, req, { error: 'bad tick range' }, 400);
+  if (to < from || to - from > CHUNK_TICKS) return json(env, req, { error: 'bad tick range' }, 400);
+  /* a run that plays past the cap is closed AT the cap and keeps what it had there; it is not thrown away */
+  const capped = to > maxTicks, upTo = capped ? maxTicks : to, isFinal = final === true || capped;
+  if (from > upTo) return json(env, req, { error: 'bad tick range' }, 400);
   const now = Date.now();
-  if ((to / 60) * 1000 > now - run.started_at + TIME_SLACK_MS) return json(env, req, { error: 'run is faster than real time' }, 422);   // can't play faster than the clock
+  if ((upTo / 60) * 1000 > now - run.started_at + TIME_SLACK_MS) return json(env, req, { error: 'run is faster than real time' }, 422);   // can't play faster than the clock
 
   const list = [];
   let prev = from;
-  for (const it of inputs) {
-    if (!Array.isArray(it) || it.length !== 2 || !isInt(it[0]) || !isInt(it[1]) || it[1] < 0 || it[1] > 5 || it[0] < prev || it[0] > to || (it[0] === to && !final)) return json(env, req, { error: 'bad input list' }, 400);   // an input on the boundary tick belongs to the next chunk
+  const inList = capped ? inputs.filter((it) => !(Array.isArray(it) && isInt(it[0]) && it[0] > upTo)) : inputs;   // moves after the cap are not part of the counted run
+  for (const it of inList) {
+    if (!Array.isArray(it) || it.length !== 2 || !isInt(it[0]) || !isInt(it[1]) || it[1] < 0 || it[1] > 5 || it[0] < prev || it[0] > upTo || (it[0] === upTo && !isFinal)) return json(env, req, { error: 'bad input list' }, 400);   // an input on the boundary tick belongs to the next chunk
     prev = it[0]; list.push(it);
   }
 
@@ -353,16 +362,17 @@ async function handleRunChunk(env, req) {
   const stats = run.stats ? JSON.parse(run.stats) : newStats();
   const feed = () => { observe(stats, S, S.tick, list[i][1]); Sim.applyCode(sim, list[i][1]); i++; };
   let i = 0;
-  while (S.tick < to && !S.dead) {
+  while (S.tick < upTo && !S.dead) {
     while (i < list.length && list[i][0] === S.tick) feed();
     if (S.wait || S.dead) break;
     sim.step(); sim.drain();
   }
-  if (final) while (i < list.length && list[i][0] === S.tick) feed();
+  if (isFinal) while (i < list.length && list[i][0] === S.tick) feed();
   if (i < list.length) return json(env, req, { error: 'inputs do not match the run' }, 422);
-  if (S.tick !== to && !(S.dead && S.tick <= to)) return json(env, req, { error: 'run did not reach that tick' }, 422);
+  if (S.tick !== upTo && !(S.dead && S.tick <= upTo)) return json(env, req, { error: 'run did not reach that tick' }, 422);
+  const atCap = capped || (S.tick >= maxTicks && !S.dead);            // the run was alive at the cap
 
-  if (!final) {
+  if (!isFinal && !atCap) {
     await env.DB.prepare('UPDATE runs SET last_tick=?1, seq=?2, snapshot=?3, stats=?4 WHERE id=?5').bind(S.tick, run.seq + 1, sim.snapshot(), JSON.stringify(stats), runId).run();
     return json(env, req, { ok: true, tick: S.tick });
   }
@@ -374,7 +384,7 @@ async function handleRunChunk(env, req) {
     await env.DB.prepare("UPDATE runs SET status='held', snapshot=NULL, stats=?1, flags=?2, score=?3, coins=?4, dist=?5, last_tick=?6, seq=?7, ended_at=?8 WHERE id=?9")
       .bind(JSON.stringify(stats), JSON.stringify(flags), score, coins, dist, S.tick, run.seq + 1, now, runId).run();
     await recordPlay(env, sess.sub, S);
-    return json(env, req, { ok: true, final: true, held: true, score, coins, dist });
+    return json(env, req, { ok: true, final: true, held: true, capped: atCap, score, coins, dist });
   }
   await env.DB.prepare("UPDATE runs SET status='done', snapshot=NULL, stats=NULL, score=?1, coins=?2, dist=?3, last_tick=?4, seq=?5, ended_at=?6 WHERE id=?7")
     .bind(score, coins, dist, S.tick, run.seq + 1, now, runId).run();
@@ -382,7 +392,7 @@ async function handleRunChunk(env, req) {
   await recordPlay(env, sess.sub, S);
   await recordGates(env, sess.sub, dist, S.tick, coins);                 // endurance records (counted runs only)
   const mine = await env.DB.prepare(`SELECT ${SCORE} AS sc FROM scores WHERE address=?1 AND week=?2`).bind(sess.sub, week).first();
-  return json(env, req, { ok: true, final: true, score, coins, dist, rank: mine ? await rankOf(env, week, SCORE, mine.sc) : null, best: mine ? mine.sc : 0 });
+  return json(env, req, { ok: true, final: true, capped: atCap, score, coins, dist, rank: mine ? await rankOf(env, week, SCORE, mine.sc) : null, best: mine ? mine.sc : 0 });
 }
 
 /* ---------- visitor counter (anonymous browser id + the approximate place Cloudflare reports for the connection) ---------- */

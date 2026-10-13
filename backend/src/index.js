@@ -649,10 +649,6 @@ async function handleSecretClaim(env, req) {
   const ins = await env.DB.prepare('INSERT OR IGNORE INTO secret_finder(id,address,found_at) VALUES(1,?1,?2)').bind(sess.sub, now).run();
   const row = await env.DB.prepare('SELECT address FROM secret_finder WHERE id=1').first();
   const first = !!(ins.meta && ins.meta.changes > 0);
-  if (first) {                                                       // the reminder: a text from Hype, right in their Messages
-    await env.DB.prepare("INSERT OR IGNORE INTO players(address,name,picture,glyph_name,updated_at) VALUES(?1,'Hype','','Hype',?2)").bind(HYPE, now).run();
-    await env.DB.prepare('INSERT INTO messages(ts,sender,recipient,body,read) VALUES(?1,?2,?3,?4,0)').bind(now, HYPE, sess.sub, 'TEXT HYPE THE CODE NOW!').run();
-  }
   return json(env, req, { ok: true, won: !!row && row.address === sess.sub, first });
 }
 async function handleSecretStatus(env, req) {

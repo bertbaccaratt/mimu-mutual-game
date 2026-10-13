@@ -47,11 +47,9 @@ ok('status names the finder for everyone', sw.b.found && sl.b.found && sp.b.foun
 ok('only the winner gets mine = true', sw.b.mine === true && sl.b.mine === false && sp.b.mine === false);
 ok('the reminder is open until they text Hype', sw.b.texted === false);
 
-// the reminder text from Hype is in the winner\'s Messages, not in anyone else\'s
-const tw = await call('/api/messages/threads', {}, W.token), tl = await call('/api/messages/threads', {}, L.token);
-const hw = (tw.b.threads || []).find((t) => /hype/i.test(t.name || ''));
-ok('the winner has a text from Hype: TEXT HYPE THE CODE NOW!', !!hw && /TEXT HYPE THE CODE NOW!/.test(hw.last || hw.body || JSON.stringify(hw)), JSON.stringify(hw));
-ok('nobody else got that text', !(tl.b.threads || []).some((t) => /hype/i.test(t.name || '')));
+// no text is put into anyone's Hype thread by the claim (the reminder is an on-screen notification from Hornilius)
+const tw = await call('/api/messages/threads', {}, W.token);
+ok('the claim does not put a text into the Hype thread', !(tw.b.threads || []).some((t) => /hype/i.test(t.name || '')), JSON.stringify(tw.b.threads));
 
 // the winner texts Hype back: the reminder clears
 const HYPE = '0x' + '0'.repeat(39) + '1';

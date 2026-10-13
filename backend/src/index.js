@@ -670,16 +670,24 @@ async function secretAdmin(env) {
     return out;
   } catch { return { found: false, error: true }; }
 }
+/* ---------- Donate all: transfers keep how many Chair Run points moved (the column is added the first time it is needed) ---------- */
+let TRANSFERS_POINTS = false;
+async function transfersPoints(env) {                               // true when the transfers table has its points column (added once, then verified)
+  if (TRANSFERS_POINTS) return true;
+  try { await env.DB.prepare('ALTER TABLE transfers ADD COLUMN points INTEGER NOT NULL DEFAULT 0').run(); } catch { /* the column is already there */ }
+  try { await env.DB.prepare('SELECT points FROM transfers LIMIT 1').first(); TRANSFERS_POINTS = true; } catch { return false; }
+  return true;
+}
 async function handleSendStatus(env, req) {
   const sess = await readToken(env, req);
   if (!sess) return json(env, req, { error: 'sign in first' }, 401);
   if (await limited(env, 'RL_READ', sess.sub)) return tooMany(env, req);
   const week = weekNow();
-  const [top, mine] = await Promise.all([topNine(env, week), env.DB.prepare(`SELECT ${TOTAL} AS sc, run_best, coins_total FROM scores WHERE address=?1 AND week=?2`).bind(sess.sub, week).first()]);
+  const [top, mine] = await Promise.all([topNine(env, week), env.DB.prepare(`SELECT ${TOTAL} AS sc, run_best, boost, coins_total FROM scores WHERE address=?1 AND week=?2`).bind(sess.sub, week).first()]);
   const inTop = top.includes(sess.sub), balance = mine ? mine.coins_total : 0;
   const rank = mine && mine.sc > 0 ? await rankOf(env, week, TOTAL, mine.sc) : null;
   const dw = donateWindow(env);
-  return json(env, req, { week, balance, rank, total: mine ? mine.sc : 0, top9: inTop, canSend: dw.open && !inTop && balance > 0, donate: { open: dw.open, state: dw.state, from: dw.from, until: dw.until } });
+  return json(env, req, { week, balance, rank, total: mine ? mine.sc : 0, top9: inTop, canSend: dw.open && !inTop && balance > 0, points: mine ? mine.run_best + mine.boost : 0, canAll: dw.open && !inTop && (mine ? mine.sc : 0) > 0, donate: { open: dw.open, state: dw.state, from: dw.from, until: dw.until } });
 }
 async function handleTransfer(env, req) {
   const sess = await readToken(env, req);
@@ -689,9 +697,9 @@ async function handleTransfer(env, req) {
   const dw = donateWindow(env);
   if (!dw.open) return json(env, req, { error: dw.state === 'early' ? 'Donations are not open yet. They open when the alarm goes off, Tue Oct 13 at 6:00 AM PT, for 24 hours.' : 'The 24-hour donation window has closed.', donate: { open: false, state: dw.state, from: dw.from, until: dw.until } }, 403);
   let b = {}; try { b = await req.json(); } catch { return json(env, req, { error: 'bad json' }, 400); }
-  const to = String(b.to || '').toLowerCase(), all = b.all === true;
+  const to = String(b.to || '').toLowerCase(), all = b.all === true, everything = b.everything === true;
   let amount = Number(b.amount);
-  if (!/^0x[0-9a-f]{40}$/.test(to) || (!all && (!Number.isInteger(amount) || amount < 1 || amount > 1e9))) return json(env, req, { error: 'bad request' }, 400);
+  if (!/^0x[0-9a-f]{40}$/.test(to) || (!all && !everything && (!Number.isInteger(amount) || amount < 1 || amount > 1e9))) return json(env, req, { error: 'bad request' }, 400);
   if (to === sess.sub) return json(env, req, { error: 'You cannot send $TMF to yourself.' }, 400);
   const week = weekNow();
   const top = await topNine(env, week);
@@ -699,6 +707,22 @@ async function handleTransfer(env, req) {
   const rc = await env.DB.prepare('SELECT coins_total c FROM scores WHERE address=?1 AND week=?2').bind(to, week).first();
   if (!rc || rc.c < 1) return json(env, req, { error: 'That player has not registered any $TMF yet, so they cannot receive.' }, 409);
   if (await isBanned(env, to)) return json(env, req, { error: 'That player cannot receive $TMF.' }, 409);
+  if (everything) {                                                   // DONATE ALL: every Chair Run point and every $TMF the sender holds, in one all-or-nothing step
+    const hasPts = await transfersPoints(env);
+    const mineE = await env.DB.prepare('SELECT run_best rb, boost bo, coins_total c FROM scores WHERE address=?1 AND week=?2').bind(sess.sub, week).first();
+    const pts = mineE ? mineE.rb + mineE.bo : 0, coinsE = mineE ? mineE.c : 0;
+    if (!mineE || pts + coinsE < 1) return json(env, req, { error: 'You have nothing to give yet.' }, 409);
+    const nowE = Date.now(), boostE = top.includes(to) ? coinsE * BOOST_PER_TMF : 0;     // the $TMF part boosts a top-5 runner exactly as before; points move one for one
+    const resE = await env.DB.batch([
+      env.DB.prepare('UPDATE scores SET run_best=0, boost=0, coins_total=0 WHERE address=?1 AND week=?2 AND run_best=?3 AND boost=?4 AND coins_total=?5').bind(sess.sub, week, mineE.rb, mineE.bo, mineE.c),
+      env.DB.prepare('UPDATE scores SET run_best=run_best+?1, coins_total=coins_total+?2, boost=boost+?3 WHERE address=?4 AND week=?5 AND (SELECT changes())>0').bind(pts, coinsE, boostE, to, week),
+      hasPts
+        ? env.DB.prepare('INSERT INTO transfers(ts,week,sender,recipient,amount,boost,points) SELECT ?1,?2,?3,?4,?5,?6,?7 WHERE (SELECT changes())>0').bind(nowE, week, sess.sub, to, coinsE, boostE, pts)
+        : env.DB.prepare('INSERT INTO transfers(ts,week,sender,recipient,amount,boost) SELECT ?1,?2,?3,?4,?5,?6 WHERE (SELECT changes())>0').bind(nowE, week, sess.sub, to, coinsE, boostE),
+    ]);
+    if (!resE[0].meta || !resE[0].meta.changes) return json(env, req, { error: 'Your score just changed. Try again.' }, 409);
+    return json(env, req, { ok: true, sent: coinsE, points: pts, total: pts + coinsE, boosted: boostE, balance: 0 });
+  }
   if (all) {                                                          // give everything the sender holds right now
     const mine = await env.DB.prepare('SELECT coins_total c FROM scores WHERE address=?1 AND week=?2').bind(sess.sub, week).first();
     amount = mine ? mine.c : 0;
@@ -891,6 +915,7 @@ async function handleAdmin(env, req, url) {
   if (path === 'dashboard' && req.method === 'GET') {
     const week = weekNow(), q = (sql, ...a) => env.DB.prepare(sql).bind(...a);
     const top = (col) => q(`SELECT s.address a, ${col} v, p.name n, p.x_handle x FROM scores s JOIN players p ON p.address=s.address WHERE s.week=?1 AND ${col}>0 ORDER BY ${col} DESC, s.updated_at ASC LIMIT 10`, week).all();
+    const hasPtsCol = await transfersPoints(env);
     const [vis, tot, today, run, nw, held, users, banned, transfers, messages, mails, hypes] = await Promise.all([
       q('SELECT COUNT(*) c FROM visitors').first(),
       q('SELECT COALESCE(SUM(visits),0) c FROM visitors').first(),
@@ -899,7 +924,7 @@ async function handleAdmin(env, req, url) {
       q("SELECT r.id, r.address a, p.name n, p.x_handle x, r.score, r.coins, r.last_tick ticks, r.flags, r.ended_at t FROM runs r LEFT JOIN players p ON p.address=r.address WHERE r.status='held' ORDER BY r.ended_at DESC LIMIT 50").all(),
       q(`SELECT p.address a, p.name n, p.glyph_name g, ${picSql(req)} pic, p.x_handle x, (p.x_id IS NOT NULL) xv, p.updated_at t, (SELECT 1 FROM bans b WHERE b.address=p.address) banned FROM players p WHERE p.address<>'${HYPE}' ORDER BY p.updated_at DESC LIMIT 5000`).all(),
       q('SELECT COUNT(*) c FROM bans').first(),
-      q('SELECT t.ts, t.amount, t.boost, t.sender sa, t.recipient ra, ps.name sn, pr.name rn FROM transfers t LEFT JOIN players ps ON ps.address=t.sender LEFT JOIN players pr ON pr.address=t.recipient ORDER BY t.id DESC LIMIT 50').all(),
+      q('SELECT t.ts, t.amount, t.boost, ' + (hasPtsCol ? 't.points' : '0 AS points') + ', t.sender sa, t.recipient ra, ps.name sn, pr.name rn FROM transfers t LEFT JOIN players ps ON ps.address=t.sender LEFT JOIN players pr ON pr.address=t.recipient ORDER BY t.id DESC LIMIT 50').all(),
       q('SELECT m.id, m.ts, m.body, m.sender sa, m.recipient ra, ps.name sn, pr.name rn FROM messages m LEFT JOIN players ps ON ps.address=m.sender LEFT JOIN players pr ON pr.address=m.recipient ORDER BY m.id DESC LIMIT 100').all(),
       q('SELECT b.id, b.ts, b.subject, (b.ikey IS NOT NULL) img, (SELECT COUNT(*) FROM mail_reads r WHERE r.id=b.id) reads FROM broadcasts b ORDER BY b.id DESC LIMIT 20').all(),
       q('SELECT m.id, m.ts, m.body, pr.name rn FROM messages m LEFT JOIN players pr ON pr.address=m.recipient WHERE m.sender=?1 ORDER BY m.id DESC LIMIT 8', HYPE).all(),

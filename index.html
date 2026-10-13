@@ -1657,7 +1657,7 @@ function buildCam(root){
   paintAll();
   $('#sh',root).onclick=()=>{ac();const f=$('#fl',root);f.classList.remove('on');void f.offsetWidth;f.classList.add('on');tone(1800,0,.03,.05,'square');tone(900,.05,.05,.04,'square');n++;P.photos=n;saveP();$('#pn',root).textContent=n;toast('📸 <span>Saved to Photos: <b>Mimu, caught in 4K</b></span>',1800)};
   /* photo library: grid of shots, tap one to view it full screen, swipe or use the arrows to browse */
-  const PICS=[1,2,3,4,5,6,7,8,9,11,10,12].map(i=>'assets/photos/p'+i+'.webp');
+  const PICS=[1,2,3,4,5,6,7,11,9,8,10,12].map(i=>'assets/photos/p'+i+'.webp');
   $('#gal',root).onclick=()=>{
     ac();tone(700,0,.03,.04,'square');
     const g=document.createElement('div');g.className='gal';

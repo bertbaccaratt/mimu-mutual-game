@@ -105,7 +105,7 @@ ok('25 more seeds replay identically', allSame);
   const snap = r.sim.snapshot(), sim2 = Sim.create(99, { wallet: 300 }); sim2.restore(snap);
   ok('the offered price survives snapshot/restore', sim2.S.rc === 330 && sim2.S.wait === 'revive');
   sim2.revive(); ok('paid 100 from run coins and 230 from the wallet', sim2.S.coins === 0 && sim2.S.walletPaid === 230);
-  ok('rules version is 6', Sim.VERSION === 6, String(Sim.VERSION));
+  ok('rules version is 7', Sim.VERSION === 7, String(Sim.VERSION));
 }
 
 // Red orb (rules v5): -5 top speed for 60 s; a run that started on v4 keeps -0.5 for 3 minutes
@@ -127,7 +127,7 @@ ok('25 more seeds replay identically', allSame);
   ok('v4 orb only trims about 0.5', o.s4 > 22.3, o.s4.toFixed(2));
   const s70 = n.at(60);
   ok('v5 speed comes back after the calm ends', s70 > 22, s70.toFixed(2) + ' orbT ' + n.S.orbT);
-  ok('the default for new runs is the latest rules', Sim.create(1, {}).S.orbT === 0 && Sim.VERSION === 6);
+  ok('the default for new runs is the latest rules', Sim.create(1, {}).S.orbT === 0 && Sim.VERSION === 7);
 }
 
 // Blue orb (rules v6): only at 50 million and 100 million points, the opposite of the red orb: top speed +5 for 60 seconds
@@ -160,4 +160,26 @@ ok('25 more seeds replay identically', allSame);
   // survives snapshot / restore
   const d = mk(6); d.S.surgeT = 33; d.S.blueN = 1; const e = Sim.create(77, { wallet: 0, v: 6 }); e.restore(d.sim.snapshot());
   ok('surge and blue count survive snapshot/restore', e.S.surgeT === 33 && e.S.blueN === 1);
+}
+
+// Rules v7: when the red and blue orb appear together (50M and 100M) they are never in the same lane
+{
+  let same7 = 0, same6 = 0, n = 0;
+  for (let seed = 1; seed <= 60; seed++) for (const [v, mark] of [[7, 5e7], [7, 1e8]]) {
+    const sim = Sim.create(seed, { wallet: 0, v }), S = sim.S;
+    S.dist = 3000; S.speed = 23; S.lives = 99; S.inv = 1e9; S.score = mark; S.orbNext = mark; S.blueN = mark === 1e8 ? 1 : 0;
+    sim.step();
+    const red = S.obj.find((o) => o.t === 'pick' && o.k === 'orb'), blue = S.obj.find((o) => o.t === 'pick' && o.k === 'blue');
+    n++; if (red && blue && red.x === blue.x) same7++;
+    if (!red || !blue) same7 += 1000;
+  }
+  ok('v7: red and blue orbs that appear together never share a lane', same7 === 0, same7 + ' clashes in ' + n + ' tries');
+  for (let seed = 1; seed <= 60; seed++) {                                  // v6 runs replay exactly as before (the clash can still happen there)
+    const sim = Sim.create(seed, { wallet: 0, v: 6 }), S = sim.S;
+    S.dist = 3000; S.speed = 23; S.lives = 99; S.inv = 1e9; S.score = 5e7; S.orbNext = 5e7;
+    sim.step();
+    const red = S.obj.find((o) => o.k === 'orb'), blue = S.obj.find((o) => o.k === 'blue');
+    if (red && blue && red.x === blue.x) same6++;
+  }
+  ok('v6 runs keep the old lane picks (so in-progress runs replay the same)', same6 > 0, same6 + ' of 60 shared a lane');
 }

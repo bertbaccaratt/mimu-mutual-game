@@ -68,6 +68,8 @@
     /* ---- spawning ---- */
     /* every world object has the same fields, so the engine can run the tick loop fast */
     const mk = (t, x, z) => { const o = { id: S.cid++, t, x, y: 0, z, type: 0, h: 0, roll: false, dead: false, hit: false, clr: false, k: '', opts: null, w: 0, f: 0, done: false, pick: 0 }; S.obj.push(o); return o; };
+    /* rules v7: an orb never appears in the lane of another orb (red or blue) that is within 25 m of it; the pick still uses one random number, like before */
+    const orbLane = (z) => { const taken = S.obj.filter((q) => q.t === 'pick' && (q.k === 'orb' || q.k === 'blue') && !q.dead && Math.abs(q.z - z) < 25).map((q) => Math.round(q.x)); const free = [-1, 0, 1].filter((l) => !taken.includes(l)); return rp(free.length ? free : [-1, 0, 1]); };
     const chair = (l, z, roll) => { const d = Math.min(1, S.dist / 3500); const t = wpick([34, 22, 24, 16, 7 + d * 3, 5 + d * 4, 3 + d * 3, 1 + d * 6]); const o = mk('chair', l, z); o.type = t; o.h = CHAIR_H[t]; o.roll = !!roll; return o; };
     const coin = (l, z, y) => { const o = mk('coin', l, z); o.y = y === undefined ? .6 : y; return o; };
     const coinLine = (l, z, n) => { for (let i = 0; i < n; i++) coin(l, z + i * 1.6); };
@@ -152,8 +154,8 @@
       if (S.slide > 0) S.slide -= dt; S.inv = Math.max(0, S.inv - dt);
       if (S.magnet > 0) S.magnet -= dt; if (S.mult > 0) S.mult -= dt;
       while (S.spawnZ < S.dist + FAR) pattern();
-      if (S.score >= S.orbNext) { S.orbNext += 2500000; const o = mk('pick', rp([-1, 0, 1]), S.dist + FAR - 6); o.k = 'orb'; emit('orbseen'); }
-      if (rv >= 6 && S.blueN < 2 && S.score >= (S.blueN ? 100000000 : 50000000)) { S.blueN++; const o = mk('pick', rp([-1, 0, 1]), S.dist + FAR - 9); o.k = 'blue'; emit('blueseen'); }
+      if (S.score >= S.orbNext) { S.orbNext += 2500000; const o = mk('pick', rv >= 7 ? orbLane(S.dist + FAR - 6) : rp([-1, 0, 1]), S.dist + FAR - 6); o.k = 'orb'; emit('orbseen'); }
+      if (rv >= 6 && S.blueN < 2 && S.score >= (S.blueN ? 100000000 : 50000000)) { S.blueN++; const o = mk('pick', rv >= 7 ? orbLane(S.dist + FAR - 9) : rp([-1, 0, 1]), S.dist + FAR - 9); o.k = 'blue'; emit('blueseen'); }
       if (S.gateZ < S.dist + FAR) spawnGate();
       const mult = S.mult > 0 ? 2 : 1;
       for (const o of S.obj) {
@@ -228,6 +230,6 @@
   }
 
   /* bump this whenever the rules change: the server only accepts runs from a game page on the same version */
-  const VERSION = 6;
+  const VERSION = 7;
   return { create, applyCode, ACT, DT, ASSETS, CHAIR_H, VERSION };
 });

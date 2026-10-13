@@ -1499,19 +1499,19 @@ const MSGS=[
 /* player-to-player texts (live): only after Glyph sign-in */
 const PM={unread:0,threads:[],top:null,topAt:0,timer:null,seen:0,mail:0};
 /* the secret phone line: one player in the whole game wins the Phone Detective badge (the server decides; everyone can read who won) */
-const SECRET={loaded:false,found:false,name:'',pic:'',at:0,mine:false,texted:false};
+const SECRET={loaded:false,found:false,name:'',pic:'',at:0,mine:false};
 let _secT=0,_secNag=0;
 async function secretLoad(){
   if(!API.on())return;_secT=Date.now();
-  try{const r=await API.j('/api/secret/status');SECRET.loaded=true;SECRET.found=!!r.found;SECRET.name=r.name||'';SECRET.pic=r.pic||'';SECRET.at=r.at||0;SECRET.mine=!!r.mine;SECRET.texted=!!r.texted}catch(e){}
+  try{const r=await API.j('/api/secret/status');SECRET.loaded=true;SECRET.found=!!r.found;SECRET.name=r.name||'';SECRET.pic=r.pic||'';SECRET.at=r.at||0;SECRET.mine=!!r.mine}catch(e){}
   secretLockNote();try{if(window._vaultSecret)window._vaultSecret()}catch(e){}
 }
-const secretNag=()=>{if(SECRET.mine&&!SECRET.texted){_secNag=Date.now();try{toast('&#128222; <span style="color:#ff5a52"><b style="color:#ff3b30">Hornilius</b> &middot; <b style="color:#ff5a52">TEXT HYPE THE CODE NOW!</b></span>',6000)}catch(e){}}};
-function secretPoll(){const n=Date.now();if(n-_secT>120000)secretLoad();if(SECRET.mine&&!SECRET.texted&&n-_secNag>300000)secretNag()}
+const secretNag=()=>{if(SECRET.mine){_secNag=Date.now();try{toast('&#128222; <span style="color:#ff5a52"><b style="color:#ff3b30">Hornilius</b> &middot; <b style="color:#ff5a52">TEXT HYPE THE CODE NOW!</b></span>',6000)}catch(e){}}};
+function secretPoll(){if(Date.now()-_secT>120000)secretLoad()}
 function secretLockNote(){
   const L=document.getElementById('lock');if(!L||L.style.display==='none'||L.classList.contains('go'))return;
-  const old=document.getElementById('lksecret');if(old&&!(SECRET.mine&&!SECRET.texted)){old.remove();return}
-  if(old||!(SECRET.mine&&!SECRET.texted))return;
+  const old=document.getElementById('lksecret');if(old&&!SECRET.mine){old.remove();return}
+  if(old||!SECRET.mine)return;
   const first=L.querySelector('.notif');if(!first)return;
   first.insertAdjacentHTML('beforebegin','<div class="notif" id="lksecret" style="background:rgba(120,18,18,.88);border-color:rgba(255,90,82,.75);box-shadow:0 0 22px rgba(255,59,48,.35)"><div class="ni" style="background:linear-gradient(135deg,#ff453a,#a3150f);border-color:#ffb3ad;font-size:17px">&#128222;</div><div><b>Hornilius <small style="font:500 10px var(--mono);color:#ffb3ad;margin-left:4px">now</small></b><span style="color:#ffd9d6;font-weight:700">TEXT HYPE THE CODE NOW!</span></div></div>');
 }
@@ -1696,7 +1696,7 @@ function buildPhone(root){
       Promise.race([won,new Promise(r=>setTimeout(()=>r(false),9000))]).then(ok=>{
         if(done)return;
         if(!ok){hang(true);return}                                    /* not the first (or not signed in): the normal wrong-number message */
-        gotIt=true;SECRET.found=true;SECRET.mine=true;SECRET.texted=false;secretLoad();pmPoll();
+        gotIt=true;SECRET.found=true;SECRET.mine=true;secretLoad();pmPoll();
         box.classList.add('on');ds.innerHTML='&nbsp;';
         wd=setTimeout(()=>{if(!live)hang(true)},10000);               /* never connected (offline or very slow): fall back to the wrong-number recording */
         const go=()=>{live=true;clearTimeout(wd);ans.hidden=true;tk=setInterval(tick,250);tick()};

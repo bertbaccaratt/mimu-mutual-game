@@ -45,15 +45,7 @@ ok('the winner can dial again and still wins (rewatch), not counted twice', rw.s
 const sw = await status(W.token), sl = await status(L.token), sp = await status();
 ok('status names the finder for everyone', sw.b.found && sl.b.found && sp.b.found && sw.b.name === sl.b.name && sl.b.name === sp.b.name && !!sw.b.at, JSON.stringify(sp.b));
 ok('only the winner gets mine = true', sw.b.mine === true && sl.b.mine === false && sp.b.mine === false);
-ok('the reminder is open until they text Hype', sw.b.texted === false);
 
 // no text is put into anyone's Hype thread by the claim (the reminder is an on-screen notification from Hornilius)
 const tw = await call('/api/messages/threads', {}, W.token);
 ok('the claim does not put a text into the Hype thread', !(tw.b.threads || []).some((t) => /hype/i.test(t.name || '')), JSON.stringify(tw.b.threads));
-
-// the winner texts Hype back: the reminder clears
-const HYPE = '0x' + '0'.repeat(39) + '1';
-const sent = await call('/api/messages/send', { method: 'POST', body: JSON.stringify({ to: HYPE, body: 'the code is 1234' }) }, W.token);
-ok('the winner can text Hype back', sent.s === 200 && sent.b.ok, JSON.stringify(sent.b));
-const sw2 = await status(W.token);
-ok('after texting Hype the reminder is done', sw2.b.mine === true && sw2.b.texted === true, JSON.stringify(sw2.b));

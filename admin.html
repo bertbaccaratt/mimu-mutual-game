@@ -479,11 +479,11 @@ let PREV=null;
 let SEC_PREV=null;
 function paintSecret(d){
   const s=d.secret||{found:false},b=$('#secretbody'),box=$('#secretbox');if(!b)return;
-  if(!s.found){box.className='sec a-sky';b.innerHTML='<b style="color:var(--text);font-size:18px">Not found yet</b><div style="margin-top:4px">Nobody has dialed it. The first signed-in player to dial wins the Phone Detective badge and gets the video.</div>';SEC_PREV=false;return}
+  if(!s.found){box.className='sec a-sky';b.innerHTML='<b style="color:var(--text);font-size:18px">Not found yet</b><div style="margin-top:4px">Nobody has dialed it yet. The first signed-in player to dial it is recorded here.</div>';SEC_PREV=false;return}
   box.className='sec a-gold';
   const when=new Date(s.at).toLocaleString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit'})+' PT';
-  b.innerHTML='<div style="font-size:20px;font-weight:700;color:var(--gold)">&#127942; FOUND by '+esc(s.name)+'</div><div style="margin-top:4px">Dialed the number first at <b>'+when+'</b>. They got the video and the Phone Detective badge.</div>'+
-    '<div style="margin-top:8px;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,.05)">'+(s.texted?'Texted Hype'+(s.textedAt?' at '+new Date(s.textedAt).toLocaleTimeString('en-US',{timeZone:'America/Los_Angeles',hour:'numeric',minute:'2-digit'})+' PT':'')+': <b>&ldquo;'+esc(s.body||'')+'&rdquo;</b>':'Has <b>not</b> texted Hype yet. Their reminder is still showing.')+'</div>';
+  b.innerHTML='<div style="font-size:20px;font-weight:700;color:var(--gold)">&#127942; '+esc(s.name)+' got the number</div><div style="margin-top:4px">They dialed it first at <b>'+when+'</b>.</div>'+
+    '<div style="margin-top:8px;font:12px var(--mono);color:var(--muted);word-break:break-all">'+esc(s.address||'')+'</div>';
   if(SEC_PREV===false){toast('&#9742; '+esc(s.name)+' just found the secret number!');ding(988,1480);confetti(60)}
   SEC_PREV=true;
 }

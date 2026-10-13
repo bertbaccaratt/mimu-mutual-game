@@ -657,18 +657,14 @@ async function handleSecretStatus(env, req) {
   const row = await env.DB.prepare(`SELECT f.address a, f.found_at t, p.name n, ${picSql(req)} pic FROM secret_finder f LEFT JOIN players p ON p.address=f.address WHERE f.id=1`).first();
   if (!row) return json(env, req, { found: false });
   let sess = null; try { sess = await readToken(env, req); } catch { /* public read */ }
-  const mine = !!sess && sess.sub === row.a;
-  let texted = false;
-  if (mine) texted = !!(await env.DB.prepare('SELECT 1 x FROM messages WHERE sender=?1 AND recipient=?2 AND ts>=?3 LIMIT 1').bind(row.a, HYPE, row.t).first());
-  return json(env, req, { found: true, name: row.n || 'a player', pic: row.pic || '', at: row.t, mine, texted });
+  return json(env, req, { found: true, name: row.n || 'a player', pic: row.pic || '', at: row.t, mine: !!sess && sess.sub === row.a });
 }
 async function secretAdmin(env) {
   try {
     await secretTable(env);
     const row = await env.DB.prepare('SELECT f.address a, f.found_at t, p.name n, p.x_handle x FROM secret_finder f LEFT JOIN players p ON p.address=f.address WHERE f.id=1').first();
     if (!row) return { found: false };
-    const m = await env.DB.prepare('SELECT ts, body FROM messages WHERE sender=?1 AND recipient=?2 AND ts>=?3 ORDER BY id DESC LIMIT 1').bind(row.a, HYPE, row.t).first();
-    return { found: true, name: row.n || 'a player', x: row.x || '', address: row.a, at: row.t, texted: !!m, textedAt: m ? m.ts : 0, body: m ? m.body : '' };
+    return { found: true, name: row.n || 'a player', x: row.x || '', address: row.a, at: row.t };
   } catch { return { found: false, error: true }; }
 }
 async function handleSendStatus(env, req) {

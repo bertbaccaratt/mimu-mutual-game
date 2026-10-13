@@ -253,6 +253,8 @@ td.n{width:48px;white-space:nowrap;color:var(--gold);font:700 15px var(--mono)}t
 
   <main class="page">
 
+  <section class="sec a-sky" id="secretbox" aria-label="Secret phone line"><h2>&#9742; Secret line <small>1-800-239-0413</small></h2><div id="secretbody" style="padding:14px 20px 18px;color:var(--muted);font-size:14px">Loading&hellip;</div></section>
+
   <section class="case" aria-label="Visitors">
     <div class="plate">Total site visitors</div>
     <div class="digits" id="digits"></div>
@@ -474,6 +476,17 @@ function topTable(rows,unit){
 }
 function ago(t){const s=Math.max(0,Math.floor((Date.now()-t)/1000));if(s<60)return s+'s ago';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago'}
 let PREV=null;
+let SEC_PREV=null;
+function paintSecret(d){
+  const s=d.secret||{found:false},b=$('#secretbody'),box=$('#secretbox');if(!b)return;
+  if(!s.found){box.className='sec a-sky';b.innerHTML='<b style="color:var(--text);font-size:18px">Not found yet</b><div style="margin-top:4px">Nobody has dialed it. The first signed-in player to dial wins the Phone Detective badge and gets the video.</div>';SEC_PREV=false;return}
+  box.className='sec a-gold';
+  const when=new Date(s.at).toLocaleString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit'})+' PT';
+  b.innerHTML='<div style="font-size:20px;font-weight:700;color:var(--gold)">&#127942; FOUND by '+esc(s.name)+'</div><div style="margin-top:4px">Dialed the number first at <b>'+when+'</b>. They got the video and the Phone Detective badge.</div>'+
+    '<div style="margin-top:8px;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,.05)">'+(s.texted?'Texted Hype'+(s.textedAt?' at '+new Date(s.textedAt).toLocaleTimeString('en-US',{timeZone:'America/Los_Angeles',hour:'numeric',minute:'2-digit'})+' PT':'')+': <b>&ldquo;'+esc(s.body||'')+'&rdquo;</b>':'Has <b>not</b> texted Hype yet. Their reminder is still showing.')+'</div>';
+  if(SEC_PREV===false){toast('&#9742; '+esc(s.name)+' just found the secret number!');ding(988,1480);confetti(60)}
+  SEC_PREV=true;
+}
 function render(d){
   DATA=d;
   if(PREV){
@@ -501,7 +514,7 @@ function render(d){
   // texts that could not be sent, with the reason (so a "it would not send" report can be traced)
   {const mp=d.msgProblems||[],bx=$('#msgprob');if(bx)bx.innerHTML=mp.length?'<div style="padding:12px 20px 4px;letter-spacing:.12em;text-transform:uppercase;font-size:10px;color:var(--muted)">Texts that could not be sent · latest 15</div><div class="scroll" style="max-height:200px"><table><thead><tr><th>When</th><th>From</th><th>To</th><th>Why</th></tr></thead><tbody>'+mp.map(p=>`<tr><td>${ago(p.ts)}</td><td>${esc(p.sn||'?')}</td><td>${esc(p.rn||'?')}</td><td>${esc(p.reason||'')} <span style="color:var(--muted)">(${p.status})</span></td></tr>`).join('')+'</tbody></table></div>':''}
   // Hype: player list for the picker and the last texts sent as Hype
-  paintHypeList();paintTop5(d);paintFacts(d);paintCool(d);
+  paintHypeList();paintTop5(d);paintFacts(d);paintCool(d);paintSecret(d);
   $('#h-sent').innerHTML=(d.hypes||[]).length?'<div style="margin-bottom:4px;letter-spacing:.12em;text-transform:uppercase;font-size:10px">Sent as Hype</div>'+d.hypes.map(h=>`<div><b>${esc(h.rn||'player')}</b><span>${esc(h.body)}</span></div>`).join(''):'';
   // sent emails
   $('#m-sent').innerHTML=(d.mails||[]).length?'<div style="margin-bottom:4px;letter-spacing:.12em;text-transform:uppercase;font-size:10px">Sent emails</div>'+d.mails.map(m=>`<div><b title="${esc(m.subject)}">${esc(m.subject)}${m.img?' &#128247;':''}</b><span>${ago(m.ts)} &middot; opened by ${nf(m.reads)}</span><button class="btn no" data-dmail="${m.id}">Delete</button></div>`).join(''):'';

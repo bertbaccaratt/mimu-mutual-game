@@ -1498,6 +1498,30 @@ const MSGS=[
   {id:'mimu',n:'Your Mimu',img:'assets/mimu-icon.jpg',t:'Yesterday',m:['Your Mimu is waiting','The chairs aren’t going to jump themselves.']}];
 /* player-to-player texts (live): only after Glyph sign-in */
 const PM={unread:0,threads:[],top:null,topAt:0,timer:null,seen:0,mail:0};
+/* the secret phone line: one player in the whole game wins the Phone Detective badge (the server decides; everyone can read who won) */
+const SECRET={loaded:false,found:false,name:'',pic:'',at:0,mine:false,texted:false};
+let _secT=0,_secNag=0;
+async function secretLoad(){
+  if(!API.on())return;_secT=Date.now();
+  try{const r=await API.j('/api/secret/status');SECRET.loaded=true;SECRET.found=!!r.found;SECRET.name=r.name||'';SECRET.pic=r.pic||'';SECRET.at=r.at||0;SECRET.mine=!!r.mine;SECRET.texted=!!r.texted}catch(e){}
+  secretLockNote();try{if(window._vaultSecret)window._vaultSecret()}catch(e){}
+}
+const secretNag=()=>{if(SECRET.mine&&!SECRET.texted){_secNag=Date.now();try{toast('&#128222; <span><b>Hype</b>: TEXT HYPE THE CODE NOW!</span>',5600)}catch(e){}}};
+function secretPoll(){const n=Date.now();if(n-_secT>120000)secretLoad();if(SECRET.mine&&!SECRET.texted&&n-_secNag>300000)secretNag()}
+function secretLockNote(){
+  const L=document.getElementById('lock');if(!L||L.style.display==='none'||L.classList.contains('go'))return;
+  const old=document.getElementById('lksecret');if(old&&!(SECRET.mine&&!SECRET.texted)){old.remove();return}
+  if(old||!(SECRET.mine&&!SECRET.texted))return;
+  const first=L.querySelector('.notif');if(!first)return;
+  first.insertAdjacentHTML('beforebegin','<div class="notif" id="lksecret" style="background:rgba(32,74,44,.82);border-color:rgba(120,230,150,.5)"><div class="ni" style="background:linear-gradient(135deg,#46d36b,#1f8f43);border-color:#b8f5c9;font-size:15px">H</div><div><b>Hype <small style="font:500 10px var(--mono);color:#9fe8b4;margin-left:4px">now</small></b><span style="color:#d6f5de">TEXT HYPE THE CODE NOW!</span></div></div>');
+}
+function secretCardHTML(){
+  const S=SECRET,when=S.at?new Date(S.at).toLocaleString('en-US',{timeZone:PT,month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+' PT':'';
+  if(!S.found)return`<div class="card" style="border-color:rgba(124,192,255,.5);margin-bottom:12px"><div class="row" style="gap:12px;align-items:center"><div style="font-size:34px;line-height:1">&#128222;</div><div style="min-width:0"><div class="lbl" style="color:#7cc0ff">Phone Detective &middot; 1 of 1</div><div style="font:700 17px var(--sans);color:var(--cream);margin-top:2px">Not found yet</div><div class="sub2" style="font-size:12.5px;margin-top:3px">Only one player in the whole game can win this badge. Somebody is going to find the right number first.</div></div></div></div>`;
+  const mine=S.mine;
+  return`<div class="card" style="border-color:${mine?'var(--gold)':'rgba(124,192,255,.5)'};margin-bottom:12px;${mine?'box-shadow:0 0 26px rgba(217,178,95,.25)':''}"><div class="row" style="gap:12px;align-items:center"><div style="font-size:34px;line-height:1">&#128222;</div><div style="min-width:0;flex:1"><div class="lbl" style="color:${mine?'var(--gold2)':'#7cc0ff'}">Phone Detective &middot; 1 of 1 ${mine?'&middot; YOU WON IT':'&middot; won'}</div><div class="row" style="gap:8px;margin-top:6px;align-items:center"><div class="av" style="width:34px;height:34px;flex:none">${imgTag(S.pic&&safeUrl(S.pic)?S.pic:'assets/mimu-icon.jpg')}</div><div style="min-width:0"><div style="font:700 17px var(--sans);color:var(--cream);overflow:hidden;text-overflow:ellipsis">${escH(S.name||'a player')}</div><div class="sub2" style="font-size:12px">found the secret number first${when?' &middot; '+when:''}</div></div></div></div></div></div>`;
+}
+
 const unreadN=()=>MSGS.filter(x=>!(P.mr&&P.mr[x.id])).length+(PM.unread||0);
 const pmOn=()=>!!(GATE.ok&&API.token&&API.on());
 const pAv=(pic,name)=>name==='Hype'?'<div class="av" style="background:linear-gradient(135deg,#46d36b,#1f8f43);color:#fff;font:700 17px var(--sans)">H</div>':`<div class="av">${imgTag(safeUrl(pic)?pic:'assets/mimu-icon.jpg')}</div>`;
@@ -1519,9 +1543,10 @@ async function pmPoll(){
     PM.threads=r.threads||[];PM.unread=r.unread||0;const mailBefore=PM.mail;PM.mail=r.mail||0;if(PM.mail>mailBefore&&PM.seen)toast('&#128236; <span>New mail from <b>Mimu On Ape</b></span>',3400);refreshMailBadge();if(window._mailList)window._mailList();
     if(PM.unread>before&&PM.seen){const t=PM.threads.find(x=>x.unread);toast(`&#128172; <span>New text from <b>${escH(t?t.name:'a player')}</b></span>`,3200)}
     PM.seen=1;refreshDockBadge();if(window._pmList)window._pmList();
+    secretPoll();
   }catch(e){}
 }
-function startPMPoll(){stopPMPoll();if(!pmOn())return;pmPoll();PM.timer=setInterval(pmPoll,20000)}
+function startPMPoll(){stopPMPoll();if(!pmOn())return;secretLoad();pmPoll();PM.timer=setInterval(pmPoll,20000)}
 function stopPMPoll(){clearInterval(PM.timer);PM.timer=null;PM.unread=0;PM.mail=0;PM.threads=[];PM.seen=0;refreshDockBadge();refreshMailBadge()}
 function buildMsgs(root){
   try{if(window._petSync)window._petSync()}catch(e){}
@@ -1559,10 +1584,10 @@ function buildMsgs(root){
     const drawBot=()=>{
       const keep=$('#pmt',root)?$('#pmt',root).value:'';            /* never lose what is being typed */
       blk.textContent=blocked?'Unblock':'Block';
-      bot.innerHTML=blocked?'<div class="pmblocked">You blocked this player. Unblock to text them again.</div>':`<div class="pmdon">Want to help ${escH(name)}? <button id="pmdn">Donate $TMF in Top 5</button></div><div class="pmerr" id="pmerr"></div><form class="pmin" id="pmf" action="javascript:void(0)" autocomplete="off"><input id="pmt" maxlength="280" placeholder="Text message" autocomplete="off" enterkeyhint="send"><button id="pms" type="submit">Send</button></form>`;
+      bot.innerHTML=blocked?'<div class="pmblocked">You blocked this player. Unblock to text them again.</div>':`${name==='Hype'?'':`<div class="pmdon">Want to help ${escH(name)}? <button id="pmdn">Donate $TMF in Top 5</button></div>`}<div class="pmerr" id="pmerr"></div><form class="pmin" id="pmf" action="javascript:void(0)" autocomplete="off"><input id="pmt" maxlength="280" placeholder="Text message" autocomplete="off" enterkeyhint="send"><button id="pms" type="submit">Send</button></form>`;
       if(blocked)return;
       const inp=$('#pmt',root),btn=$('#pms',root),er=$('#pmerr',root),form=$('#pmf',root);inp.value=keep;
-      $('#pmdn',root).onclick=()=>{goHome();setTimeout(()=>openApp('top5'),700)};
+      {const dnb=$('#pmdn',root);if(dnb)dnb.onclick=()=>{goHome();setTimeout(()=>openApp('top5'),700)}}
       const send=async()=>{
         const body=inp.value.trim();if(!body||btn.disabled)return;
         btn.disabled=true;btn.textContent='…';er.textContent='';
@@ -1654,29 +1679,37 @@ function buildPhone(root){
     box.innerHTML='<video playsinline webkit-playsinline preload="auto" src="assets/hornilius-call.mp4?v=1"></video><div class="ftt"><b>Hornilius</b><span class="ftm">FaceTime Video &middot; connecting&hellip;</span></div><button class="fte" aria-label="End call"></button><button class="fta" hidden>Tap to answer</button>';
     sc.appendChild(box);
     const v=box.querySelector('video'),tmx=box.querySelector('.ftm'),ans=box.querySelector('.fta');
-    let done=false,live=false,wd=null,tk=null;
+    let done=false,live=false,wd=null,tk=null,gotIt=false,won=Promise.resolve(false);
+    /* only the first signed-in player to dial this number gets the video (the server decides); everyone else gets the wrong-number message */
+    const claim=()=>{won=(API.token&&API.on())?API.j('/api/secret/claim',{method:'POST',body:'{}',timeout:9000}).then(r=>!!(r&&r.won)).catch(()=>false):Promise.resolve(false)};
     const hang=fail=>{if(done)return;done=true;clearTimeout(wd);clearInterval(tk);hangNow=null;try{v.pause();v.removeAttribute('src');v.load()}catch(e){}box.remove();
       if(fail){wrongNumber();return}
-      num='';dn.textContent='';resetCall();tone(480,0,.14,.04);tone(380,.17,.2,.04)};
+      num='';dn.textContent='';resetCall();tone(480,0,.14,.04);tone(380,.17,.2,.04);
+      if(gotIt)setTimeout(()=>{secretLoad().then(()=>secretNag())},900)};
     hangNow=()=>hang(false);
     box.querySelector('.fte').onclick=()=>hang(false);
     const mmss=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
     const tick=()=>{if(live)tmx.textContent='FaceTime Video · '+mmss(v.currentTime)};
     v.onended=()=>setTimeout(()=>hang(false),500);
     v.onerror=()=>hang(true);
-    return{reveal(){
-      box.classList.add('on');ds.innerHTML='&nbsp;';
-      wd=setTimeout(()=>{if(!live)hang(true)},10000);                   /* never connected (offline or very slow): fall back to the wrong-number recording */
-      const go=()=>{live=true;clearTimeout(wd);ans.hidden=true;tk=setInterval(tick,250);tick()};
-      const pr=v.play();
-      if(pr&&pr.then)pr.then(go).catch(()=>{clearTimeout(wd);ans.hidden=false;ans.onclick=()=>{v.play().then(go).catch(()=>hang(true))}});else go();
+    return{claim,reveal(){
+      Promise.race([won,new Promise(r=>setTimeout(()=>r(false),9000))]).then(ok=>{
+        if(done)return;
+        if(!ok){hang(true);return}                                    /* not the first (or not signed in): the normal wrong-number message */
+        gotIt=true;SECRET.found=true;SECRET.mine=true;SECRET.texted=false;secretLoad();pmPoll();
+        box.classList.add('on');ds.innerHTML='&nbsp;';
+        wd=setTimeout(()=>{if(!live)hang(true)},10000);               /* never connected (offline or very slow): fall back to the wrong-number recording */
+        const go=()=>{live=true;clearTimeout(wd);ans.hidden=true;tk=setInterval(tick,250);tick()};
+        const pr=v.play();
+        if(pr&&pr.then)pr.then(go).catch(()=>{clearTimeout(wd);ans.hidden=false;ans.onclick=()=>{v.play().then(go).catch(()=>hang(true))}});else go();
+      });
     }};
   };
   cl.onclick=()=>{
     if(calling){clearTimeout(tm);if(hangNow)hangNow();else resetCall();return}
     if(!num){ds.textContent='Tap a number first';return}
     calling=true;cl.classList.add('end');ds.textContent='calling…';ac();tone(440,0,.4,.04);tone(480,0,.4,.04);tone(440,1.2,.4,.04);tone(480,1.2,.4,.04);
-    if(isSecret()){const c=prepCall();tm=setTimeout(()=>c.reveal(),2800);return}
+    if(isSecret()){const c=prepCall();c.claim();tm=setTimeout(()=>c.reveal(),2800);return}
     loadYT();tm=setTimeout(wrongNumber,2800);
   };
   return{destroy(){clearTimeout(tm);if(hangNow)hangNow()}};
@@ -2944,6 +2977,7 @@ function buildRecap(root){
 function buildVault(root){
   const open={};let filter='all',scCv=null;
   const draw=()=>keepScroll(root,drawBody);
+  window._vaultSecret=()=>{if(document.body.contains(root))draw()};secretLoad();
   const ring=(f,c,size=84)=>{const r=size/2-7,cc=2*Math.PI*r;return`<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#ffffff1c" stroke-width="7"/><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(cc*f).toFixed(1)} ${cc.toFixed(1)}" transform="rotate(-90 ${size/2} ${size/2})"/></svg>`};
   const card=(a,cat)=>{
     const v=Math.max(0,a.val()),done=v>=a.goal,f=Math.min(1,v/a.goal),m=MEDALS[a.med];
@@ -2979,6 +3013,7 @@ function buildVault(root){
       const isOpen=open[c.id]!==undefined?open[c.id]:(filter!=='all');
       return`<details class="acat" data-c="${c.id}" style="--cc:${c.c}" ${isOpen?'open':''}><summary><span class="aci">${c.i}</span><b>${c.n}</b><em>${got}/${total}</em><div class="acbar"><i style="width:${total?got/total*100:0}%"></i></div></summary><div class="alist">${items.map(x=>card(x.a,c)).join('')}</div></details>`}).join('');
     root.innerHTML=`<div class="sc"><div class="ah"><h1>Badges</h1><div class="sp"></div><div class="pill"><span class="coin"></span>${fmt(P.coins)}</div></div><div class="scroll" style="padding-bottom:30px">
+     ${secretCardHTML()}
      <div class="shc"><div class="shp" id="scMount"></div><div class="shb"><div class="lbl" style="color:var(--gold)">Your share card</div><div class="sub2" style="font-size:12px;margin:4px 0 10px">A picture of your level and stats to post or save.</div><button class="btn gold sm" id="scShare" type="button">Share on X</button><button class="btn ghost sm" id="scSave" type="button" style="margin-top:6px">Save image</button></div></div>
      <div class="ahero"><div class="aring">${ring(done.length/list.length,'#f0c64a',92)}<div class="ainn"><b>${done.length}</b><small>of ${list.length}</small></div></div>
        <div class="ahb"><div class="lbl" style="color:var(--gold)">Your level</div><div class="alvl">${LEVELS[li][1]}</div><div class="sub2" style="font-size:12px">${fmt(pts)} badge points${LEVELS[li+1]?' · '+fmt(hi-pts)+' to '+LEVELS[li+1][1]:' · top level'}</div>

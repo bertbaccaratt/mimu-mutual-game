@@ -1653,11 +1653,11 @@ function buildPhone(root){
 function buildCam(root){
   let n=P.photos||0;
   root.innerHTML=`<div class="camv"><div class="vf"><img src="assets/camera-photo.webp?v=2" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%"><div class="gridl"></div></div><div class="ct"><span>⚡︎ Auto</span><span>HDR</span></div><div class="md">PHOTO</div>
-   <button class="th" id="gal" aria-label="Open photos"><img src="assets/photos/p8.webp" alt=""><b id="pn">${n?n:''}</b></button><div class="cb"><button class="shut" id="sh"><i></i></button></div><div class="fl" id="fl"></div></div>`;
+   <button class="th" id="gal" aria-label="Open photos"><img src="assets/photos/p9.webp" alt=""><b id="pn">${n?n:''}</b></button><div class="cb"><button class="shut" id="sh"><i></i></button></div><div class="fl" id="fl"></div></div>`;
   paintAll();
   $('#sh',root).onclick=()=>{ac();const f=$('#fl',root);f.classList.remove('on');void f.offsetWidth;f.classList.add('on');tone(1800,0,.03,.05,'square');tone(900,.05,.05,.04,'square');n++;P.photos=n;saveP();$('#pn',root).textContent=n;toast('📸 <span>Saved to Photos: <b>Mimu, caught in 4K</b></span>',1800)};
   /* photo library: grid of shots, tap one to view it full screen, swipe or use the arrows to browse */
-  const PICS=[1,2,3,4,5,6,7,8].map(i=>'assets/photos/p'+i+'.webp');
+  const PICS=[1,2,3,4,5,6,7,8,9].map(i=>'assets/photos/p'+i+'.webp');
   $('#gal',root).onclick=()=>{
     ac();tone(700,0,.03,.04,'square');
     const g=document.createElement('div');g.className='gal';

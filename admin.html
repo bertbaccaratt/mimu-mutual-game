@@ -145,6 +145,10 @@ a{color:var(--gold);text-decoration:none}a:hover{text-decoration:underline}
 .sec>h2{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 20px 12px;font:700 15px var(--cond);letter-spacing:.2em;text-transform:uppercase;color:var(--ac);border-bottom:1px solid var(--line);text-shadow:0 0 18px color-mix(in srgb,var(--ac) 45%,transparent)}
 .sec>h2 small{font:500 10px var(--mono);letter-spacing:.14em;color:var(--muted);text-transform:none;text-shadow:none}
 .sec>div{flex:1}
+.sec.sec-ok{border:3px solid #ffd257;box-shadow:0 0 0 2px #7a5a12,0 0 34px rgba(255,210,87,.55),inset 0 0 40px rgba(255,210,87,.12);animation:secwig 1.1s ease-in-out infinite;transform-origin:50% 60%}
+@keyframes secwig{0%,100%{transform:rotate(-1.4deg) scale(1)}25%{transform:rotate(1.4deg) scale(1.012)}50%{transform:rotate(-1deg) scale(1)}75%{transform:rotate(1.2deg) scale(1.01)}}
+.sec .chk{display:inline-grid;place-items:center;width:48px;height:48px;border-radius:50%;background:#22c55e;color:#fff;font-size:30px;font-weight:900;line-height:1;box-shadow:0 0 18px rgba(34,197,94,.75);animation:chkwig .55s ease-in-out infinite;margin-right:12px;vertical-align:middle}
+@keyframes chkwig{0%,100%{transform:rotate(-14deg) scale(1)}50%{transform:rotate(14deg) scale(1.12)}}
 .a-gold{--ac:var(--gold)}.a-purple{--ac:var(--purple)}.a-green{--ac:var(--green)}.a-amber{--ac:var(--amber)}.a-teal{--ac:var(--teal)}.a-pink{--ac:var(--pink)}.a-sky{--ac:var(--sky)}
 table{width:100%;border-collapse:collapse}
 th{padding:9px 16px;text-align:left;color:var(--muted);font:600 10px var(--mono);letter-spacing:.14em;text-transform:uppercase;border-bottom:1px solid var(--line);position:sticky;top:0;background:#12161f;z-index:2}
@@ -476,16 +480,21 @@ function topTable(rows,unit){
 }
 function ago(t){const s=Math.max(0,Math.floor((Date.now()-t)/1000));if(s<60)return s+'s ago';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago'}
 let PREV=null;
-let SEC_PREV=null;
+let SEC_PREV=null,SEC_CODE_PREV=null;
 function paintSecret(d){
   const s=d.secret||{found:false},b=$('#secretbody'),box=$('#secretbox');if(!b)return;
-  if(!s.found){box.className='sec a-sky';b.innerHTML='<b style="color:var(--text);font-size:18px">Not found yet</b><div style="margin-top:4px">Nobody has dialed it yet. The first signed-in player to dial it is recorded here.</div>';SEC_PREV=false;return}
-  box.className='sec a-gold';
-  const when=new Date(s.at).toLocaleString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit'})+' PT';
-  b.innerHTML='<div style="font-size:20px;font-weight:700;color:var(--gold)">&#127942; '+esc(s.name)+' got the number</div><div style="margin-top:4px">They dialed it first at <b>'+when+'</b>.</div>'+
-    '<div style="margin-top:8px;font:12px var(--mono);color:var(--muted);word-break:break-all">'+esc(s.address||'')+'</div>';
+  if(!s.found){box.className='sec a-sky';b.innerHTML='<b style="color:var(--text);font-size:18px">Not found yet</b><div style="margin-top:4px">Nobody has dialed it yet. The first signed-in player to dial it is recorded here.</div>';SEC_PREV=false;SEC_CODE_PREV=false;return}
+  const pt=ms=>new Date(ms).toLocaleString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit'})+' PT';
+  box.className=s.codeOk?'sec a-gold sec-ok':'sec a-gold';
+  let h='';
+  if(s.codeOk)h+='<div style="display:flex;align-items:center;margin-bottom:10px"><span class="chk">&#10004;</span><div><div style="font-size:20px;font-weight:800;color:#4ade80">TEXTED THE CORRECT CODE</div><div style="color:var(--muted);font-size:13px">to the Hype account at <b>'+pt(s.codeAt)+'</b></div></div></div>';
+  h+='<div style="font-size:20px;font-weight:700;color:var(--gold)">&#127942; '+esc(s.name)+' got the number</div><div style="margin-top:4px">They dialed it first at <b>'+pt(s.at)+'</b>.</div>';
+  if(s.codeOk&&s.codeText)h+='<div style="margin-top:8px;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,.06)">They sent: <b>&ldquo;'+esc(s.codeText)+'&rdquo;</b></div>';
+  h+='<div style="margin-top:8px;font:12px var(--mono);color:var(--muted);word-break:break-all">'+esc(s.address||'')+'</div>';
+  b.innerHTML=h;
   if(SEC_PREV===false){toast('&#9742; '+esc(s.name)+' just found the secret number!');ding(988,1480);confetti(60)}
-  SEC_PREV=true;
+  if(s.codeOk&&SEC_CODE_PREV===false){toast('&#9989; '+esc(s.name)+' texted the correct code!');ding(1180,1760);confetti(90)}
+  SEC_PREV=true;SEC_CODE_PREV=!!s.codeOk;
 }
 function render(d){
   DATA=d;

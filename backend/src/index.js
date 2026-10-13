@@ -14,6 +14,7 @@
 import { createPublicClient, http, fallback, verifyMessage, parseAbi, isAddress, getAddress } from 'viem';
 import Sim from '../../assets/sim.js';
 import { newStats, observe, judge } from './behavior.js';
+import { codeCheck } from './secret.js';
 
 const EPOCH = Date.UTC(2024, 0, 5, 20);          // must match the front-end weekKey()
 const WEEK_MS = 604800000;
@@ -664,7 +665,9 @@ async function secretAdmin(env) {
     await secretTable(env);
     const row = await env.DB.prepare('SELECT f.address a, f.found_at t, p.name n, p.x_handle x FROM secret_finder f LEFT JOIN players p ON p.address=f.address WHERE f.id=1').first();
     if (!row) return { found: false };
-    return { found: true, name: row.n || 'a player', x: row.x || '', address: row.a, at: row.t };
+    const out = { found: true, name: row.n || 'a player', x: row.x || '', address: row.a, at: row.t };
+    try { Object.assign(out, await codeCheck(env, row)); } catch { /* the code check can never hide who found the number */ }
+    return out;
   } catch { return { found: false, error: true }; }
 }
 async function handleSendStatus(env, req) {

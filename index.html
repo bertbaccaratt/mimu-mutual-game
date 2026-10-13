@@ -1454,6 +1454,11 @@ const DOCK=[
 .callb.end{background:#e0443c;animation:callpulse 1.3s ease-out infinite}
 @keyframes callpulse{0%{box-shadow:0 0 0 0 rgba(224,68,60,.55)}100%{box-shadow:0 0 0 22px rgba(224,68,60,0)}}
 .ythide{position:fixed;left:-400px;bottom:0;width:200px;height:200px;opacity:0;pointer-events:none;overflow:hidden}
+.ftc{position:absolute;inset:0;background:#000;z-index:40;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .35s}.ftc.on{opacity:1;pointer-events:auto}
+.ftc video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+.ftt{position:relative;z-index:2;padding:48px 20px 44px;background:linear-gradient(180deg,rgba(0,0,0,.65),transparent);text-align:center;color:#fff}.ftt b{display:block;font:600 22px var(--sans);letter-spacing:.2px}.ftt span{display:block;margin-top:3px;font:400 13px var(--sans);opacity:.85}
+.fte{position:absolute;z-index:2;left:50%;top:94.6%;width:76px;height:76px;margin:-38px 0 0 -38px;border-radius:50%;background:transparent}   /* sits over the red end button that is part of the video */
+.fta{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);padding:16px 30px;border-radius:30px;background:#2fbd55;color:#fff;font:600 17px var(--sans)}
 .camv{position:absolute;inset:0;background:#000;display:flex;flex-direction:column}
 .camv .vf{position:absolute;left:0;right:0;top:96px;bottom:150px;overflow:hidden;background:radial-gradient(circle at 50% 38%,#2a1b1f,#050304)}
 .camv .vf .hero,.camv .vf canvas{position:absolute;left:50%;top:50%;width:112%;height:auto;transform:translate(-50%,-50%);image-rendering:auto}
@@ -1642,10 +1647,36 @@ function buildPhone(root){
           onStateChange:ev=>{if(ev.data===1)clearTimeout(watchdog);if(ev.data===0)hang()},onError:()=>fallback()}});
     });
   };
+  /* the secret line: 1-800-239-0413 rings twice, then Hornilius picks up on a FaceTime-style video call (sound on); the call hangs up when the video ends */
+  const isSecret=()=>{const d=num.replace(/\D/g,'');return d==='18002390413'||d==='8002390413'};
+  const prepCall=()=>{
+    const sc=root.querySelector('.sc')||root,box=document.createElement('div');box.className='ftc';
+    box.innerHTML='<video playsinline webkit-playsinline preload="auto" src="assets/hornilius-call.mp4?v=1"></video><div class="ftt"><b>Hornilius</b><span class="ftm">FaceTime Video &middot; connecting&hellip;</span></div><button class="fte" aria-label="End call"></button><button class="fta" hidden>Tap to answer</button>';
+    sc.appendChild(box);
+    const v=box.querySelector('video'),tmx=box.querySelector('.ftm'),ans=box.querySelector('.fta');
+    let done=false,live=false,wd=null,tk=null;
+    const hang=fail=>{if(done)return;done=true;clearTimeout(wd);clearInterval(tk);hangNow=null;try{v.pause();v.removeAttribute('src');v.load()}catch(e){}box.remove();
+      if(fail){wrongNumber();return}
+      num='';dn.textContent='';resetCall();tone(480,0,.14,.04);tone(380,.17,.2,.04)};
+    hangNow=()=>hang(false);
+    box.querySelector('.fte').onclick=()=>hang(false);
+    const mmss=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
+    const tick=()=>{if(live)tmx.textContent='FaceTime Video · '+mmss(v.currentTime)};
+    v.onended=()=>setTimeout(()=>hang(false),500);
+    v.onerror=()=>hang(true);
+    return{reveal(){
+      box.classList.add('on');ds.innerHTML='&nbsp;';
+      wd=setTimeout(()=>{if(!live)hang(true)},10000);                   /* never connected (offline or very slow): fall back to the wrong-number recording */
+      const go=()=>{live=true;clearTimeout(wd);ans.hidden=true;tk=setInterval(tick,250);tick()};
+      const pr=v.play();
+      if(pr&&pr.then)pr.then(go).catch(()=>{clearTimeout(wd);ans.hidden=false;ans.onclick=()=>{v.play().then(go).catch(()=>hang(true))}});else go();
+    }};
+  };
   cl.onclick=()=>{
     if(calling){clearTimeout(tm);if(hangNow)hangNow();else resetCall();return}
     if(!num){ds.textContent='Tap a number first';return}
     calling=true;cl.classList.add('end');ds.textContent='calling…';ac();tone(440,0,.4,.04);tone(480,0,.4,.04);tone(440,1.2,.4,.04);tone(480,1.2,.4,.04);
+    if(isSecret()){const c=prepCall();tm=setTimeout(()=>c.reveal(),2800);return}
     loadYT();tm=setTimeout(wrongNumber,2800);
   };
   return{destroy(){clearTimeout(tm);if(hangNow)hangNow()}};
